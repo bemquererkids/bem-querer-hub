@@ -107,14 +107,16 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({ chat, messages: initialM
                     const isMe = msg.sender === 'agent';
                     return (
                         <div key={msg.id} className={`flex ${isMe ? 'justify-end' : 'justify-start'}`}>
-                            <div className={`max-w-[70%] rounded-lg p-3 shadow-sm text-sm relative ${isMe
-                                    ? 'bg-[#d9fdd3] text-slate-900 rounded-tr-none'
-                                    : 'bg-white text-slate-900 rounded-tl-none'
-                                }`}>
+                            <div
+                                className={`max-w-[70%] px-4 py-2 shadow-sm relative text-sm ${isMe
+                                        ? 'bg-gradient-to-r from-cyan-500 to-teal-500 text-white rounded-2xl rounded-tr-sm'
+                                        : 'bg-white border border-slate-100 text-slate-700 rounded-2xl rounded-tl-sm'
+                                    }`}
+                            >
                                 <p className="leading-relaxed whitespace-pre-wrap">{msg.content}</p>
-                                <span className="text-[10px] text-slate-400 block text-right mt-1 opacity-70">
+                                <span className="text-[10px] text-slate-200 block text-right mt-1 opacity-70">
                                     {new Date(msg.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-                                    {isMe && <span className="ml-1 text-blue-500">✓✓</span>}
+                                    {isMe && <span className="ml-1 text-blue-200">✓✓</span>}
                                 </span>
                             </div>
                         </div>
@@ -132,24 +134,32 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({ chat, messages: initialM
             </div>
 
             {/* Input Area */}
-            <div className="p-3 bg-white border-t border-border">
-                <div className="flex items-center gap-2">
-                    <Button variant="ghost" size="icon" className="text-slate-500"><Paperclip className="w-5 h-5" /></Button>
+            <div className="p-4 bg-white border-t border-slate-100 flex items-center gap-2">
+                <Button variant="ghost" size="icon" className="text-slate-400 hover:text-cyan-600 hover:bg-cyan-50 transition-colors">
+                    <Paperclip className="w-5 h-5" />
+                </Button>
+                <div className="flex-1 relative">
                     <Input
                         value={newMessage}
                         onChange={(e) => setNewMessage(e.target.value)}
                         onKeyDown={(e) => e.key === 'Enter' && handleSend()}
-                        placeholder="Digite uma mensagem..."
-                        className="flex-1 bg-slate-50 border-slate-200 focus-visible:ring-0 rounded-full px-4"
+                        placeholder="Digite sua mensagem..."
+                        className="pr-10 bg-slate-50 border-slate-200 focus:border-cyan-500 focus:ring-cyan-500/20"
                     />
-                    {newMessage.trim() ? (
-                        <Button onClick={handleSend} size="icon" className="rounded-full bg-[#00a884] hover:bg-[#008f6f] h-10 w-10">
-                            <Send className="w-5 h-5 text-white ml-0.5" />
-                        </Button>
-                    ) : (
-                        <Button variant="ghost" size="icon" className="text-slate-500"><Mic className="w-5 h-5" /></Button>
-                    )}
+                    <Button
+                        variant="ghost"
+                        size="icon"
+                        className="absolute right-1 top-1 h-8 w-8 text-slate-400 hover:text-cyan-600"
+                    >
+                        <Mic className="w-4 h-4" />
+                    </Button>
                 </div>
+                <Button
+                    onClick={handleSend}
+                    className="bg-gradient-to-r from-cyan-500 to-teal-500 hover:from-cyan-600 hover:to-teal-600 text-white shadow-lg shadow-cyan-500/30 rounded-full w-10 h-10 p-0 flex items-center justify-center transition-all hover:scale-105"
+                >
+                    <Send className="w-4 h-4 ml-0.5" />
+                </Button>
             </div>
         </div>
     );
