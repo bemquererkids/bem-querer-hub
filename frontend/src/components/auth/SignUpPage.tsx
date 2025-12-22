@@ -4,12 +4,7 @@ import { Input } from '../ui/input';
 import { Button } from '../ui/button';
 import { Label } from '../ui/label';
 import { Loader2, UserPlus, ArrowLeft } from 'lucide-react';
-import { createClient } from '@supabase/supabase-js';
-
-// Initialize Supabase Client (Frontend)
-const supabaseUrl = import.meta.env.VITE_SUPABASE_URL || '';
-const supabaseKey = import.meta.env.VITE_SUPABASE_KEY || '';
-const supabase = createClient(supabaseUrl, supabaseKey);
+import { supabase } from '../../services/supabase';
 
 export const SignUpPage: React.FC<{ onBack: () => void, onSuccess: () => void }> = ({ onBack, onSuccess }) => {
     const [clinicName, setClinicName] = useState('');
