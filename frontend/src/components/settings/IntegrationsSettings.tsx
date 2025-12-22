@@ -44,14 +44,14 @@ export const IntegrationsSettings: React.FC = () => {
 
     return (
         <div className="p-6 max-w-5xl mx-auto space-y-8 animate-in fade-in duration-500">
-            
+
             <div className="flex flex-col gap-1">
                 <h2 className="text-2xl font-bold tracking-tight">Integrações</h2>
                 <p className="text-muted-foreground">Gerencie a conexão com seus canais de atendimento e sistemas externos.</p>
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                
+
                 {/* 1. WHATSAPP CARD */}
                 <Card className="border-l-4 border-l-green-500 shadow-sm">
                     <CardHeader>
@@ -103,7 +103,7 @@ export const IntegrationsSettings: React.FC = () => {
                                 <Power className="w-4 h-4" /> Desconectar
                             </Button>
                         ) : (
-                            <Button size="sm" onClick={handleReconnectWhatsapp} className="w-full sm:w-auto gap-2 bg-green-600 hover:bg-green-700 text-white">
+                            <Button size="sm" onClick={handleReconnectWhatsapp} className="w-full sm:w-auto gap-2 bg-gradient-to-r from-green-500 to-emerald-500 hover:from-green-600 hover:to-emerald-600 text-white shadow-lg shadow-green-500/30">
                                 <QrCode className="w-4 h-4" /> Gerar Novo QR Code
                             </Button>
                         )}
@@ -111,12 +111,12 @@ export const IntegrationsSettings: React.FC = () => {
                 </Card>
 
                 {/* 2. CLINICORP CARD */}
-                <Card className="border-l-4 border-l-blue-500 shadow-sm">
+                <Card className="border-l-4 border-l-cyan-500 shadow-sm">
                     <CardHeader>
                         <div className="flex justify-between items-start">
                             <div className="flex items-center gap-2">
-                                <div className="p-2 bg-blue-100 rounded-lg">
-                                    <Calendar className="w-6 h-6 text-blue-600" />
+                                <div className="p-2 bg-cyan-100 rounded-lg">
+                                    <Calendar className="w-6 h-6 text-cyan-600" />
                                 </div>
                                 <div>
                                     <CardTitle>Clinicorp</CardTitle>
@@ -139,9 +139,9 @@ export const IntegrationsSettings: React.FC = () => {
                             <div className="space-y-3">
                                 <div className="space-y-1">
                                     <Label htmlFor="client_id">Client ID / Usuário</Label>
-                                    <Input 
-                                        id="client_id" 
-                                        placeholder="Ex: bemquerer ou ID da aplicação" 
+                                    <Input
+                                        id="client_id"
+                                        placeholder="Ex: bemquerer ou ID da aplicação"
                                         value={clinicorpClientId}
                                         onChange={(e) => setClinicorpClientId(e.target.value)}
                                         className="font-mono text-sm"
@@ -149,15 +149,15 @@ export const IntegrationsSettings: React.FC = () => {
                                 </div>
                                 <div className="space-y-1">
                                     <Label htmlFor="client_secret">Client Secret / Token API</Label>
-                                    <Input 
-                                        id="client_secret" 
-                                        type="password" 
-                                        placeholder="Ex: Token (8b6b...) ou Senha" 
+                                    <Input
+                                        id="client_secret"
+                                        type="password"
+                                        placeholder="Ex: Token (8b6b...) ou Senha"
                                         value={clinicorpSecret}
                                         onChange={(e) => setClinicorpSecret(e.target.value)}
                                     />
                                 </div>
-                                <div className="bg-blue-50 text-blue-700 text-xs p-3 rounded border border-blue-100">
+                                <div className="bg-cyan-50 text-cyan-700 text-xs p-3 rounded border border-cyan-100">
                                     ℹ️ Solicite estas credenciais ao suporte da Clinicorp.
                                 </div>
                             </div>
@@ -177,18 +177,18 @@ export const IntegrationsSettings: React.FC = () => {
                         )}
                     </CardContent>
                     <CardFooter className="justify-between border-t bg-slate-50/50 p-4">
-                         {clinicorpStatus === 'disconnected' ? (
-                            <Button 
-                                onClick={handleConnectClinicorp} 
+                        {clinicorpStatus === 'disconnected' ? (
+                            <Button
+                                onClick={handleConnectClinicorp}
                                 disabled={loading}
-                                className="w-full sm:w-auto gap-2"
+                                className="w-full sm:w-auto gap-2 bg-gradient-to-r from-cyan-500 to-teal-500 hover:from-cyan-600 hover:to-teal-600 text-white shadow-lg shadow-cyan-500/30"
                             >
                                 {loading && <RefreshCw className="w-4 h-4 animate-spin" />}
                                 Conectar Clinicorp
                             </Button>
                         ) : (
-                             <Button 
-                                variant="outline" 
+                            <Button
+                                variant="outline"
                                 onClick={() => setClinicorpStatus('disconnected')}
                                 className="w-full sm:w-auto gap-2 text-destructive hover:text-destructive"
                             >
@@ -198,10 +198,10 @@ export const IntegrationsSettings: React.FC = () => {
                     </CardFooter>
                 </Card>
             </div>
-            
+
             {/* 3. GEMINI AI CARD (Simplified) */}
             <Card className="border-l-4 border-l-purple-500 shadow-sm opacity-80 hover:opacity-100 transition-opacity">
-                 <CardHeader>
+                <CardHeader>
                     <div className="flex justify-between items-start">
                         <div className="flex items-center gap-2">
                             <div className="p-2 bg-purple-100 rounded-lg">
@@ -218,9 +218,9 @@ export const IntegrationsSettings: React.FC = () => {
                     </div>
                 </CardHeader>
                 <CardContent>
-                     <p className="text-sm text-muted-foreground">
-                         A IA está configurada globalmente pelo administrador do sistema. Para ajustes de prompt ou personalidade, contate o suporte técnico.
-                     </p>
+                    <p className="text-sm text-muted-foreground">
+                        A IA está configurada globalmente pelo administrador do sistema. Para ajustes de prompt ou personalidade, contate o suporte técnico.
+                    </p>
                 </CardContent>
             </Card>
 
