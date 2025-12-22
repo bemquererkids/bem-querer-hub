@@ -1,4 +1,4 @@
-export type CRMStatus = 'new' | 'qualifying' | 'scheduled' | 'noshow' | 'won';
+export type CRMStatus = 'new' | 'qualifying' | 'scheduled' | 'noshow' | 'won' | 'attended';
 
 export interface Deal {
     id: string;
