@@ -4,6 +4,7 @@ export interface Deal {
     id: string;
     patientName: string;
     patientAvatar?: string;
+    phone?: string;
     value?: number;
     status: CRMStatus;
     lastContact: string;

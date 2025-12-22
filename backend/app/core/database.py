@@ -12,17 +12,36 @@ class MockSupabaseQuery:
     def __init__(self, table_name):
         self.table_name = table_name
         self._filters = []
+        self._data_to_set = {}
         
-    def select(self, columns):
+    def select(self, columns="*"):
         return self
         
     def eq(self, column, value):
         self._filters.append((column, value))
         return self
         
+    def order(self, column, desc=False):
+        return self
+        
+    def limit(self, count):
+        return self
+        
+    def insert(self, data):
+        self._data_to_set = data
+        return self
+        
+    def update(self, data):
+        self._data_to_set = data
+        return self
+        
     def execute(self):
         # Return Mock Data based on table
         if self.table_name == "chats":
+            if self._data_to_set:
+                # Return the data being inserted/updated as if it worked
+                return MockSupabaseResponse([{"id": "mock_chat_new", **self._data_to_set}])
+                
             return MockSupabaseResponse([
                 {
                     "id": "mock_chat_1",
@@ -45,6 +64,11 @@ class MockSupabaseQuery:
                     }
                 }
             ])
+        
+        if self._data_to_set:
+            # For insert/update on other tables
+            return MockSupabaseResponse([{"id": f"mock_{self.table_name}_id", **self._data_to_set}])
+            
         return MockSupabaseResponse([])
 
 class MockSupabaseClient:

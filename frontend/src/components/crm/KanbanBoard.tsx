@@ -17,11 +17,11 @@ interface CRMCardProps {
 }
 
 const CRMCard: React.FC<CRMCardProps> = ({ deal, type, onStatusUpdate }) => {
-    // Mock random data for visual fidelity to reference
-    const mockId = Math.floor(Math.random() * 90000) + 10000;
-    const mockPhone = "5511999999999";
-    const mockDate = new Date().toLocaleDateString('pt-BR');
-    const mockTime = "09:30";
+    // Semi-mocked fallback data for visual fidelity
+    const mockId = deal.id.substring(0, 5).toUpperCase();
+    const displayPhone = deal.phone || "Sem Telefone";
+    const displayDate = new Date(deal.lastContact).toLocaleDateString('pt-BR');
+    const displayTime = new Date(deal.lastContact).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
 
     return (
         <Card className="hover:shadow-md transition-shadow border-slate-200">
@@ -33,16 +33,15 @@ const CRMCard: React.FC<CRMCardProps> = ({ deal, type, onStatusUpdate }) => {
                             <span className="text-xs font-bold text-blue-600 bg-blue-50 px-2 py-0.5 rounded">
                                 {type === 'appointment' ? `Agendamento #${mockId}` : `Lead #${mockId}`}
                             </span>
-                            {type === 'lead' && <span className="text-[10px] text-slate-400">há 2 horas</span>}
-                            {type === 'appointment' && <span className="text-[10px] text-slate-400">há 11 horas</span>}
+                            <span className="text-[10px] text-slate-400">há 2 horas</span>
                         </div>
-                        {type === 'lead' && (
+                        {deal.status === 'qualifying' && (
                             <Badge variant="secondary" className="w-fit bg-emerald-100 text-emerald-700 hover:bg-emerald-200 text-[10px] px-2 h-5">
                                 Novo
                             </Badge>
                         )}
                         {type === 'appointment' && (
-                             <Badge variant="secondary" className="w-fit bg-orange-100 text-orange-700 hover:bg-orange-200 text-[10px] px-2 h-5">
+                            <Badge variant="secondary" className="w-fit bg-orange-100 text-orange-700 hover:bg-orange-200 text-[10px] px-2 h-5">
                                 Clinicorp: Sincronizado
                             </Badge>
                         )}
@@ -55,23 +54,21 @@ const CRMCard: React.FC<CRMCardProps> = ({ deal, type, onStatusUpdate }) => {
                 {/* Body */}
                 <div className="space-y-3 mb-4">
                     <h3 className="font-bold text-slate-800 text-lg">{deal.patientName}</h3>
-                    
+
                     <div className="flex items-center gap-2 text-sm text-slate-500">
                         <Phone className="w-4 h-4" />
-                        <span>{mockPhone}</span>
+                        <span>{displayPhone}</span>
                     </div>
 
-                    {type === 'lead' && (
-                        <div className="flex items-center gap-2 text-sm text-slate-500">
-                            <Target className="w-4 h-4" />
-                            <span className="truncate max-w-[200px]">Mídia: Google Ads (Campanha X)</span>
-                        </div>
-                    )}
+                    <div className="flex items-center gap-2 text-sm text-slate-500">
+                        <Target className="w-4 h-4" />
+                        <span className="truncate max-w-[200px]">Mídia: {deal.source}</span>
+                    </div>
 
                     {type === 'appointment' && (
                         <div className="flex items-center gap-2 text-sm text-slate-500">
                             <CalendarIcon className="w-4 h-4" />
-                            <span>{mockDate}, {mockTime}</span>
+                            <span>{displayDate}, {displayTime}</span>
                         </div>
                     )}
                 </div>
@@ -79,8 +76,8 @@ const CRMCard: React.FC<CRMCardProps> = ({ deal, type, onStatusUpdate }) => {
                 {/* Footer Actions */}
                 <div className="pt-4 border-t border-slate-100 flex gap-3">
                     {type === 'lead' && (
-                        <Button 
-                            variant="outline" 
+                        <Button
+                            variant="outline"
                             className="w-full border-slate-200 text-slate-600 hover:text-blue-600 hover:border-blue-200"
                             onClick={() => onStatusUpdate(deal.id, 'scheduled')}
                         >
@@ -90,14 +87,14 @@ const CRMCard: React.FC<CRMCardProps> = ({ deal, type, onStatusUpdate }) => {
 
                     {type === 'appointment' && (
                         <>
-                            <Button 
+                            <Button
                                 className="flex-1 bg-emerald-500 hover:bg-emerald-600 text-white h-9 text-xs"
                                 onClick={() => onStatusUpdate(deal.id, 'attended')}
                             >
                                 <CheckCircle2 className="w-3 h-3 mr-1.5" /> Compareceu
                             </Button>
-                            <Button 
-                                variant="destructive" 
+                            <Button
+                                variant="destructive"
                                 className="flex-1 h-9 text-xs"
                                 onClick={() => onStatusUpdate(deal.id, 'noshow')}
                             >
@@ -121,8 +118,8 @@ export const KanbanBoard: React.FC = () => {
     useEffect(() => {
         const fetchDeals = async () => {
             try {
-                 const data = await crmService.getDeals();
-                 setDeals(data);
+                const data = await crmService.getDeals();
+                setDeals(data);
             } catch (error) {
                 console.error("Failed to fetch deals", error);
             } finally {
@@ -133,22 +130,27 @@ export const KanbanBoard: React.FC = () => {
     }, []);
 
     const handleStatusUpdate = async (id: string, newStatus: string) => {
-        // 1. Optimistic Update (Remove from current view instantly)
-        setDeals(current => current.filter(d => d.id !== id));
-        
+        // Optimistic UI Update: change local state first
+        setDeals(current => current.map(d => d.id === id ? { ...d, status: newStatus as any } : d));
+
         try {
-            // 2. Call API
             await crmService.updateDealStatus(id, newStatus);
             console.log(`Deal ${id} updated to ${newStatus}`);
         } catch (error) {
             console.error("Failed to update status", error);
-            // Revert would happen here in a robust app
         }
     };
 
-    // Filter deals based on active tab (Mock Logic)
+    // Filter deals based on active tab
     const getFilteredDeals = () => {
-        return deals; 
+        switch (activeTab) {
+            case 'leads': return deals.filter(d => ['new', 'qualifying'].includes(d.status));
+            case 'appointments': return deals.filter(d => d.status === 'scheduled');
+            case 'noshows': return deals.filter(d => d.status === 'noshow');
+            case 'attended': return deals.filter(d => d.status === 'attended');
+            case 'sales': return deals.filter(d => d.status === 'won');
+            default: return deals;
+        }
     };
 
     const currentDeals = getFilteredDeals();
@@ -159,7 +161,7 @@ export const KanbanBoard: React.FC = () => {
 
     return (
         <div className="p-8 h-full flex flex-col space-y-6">
-            
+
             {/* 1. TOP CONTROLS */}
             <div className="flex flex-col md:flex-row gap-4 justify-between bg-white p-4 rounded-xl shadow-sm border border-slate-100">
                 <div className="flex items-center gap-3">
@@ -173,16 +175,16 @@ export const KanbanBoard: React.FC = () => {
                     </Button>
                 </div>
                 <div className="relative w-full md:w-[300px]">
-                     <Search className="absolute left-3 top-2.5 h-4 w-4 text-slate-400" />
-                     <Input placeholder="Buscar por nome ou telefone" className="pl-9 bg-slate-50 border-slate-200" />
+                    <Search className="absolute left-3 top-2.5 h-4 w-4 text-slate-400" />
+                    <Input placeholder="Buscar por nome ou telefone" className="pl-9 bg-slate-50 border-slate-200" />
                 </div>
             </div>
 
             {/* 2. TABS & GRID */}
             <Tabs defaultValue="leads" className="flex-1 flex flex-col" onValueChange={setActiveTab}>
                 <TabsList className="w-full justify-start h-12 bg-transparent p-0 gap-6 border-b border-slate-200 mb-6 rounded-none">
-                    <TabsTrigger 
-                        value="leads" 
+                    <TabsTrigger
+                        value="leads"
                         className="rounded-none border-b-2 border-transparent data-[state=active]:border-blue-600 data-[state=active]:shadow-none px-4 py-3 text-slate-500 data-[state=active]:text-blue-600 bg-transparent"
                     >
                         <div className="flex items-center gap-2">
@@ -190,38 +192,38 @@ export const KanbanBoard: React.FC = () => {
                             <Badge variant="secondary" className="bg-slate-100 text-slate-600">1862</Badge>
                         </div>
                     </TabsTrigger>
-                    <TabsTrigger 
-                        value="appointments" 
+                    <TabsTrigger
+                        value="appointments"
                         className="rounded-none border-b-2 border-transparent data-[state=active]:border-blue-600 data-[state=active]:shadow-none px-4 py-3 text-slate-500 data-[state=active]:text-blue-600 bg-transparent"
                     >
-                         <div className="flex items-center gap-2">
+                        <div className="flex items-center gap-2">
                             <span className="font-bold">Agendamentos</span>
                             <Badge variant="secondary" className="bg-blue-50 text-blue-600">730</Badge>
                         </div>
                     </TabsTrigger>
-                    <TabsTrigger 
-                        value="noshows" 
+                    <TabsTrigger
+                        value="noshows"
                         className="rounded-none border-b-2 border-transparent data-[state=active]:border-blue-600 data-[state=active]:shadow-none px-4 py-3 text-slate-500 data-[state=active]:text-blue-600 bg-transparent"
                     >
-                         <div className="flex items-center gap-2">
+                        <div className="flex items-center gap-2">
                             <span className="font-bold">No-Shows</span>
                             <Badge variant="secondary" className="bg-slate-100 text-slate-600">173</Badge>
                         </div>
                     </TabsTrigger>
-                    <TabsTrigger 
-                        value="attended" 
+                    <TabsTrigger
+                        value="attended"
                         className="rounded-none border-b-2 border-transparent data-[state=active]:border-blue-600 data-[state=active]:shadow-none px-4 py-3 text-slate-500 data-[state=active]:text-blue-600 bg-transparent"
                     >
-                         <div className="flex items-center gap-2">
+                        <div className="flex items-center gap-2">
                             <span className="font-bold">Comparecimentos</span>
                             <Badge variant="secondary" className="bg-slate-100 text-slate-600">481</Badge>
                         </div>
                     </TabsTrigger>
-                    <TabsTrigger 
-                        value="sales" 
+                    <TabsTrigger
+                        value="sales"
                         className="rounded-none border-b-2 border-transparent data-[state=active]:border-blue-600 data-[state=active]:shadow-none px-4 py-3 text-slate-500 data-[state=active]:text-blue-600 bg-transparent"
                     >
-                         <div className="flex items-center gap-2">
+                        <div className="flex items-center gap-2">
                             <span className="font-bold">Vendas</span>
                             <Badge variant="secondary" className="bg-slate-100 text-slate-600">43</Badge>
                         </div>
@@ -232,18 +234,18 @@ export const KanbanBoard: React.FC = () => {
                 <div className="flex-1 overflow-y-auto custom-scrollbar">
                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 pb-20">
                         {currentDeals.map((deal) => (
-                            <CRMCard 
-                                key={deal.id} 
-                                deal={deal} 
+                            <CRMCard
+                                key={deal.id}
+                                deal={deal}
                                 type={activeTab === 'leads' ? 'lead' : 'appointment'}
                                 onStatusUpdate={handleStatusUpdate}
                             />
                         ))}
-                         {/* Duplicating data to fill grid for visual check */}
-                         {currentDeals.map((deal) => (
-                            <CRMCard 
-                                key={`${deal.id}-dup`} 
-                                deal={deal} 
+                        {/* Duplicating data to fill grid for visual check */}
+                        {currentDeals.map((deal) => (
+                            <CRMCard
+                                key={`${deal.id}-dup`}
+                                deal={deal}
                                 type={activeTab === 'leads' ? 'lead' : 'appointment'}
                                 onStatusUpdate={handleStatusUpdate}
                             />

@@ -2,7 +2,7 @@
 Bem-Querer Hub - FastAPI Backend
 Main Application Entry Point
 """
-from fastapi import FastAPI
+from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
 from app.core.security import TenantMiddleware
 from app.api import webhooks, crm, integration, clinicorp_webhook, chat
@@ -27,6 +27,23 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+# Debug Middleware - Catch all and print traceback
+@app.middleware("http")
+async def catch_exceptions_middleware(request: Request, call_next):
+    try:
+        return await call_next(request)
+    except Exception as e:
+        import traceback
+        print("\n" + "="*50)
+        print("❌ INTERNAL SERVER ERROR DETECTED")
+        traceback.print_exc()
+        print("="*50 + "\n")
+        from fastapi.responses import JSONResponse
+        return JSONResponse(
+            status_code=500,
+            content={"detail": str(e), "traceback": traceback.format_exc()}
+        )
 
 # Multi-tenant Middleware
 app.add_middleware(TenantMiddleware)

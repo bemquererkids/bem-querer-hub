@@ -21,7 +21,12 @@ class TenantMiddleware(BaseHTTPMiddleware):
     async def dispatch(self, request: Request, call_next):
         # Skip auth for public endpoints
         # Allows crm and integrations to be accessed without token for Prototype/Demo
-        public_paths = ["/", "/health", "/docs", "/openapi.json", "/webhook/whatsapp", "/webhook/clinicorp", "/chat/message"]
+        public_paths = [
+            "/", "/health", "/docs", "/openapi.json", 
+            "/webhook/whatsapp", "/webhooks/whatsapp", 
+            "/webhook/clinicorp", "/webhooks/clinicorp",
+            "/chat/message"
+        ]
         public_prefixes = ["/crm", "/integrations"]
         
         if request.url.path in public_paths or any(request.url.path.startswith(prefix) for prefix in public_prefixes):

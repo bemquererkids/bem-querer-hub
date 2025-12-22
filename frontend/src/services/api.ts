@@ -3,7 +3,7 @@ import axios from 'axios';
 import { Deal } from '../types/crm';
 
 // Get API URL from Environment (Vite) or fallback to local
-const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000'; 
+const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000';
 
 export const api = axios.create({
   baseURL: API_URL,
@@ -14,11 +14,11 @@ export const api = axios.create({
 
 // Simple interceptor to inject token (Mock for now or if we had auth)
 api.interceptors.request.use((config) => {
-    const token = localStorage.getItem('token');
-    if (token) {
-        config.headers.Authorization = `Bearer ${token}`;
-    }
-    return config;
+  const token = localStorage.getItem('token');
+  if (token) {
+    config.headers.Authorization = `Bearer ${token}`;
+  }
+  return config;
 });
 
 export const crmService = {
@@ -33,18 +33,26 @@ export const crmService = {
 };
 
 export const chatService = {
-    sendMessage: async (message: string) => {
-        const response = await api.post('/chat/message', { message });
-        return response.data;
-    }
+  getChats: async () => {
+    const response = await api.get('/chat/list'); // Assuming this endpoint exists or mock handles it
+    return response.data;
+  },
+  getMessages: async (chatId: string) => {
+    const response = await api.get(`/chat/${chatId}/messages`);
+    return response.data;
+  },
+  sendMessage: async (chatId: string, message: string) => {
+    const response = await api.post('/chat/message', { chat_id: chatId, message });
+    return response.data;
+  }
 };
 
 export const integrationService = {
-    connectClinicorp: async (clientId: string, clientSecret: string) => {
-        const response = await api.post('/integrations/clinicorp/configure', {
-            client_id: clientId,
-            client_secret: clientSecret
-        });
-        return response.data;
-    }
+  connectClinicorp: async (clientId: string, clientSecret: string) => {
+    const response = await api.post('/integrations/clinicorp/configure', {
+      client_id: clientId,
+      client_secret: clientSecret
+    });
+    return response.data;
+  }
 };

@@ -43,14 +43,14 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({ chat, messages: initialM
             type: 'text',
             status: 'sent'
         };
-        
+
         setMessages(prev => [...prev, userMsg]);
         setIsTyping(true);
 
         try {
             // 2. Call AI Backend
-            const response = await chatService.sendMessage(text);
-            
+            const response = await chatService.sendMessage(chat.id, text);
+
             // 3. Add AI Response
             const aiMsg: ChatMessage = {
                 id: (Date.now() + 1).toString(),
@@ -107,14 +107,13 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({ chat, messages: initialM
                     const isMe = msg.sender === 'agent';
                     return (
                         <div key={msg.id} className={`flex ${isMe ? 'justify-end' : 'justify-start'}`}>
-                            <div className={`max-w-[70%] rounded-lg p-3 shadow-sm text-sm relative ${
-                                isMe 
-                                ? 'bg-[#d9fdd3] text-slate-900 rounded-tr-none' 
-                                : 'bg-white text-slate-900 rounded-tl-none'
-                            }`}>
+                            <div className={`max-w-[70%] rounded-lg p-3 shadow-sm text-sm relative ${isMe
+                                    ? 'bg-[#d9fdd3] text-slate-900 rounded-tr-none'
+                                    : 'bg-white text-slate-900 rounded-tl-none'
+                                }`}>
                                 <p className="leading-relaxed whitespace-pre-wrap">{msg.content}</p>
                                 <span className="text-[10px] text-slate-400 block text-right mt-1 opacity-70">
-                                    {new Date(msg.timestamp).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}
+                                    {new Date(msg.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                                     {isMe && <span className="ml-1 text-blue-500">✓✓</span>}
                                 </span>
                             </div>
@@ -136,11 +135,11 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({ chat, messages: initialM
             <div className="p-3 bg-white border-t border-border">
                 <div className="flex items-center gap-2">
                     <Button variant="ghost" size="icon" className="text-slate-500"><Paperclip className="w-5 h-5" /></Button>
-                    <Input 
+                    <Input
                         value={newMessage}
                         onChange={(e) => setNewMessage(e.target.value)}
                         onKeyDown={(e) => e.key === 'Enter' && handleSend()}
-                        placeholder="Digite uma mensagem..." 
+                        placeholder="Digite uma mensagem..."
                         className="flex-1 bg-slate-50 border-slate-200 focus-visible:ring-0 rounded-full px-4"
                     />
                     {newMessage.trim() ? (
