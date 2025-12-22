@@ -5,6 +5,7 @@ import { IntegrationsSettings } from './components/settings/IntegrationsSettings
 import { ConfigPromptPage } from './components/settings/ConfigPromptPage';
 import { DashboardHome } from './components/dashboard/DashboardHome';
 import { FollowUpPage } from './components/crm/FollowUpPage';
+import { LoginPage } from './components/auth/LoginPage';
 import { Button } from './components/ui/button';
 import { Avatar, AvatarImage, AvatarFallback } from './components/ui/avatar';
 import { 
