@@ -1,0 +1,172 @@
+"""
+UazAPI Service
+Handles communication with UazAPI (WhatsApp Gateway)
+"""
+import httpx
+from typing import Dict, Any, Optional
+from app.core.config import settings
+import logging
+
+logger = logging.getLogger(__name__)
+
+
+class UazAPIService:
+    """Service for interacting with UazAPI"""
+    
+    def __init__(self):
+        self.base_url = settings.UAZAPI_BASE_URL
+        self.token = settings.UAZAPI_TOKEN
+        self.headers = {
+            "Authorization": f"Bearer {self.token}",
+            "Content-Type": "application/json"
+        }
+    
+    async def send_message(
+        self,
+        instance: str,
+        phone: str,
+        message: str,
+        quoted_message_id: Optional[str] = None
+    ) -> Dict[str, Any]:
+        """
+        Send a text message via UazAPI
+        
+        Args:
+            instance: WhatsApp instance name
+            phone: Recipient phone number (with country code)
+            message: Message text
+            quoted_message_id: Optional message ID to quote/reply to
+        
+        Returns:
+            API response with message ID
+        """
+        try:
+            url = f"{self.base_url}/message/sendText/{instance}"
+            
+            payload = {
+                "number": phone,
+                "text": message
+            }
+            
+            if quoted_message_id:
+                payload["quoted"] = {
+                    "key": {
+                        "id": quoted_message_id
+                    }
+                }
+            
+            async with httpx.AsyncClient() as client:
+                response = await client.post(
+                    url,
+                    json=payload,
+                    headers=self.headers,
+                    timeout=10.0
+                )
+                response.raise_for_status()
+                return response.json()
+                
+        except httpx.HTTPError as e:
+            logger.error(f"Error sending message via UazAPI: {str(e)}")
+            raise
+        except Exception as e:
+            logger.error(f"Unexpected error sending message: {str(e)}")
+            raise
+    
+    async def send_image(
+        self,
+        instance: str,
+        phone: str,
+        image_url: str,
+        caption: Optional[str] = None
+    ) -> Dict[str, Any]:
+        """Send an image message"""
+        try:
+            url = f"{self.base_url}/message/sendImage/{instance}"
+            
+            payload = {
+                "number": phone,
+                "image": image_url
+            }
+            
+            if caption:
+                payload["caption"] = caption
+            
+            async with httpx.AsyncClient() as client:
+                response = await client.post(
+                    url,
+                    json=payload,
+                    headers=self.headers,
+                    timeout=15.0
+                )
+                response.raise_for_status()
+                return response.json()
+                
+        except Exception as e:
+            logger.error(f"Error sending image: {str(e)}")
+            raise
+    
+    async def get_instance_status(self, instance: str) -> Dict[str, Any]:
+        """
+        Get WhatsApp instance connection status
+        
+        Returns:
+            Status info (connected, qrcode, etc.)
+        """
+        try:
+            url = f"{self.base_url}/instance/connectionState/{instance}"
+            
+            async with httpx.AsyncClient() as client:
+                response = await client.get(
+                    url,
+                    headers=self.headers,
+                    timeout=5.0
+                )
+                response.raise_for_status()
+                return response.json()
+                
+        except Exception as e:
+            logger.error(f"Error getting instance status: {str(e)}")
+            raise
+    
+    async def mark_as_read(
+        self,
+        instance: str,
+        phone: str,
+        message_id: str
+    ) -> Dict[str, Any]:
+        """Mark a message as read"""
+        try:
+            url = f"{self.base_url}/chat/markMessageAsRead/{instance}"
+            
+            payload = {
+                "number": phone,
+                "key": {
+                    "id": message_id
+                }
+            }
+            
+            async with httpx.AsyncClient() as client:
+                response = await client.post(
+                    url,
+                    json=payload,
+                    headers=self.headers,
+                    timeout=5.0
+                )
+                response.raise_for_status()
+                return response.json()
+                
+        except Exception as e:
+            logger.error(f"Error marking message as read: {str(e)}")
+            raise
+
+
+# Singleton instance
+_uazapi_service: Optional[UazAPIService] = None
+
+
+def get_uazapi_service() -> UazAPIService:
+    """Get or create UazAPI service instance"""
+    global _uazapi_service
+    if _uazapi_service is None:
+        _uazapi_service = UazAPIService()
+    return _uazapi_service
