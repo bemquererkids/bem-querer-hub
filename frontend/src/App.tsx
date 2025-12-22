@@ -111,56 +111,58 @@ className =\"w-full bg-slate-700/50 text-white placeholder-slate-400 pl-10 pr-4 
                   </Avatar >
     <div className=\"flex-1 min-w-0\">
         < p className =\"text-sm font-medium text-white truncate\">Dra. Ana Silva</p>
-            < p className =\"text-xs text-slate-400 truncate\">Dentista Admin</p>
+            < div className = "flex-1 min-w-0" >
+        <p className="text-sm font-medium text-white truncate">Dra. Ana Silva</p>
+            <p className="text-xs text-slate-400 truncate">Dentista Admin</p>
                   </div >
               </div >
           </div >
       </aside >
 
     {/* MAIN CONTENT AREA */ }
-    < div className =\"flex-1 flex flex-col overflow-hidden\">
+    < div className = "flex-1 flex flex-col overflow-hidden" >
 
-{/* TOP HEADER BAR (Simple, Clean) */ }
-<header className=\"h-16 bg-white border-b border-slate-200 flex items-center justify-between px-6 shadow-sm z-20\">
-    < div className =\"flex items-center gap-4\">
-        < h1 className =\"text-xl font-semibold text-slate-800\">
-{ currentView === 'dashboard' && 'Dashboard' }
-{ currentView === 'chat' && 'Chat' }
-{ currentView === 'crm' && 'CRM' }
-{ currentView === 'followup' && 'Follow-up' }
-{ currentView === 'prompt-config' && 'Configurar Prompt' }
-{ currentView === 'clinic-config' && 'Configurações da Clínica' }
-                  </h1 >
-              </div >
-
-    <div className=\"flex items-center gap-4\">
-        < Button size =\"sm\" className=\"bg-gradient-to-r from-cyan-500 to-teal-500 hover:from-cyan-600 hover:to-teal-600 text-white shadow-lg shadow-cyan-500/30\">
-            < Plus className =\"w-4 h-4 mr-2\" /> Novo
-                  </Button >
-
-    <div className=\"relative cursor-pointer hover:bg-slate-100 p-2 rounded-lg transition-all\">
-        < Bell className =\"w-5 h-5 text-slate-600\" />
-            < span className =\"absolute top-1 right-1 w-2 h-2 bg-red-500 rounded-full border-2 border-white\"></span>
-                  </div >
-              </div >
+        {/* TOP HEADER BAR (Simple, Clean) */ }
+        < header className = "h-16 bg-white border-b border-slate-200 flex items-center justify-between px-6 shadow-sm z-20" >
+              <div className="flex items-center gap-4">
+                  <h1 className="text-xl font-semibold text-slate-800">
+                      {currentView === 'dashboard' && 'Dashboard'}
+                      {currentView === 'chat' && 'Chat'}
+                      {currentView === 'crm' && 'CRM'}
+                      {currentView === 'followup' && 'Follow-up'}
+                      {currentView === 'prompt-config' && 'Configurar Prompt'}
+                      {currentView === 'clinic-config' && 'Configurações da Clínica'}
+                  </h1>
+              </div>
+              
+              <div className="flex items-center gap-4">
+                  <Button size="sm" className="bg-gradient-to-r from-cyan-500 to-teal-500 hover:from-cyan-600 hover:to-teal-600 text-white shadow-lg shadow-cyan-500/30">
+                      <Plus className="w-4 h-4 mr-2" /> Novo
+                  </Button>
+                  
+                  <div className="relative cursor-pointer hover:bg-slate-100 p-2 rounded-lg transition-all">
+                      <Bell className="w-5 h-5 text-slate-600" />
+                      <span className="absolute top-1 right-1 w-2 h-2 bg-red-500 rounded-full border-2 border-white"></span>
+                  </div>
+              </div>
           </header >
 
     {/* CONTENT */ }
-    < main className =\"flex-1 overflow-y-auto bg-slate-50\">
-        < AnimatePresence mode =\"wait\">
-            < motion.div
-key = { currentView }
-{...fadeIn }
-className =\"w-full h-full\"
-    >
-    { currentView === 'dashboard' && <DashboardHome />}
-{ currentView === 'chat' && <ChatLayout /> }
-{ currentView === 'crm' && <KanbanBoard /> }
-{ currentView === 'followup' && <FollowUpPage /> }
-{ currentView === 'prompt-config' && <ConfigPromptPage /> }
-{ currentView === 'clinic-config' && <IntegrationsSettings /> }
-                  </motion.div >
-              </AnimatePresence >
+    < main className = "flex-1 overflow-y-auto bg-slate-50" >
+        <AnimatePresence mode="wait">
+            <motion.div
+                key={currentView}
+                {...fadeIn}
+                className="w-full h-full"
+            >
+                {currentView === 'dashboard' && <DashboardHome />}
+                {currentView === 'chat' && <ChatLayout />}
+                {currentView === 'crm' && <KanbanBoard />}
+                {currentView === 'followup' && <FollowUpPage />}
+                {currentView === 'prompt-config' && <ConfigPromptPage />}
+                {currentView === 'clinic-config' && <IntegrationsSettings />}
+            </motion.div>
+        </AnimatePresence>
           </main >
       </div >
     </div >

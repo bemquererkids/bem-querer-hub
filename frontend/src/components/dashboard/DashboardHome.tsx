@@ -1,199 +1,217 @@
-import React, { useState } from 'react';
+import React from 'react';
+import { motion } from 'framer-motion';
 import { Card, CardContent, CardHeader, CardTitle } from '../ui/card';
 import { Button } from '../ui/button';
-import { 
-    Users, 
-    Calendar, 
-    CheckCircle2, 
-    TrendingUp, 
-    RefreshCw, 
-    HelpCircle,
-    ChevronDown,
-    ChevronRight,
-    LogOut,
+import {
+    Users,
+    Calendar,
+    CheckCircle2,
+    TrendingUp,
+    RefreshCw,
     Calendar as CalendarIcon,
     FileText,
     Wallet,
-    CreditCard
+    CreditCard,
+    DollarSign,
+    ArrowUpRight,
+    ArrowDownRight
 } from 'lucide-react';
-import { 
-    BarChart, 
-    Bar, 
-    XAxis, 
-    YAxis, 
-    CartesianGrid, 
-    Tooltip, 
+import {
+    BarChart,
+    Bar,
+    XAxis,
+    YAxis,
+    CartesianGrid,
+    Tooltip,
     ResponsiveContainer,
     Cell
 } from 'recharts';
+import { staggerContainer, staggerItem } from '../../utils/animations';
 
 // Mock Data for Funnel Chart
 const funnelData = [
-  { name: 'Leads', value: 156, fill: '#60a5fa' }, // Blue
-  { name: 'Agendados', value: 76, fill: '#fbbf24' }, // Amber
-  { name: 'Compareceram', value: 37, fill: '#34d399' }, // Emerald
-  { name: 'Vendas', value: 6, fill: '#818cf8' }, // Indigo
+    { name: 'Leads', value: 156, fill: '#06b6d4' }, // Cyan
+    { name: 'Agendados', value: 76, fill: '#14b8a6' }, // Teal
+    { name: 'Compareceram', value: 37, fill: '#10b981' }, // Emerald
+    { name: 'Vendas', value: 6, fill: '#8b5cf6' }, // Purple
 ];
 
-// Reusable Metric Card Component
-const MetricCard = ({ title, value, subtext, icon: Icon, trend }: any) => (
-    <div className="bg-white p-6 rounded-xl border border-slate-100 shadow-sm hover:shadow-md transition-all flex flex-col justify-between h-32">
-        <div className="flex justify-between items-start">
-            <div>
-                <p className="text-sm font-medium text-slate-500">{title}</p>
-                <h3 className="text-3xl font-bold text-slate-800 mt-1">{value}</h3>
-            </div>
-            <div className="p-2 bg-slate-50 rounded-lg text-slate-400">
-                <Icon className="w-5 h-5" />
-            </div>
-        </div>
-        {subtext && (
-            <p className={`text-xs font-bold flex items-center gap-1 ${trend === 'positive' ? 'text-green-600' : 'text-slate-400'}`}>
-                {trend === 'positive' && '↗'} {subtext}
-            </p>
-        )}
-    </div>
-);
+// Jampack-Style Metric Card
+const MetricCard = ({ title, value, subtext, icon: Icon, trend, color = 'cyan' }: any) => {
+    const colorClasses = {
+        cyan: 'bg-cyan-50 text-cyan-600',
+        teal: 'bg-teal-50 text-teal-600',
+        emerald: 'bg-emerald-50 text-emerald-600',
+        purple: 'bg-purple-50 text-purple-600'
+    };
 
-// Collapsible Section Component
-const DashboardSection = ({ title, icon: Icon, children, isOpen = true }: any) => {
-    const [open, setOpen] = useState(isOpen);
-    
     return (
-        <div className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden mb-6">
-            <div 
-                className="p-4 flex items-center justify-between cursor-pointer hover:bg-slate-50 transition-colors border-b border-slate-100"
-                onClick={() => setOpen(!open)}
-            >
-                <div className="flex items-center gap-3">
-                    <div className="p-2 bg-blue-50 text-blue-600 rounded-lg">
-                        <Icon className="w-5 h-5" />
+        <motion.div
+            variants={staggerItem}
+            className="bg-white p-6 rounded-2xl shadow-sm hover:shadow-md transition-all border border-slate-100"
+        >
+            <div className="flex justify-between items-start mb-4">
+                <div className={`p-3 rounded-xl ${colorClasses[color as keyof typeof colorClasses]}`}>
+                    <Icon className="w-5 h-5" />
+                </div>
+                {trend && (
+                    <div className={`flex items-center gap-1 text-xs font-semibold ${trend === 'up' ? 'text-emerald-600' : 'text-red-600'}`}>
+                        {trend === 'up' ? <ArrowUpRight className="w-3 h-3" /> : <ArrowDownRight className="w-3 h-3" />}
+                        {trend === 'up' ? '+12%' : '-5%'}
                     </div>
-                    <h3 className="font-bold text-slate-800">{title}</h3>
-                </div>
-                {open ? <ChevronDown className="w-5 h-5 text-slate-400" /> : <ChevronRight className="w-5 h-5 text-slate-400" />}
+                )}
             </div>
-            
-            {open && (
-                <div className="p-6 bg-slate-50/30 animate-in slide-in-from-top-2 duration-300">
-                    {children}
-                </div>
-            )}
-        </div>
+
+            <div>
+                <p className="text-sm font-medium text-slate-500 mb-1">{title}</p>
+                <h3 className="text-3xl font-bold text-slate-900">{value}</h3>
+                {subtext && (
+                    <p className="text-xs text-slate-400 mt-2">{subtext}</p>
+                )}
+            </div>
+        </motion.div>
     );
 };
 
 export const DashboardHome: React.FC = () => {
     return (
-        <div className="p-8 space-y-6 min-h-full font-sans text-slate-800">
-            
-            {/* 1. HEADER */}
-            <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-8">
+        <div className="p-8 space-y-6 min-h-full">
+
+            {/* HEADER */}
+            <motion.div
+                initial={{ opacity: 0, y: -20 }}
+                animate={{ opacity: 1, y: 0 }}
+                className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-8"
+            >
                 <div>
-                    <h1 className="text-2xl font-bold text-slate-900">Dashboard de Vendas</h1>
+                    <h1 className="text-2xl font-bold text-slate-900 mb-1">Dashboard de Vendas</h1>
                     <p className="text-slate-500">Análise do funil de conversão e métricas financeiras</p>
                 </div>
-                
+
                 <div className="flex items-center gap-3">
-                    <Button variant="outline" className="bg-white border-slate-200 text-slate-600 font-medium">
+                    <Button variant="outline" className="bg-white border-slate-200 text-slate-600 font-medium hover:bg-slate-50">
                         <CalendarIcon className="w-4 h-4 mr-2" />
-                        01/08/2025 - 31/08/2025
+                        01/08 - 31/08/2025
                     </Button>
-                    <Button variant="outline" className="bg-white border-slate-200 text-slate-600 hover:text-red-600 hover:bg-red-50">
-                        <LogOut className="w-4 h-4 mr-2" /> Sair
+                    <Button className="bg-gradient-to-r from-cyan-500 to-teal-500 hover:from-cyan-600 hover:to-teal-600 text-white shadow-lg shadow-cyan-500/30">
+                        <RefreshCw className="w-4 h-4 mr-2" /> Atualizar
                     </Button>
                 </div>
-            </div>
+            </motion.div>
 
-            {/* 2. CONTROLS */}
-            <div className="flex items-center gap-2 mb-6">
-                <Button variant="ghost" size="sm" className="text-slate-500 hover:text-blue-600">
-                    <RefreshCw className="w-4 h-4 mr-2" /> Atualizar
-                </Button>
-                <div className="flex-1" />
-                <HelpCircle className="w-5 h-5 text-slate-300 cursor-help" />
-            </div>
-
-            {/* 3. SECTION: MÉTRICAS DE CONVERSÃO */}
-            <DashboardSection title="Métricas de Conversão" icon={TrendingUp}>
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-                    <MetricCard 
-                        title="Total de Leads" 
-                        value="156" 
-                        icon={Users} 
+            {/* MÉTRICAS DE CONVERSÃO */}
+            <div>
+                <h2 className="text-sm font-semibold text-slate-700 uppercase tracking-wider mb-4">Métricas de Conversão</h2>
+                <motion.div
+                    variants={staggerContainer}
+                    initial="initial"
+                    animate="animate"
+                    className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6"
+                >
+                    <MetricCard
+                        title="Total de Leads"
+                        value="156"
+                        icon={Users}
+                        color="cyan"
+                        trend="up"
                     />
-                    <MetricCard 
-                        title="Agendamentos" 
-                        value="76" 
+                    <MetricCard
+                        title="Agendamentos"
+                        value="76"
                         subtext="48.7% Taxa de agendamentos"
-                        trend="positive"
-                        icon={Calendar} 
+                        icon={Calendar}
+                        color="teal"
+                        trend="up"
                     />
-                    <MetricCard 
-                        title="Comparecimentos" 
-                        value="37" 
+                    <MetricCard
+                        title="Comparecimentos"
+                        value="37"
                         subtext="48.7% Taxa de comparecimento"
-                        trend="positive"
-                        icon={CheckCircle2} 
+                        icon={CheckCircle2}
+                        color="emerald"
+                        trend="up"
                     />
-                    <MetricCard 
-                        title="Vendas" 
-                        value="6" 
+                    <MetricCard
+                        title="Vendas"
+                        value="6"
                         subtext="16.2% Taxa de conversão"
-                        trend="positive"
-                        icon={TrendingUp} 
+                        icon={TrendingUp}
+                        color="purple"
+                        trend="down"
                     />
-                </div>
-            </DashboardSection>
+                </motion.div>
+            </div>
 
-            {/* 4. SECTION: FUNIL DE CONVERSÃO */}
-            <DashboardSection title="Funil de Conversão" icon={BarChart}>
-                <div className="h-[300px] w-full bg-white p-4 rounded-xl border border-slate-100" style={{ height: 300, minHeight: 300 }}>
-                    <ResponsiveContainer width="100%" height="100%">
-                        <BarChart data={funnelData} layout="vertical" margin={{ top: 5, right: 30, left: 40, bottom: 5 }}>
-                            <CartesianGrid strokeDasharray="3 3" horizontal={false} stroke="#e2e8f0" />
-                            <XAxis type="number" hide />
-                            <YAxis type="category" dataKey="name" tick={{ fontSize: 12, fill: '#64748b' }} width={100} />
-                            <Tooltip 
-                                cursor={{ fill: 'transparent' }}
-                                contentStyle={{ borderRadius: '8px', border: 'none', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)' }}
-                            />
-                            <Bar dataKey="value" radius={[0, 4, 4, 0]} barSize={30}>
-                                {funnelData.map((entry, index) => (
-                                    <Cell key={`cell-${index}`} fill={entry.fill} />
-                                ))}
-                            </Bar>
-                        </BarChart>
-                    </ResponsiveContainer>
+            {/* FUNIL DE CONVERSÃO */}
+            <motion.div
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.2 }}
+            >
+                <h2 className="text-sm font-semibold text-slate-700 uppercase tracking-wider mb-4">Funil de Conversão</h2>
+                <div className="bg-white p-6 rounded-2xl shadow-sm border border-slate-100">
+                    <div className="h-[320px] w-full">
+                        <ResponsiveContainer width="100%" height="100%">
+                            <BarChart data={funnelData} layout="vertical" margin={{ top: 5, right: 30, left: 40, bottom: 5 }}>
+                                <CartesianGrid strokeDasharray="3 3" horizontal={false} stroke="#e2e8f0" />
+                                <XAxis type="number" hide />
+                                <YAxis type="category" dataKey="name" tick={{ fontSize: 13, fill: '#64748b', fontWeight: 500 }} width={100} />
+                                <Tooltip
+                                    cursor={{ fill: 'transparent' }}
+                                    contentStyle={{
+                                        borderRadius: '12px',
+                                        border: 'none',
+                                        boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)',
+                                        padding: '12px'
+                                    }}
+                                />
+                                <Bar dataKey="value" radius={[0, 8, 8, 0]} barSize={40}>
+                                    {funnelData.map((entry, index) => (
+                                        <Cell key={`cell-${index}`} fill={entry.fill} />
+                                    ))}
+                                </Bar>
+                            </BarChart>
+                        </ResponsiveContainer>
+                    </div>
                 </div>
-            </DashboardSection>
+            </motion.div>
 
-            {/* 5. SECTION: MÉTRICAS FINANCEIRAS */}
-            <DashboardSection title="Métricas Financeiras" icon={DollarSign} isOpen={true}>
-                 <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                    <MetricCard 
-                        title="Valor Orçado" 
-                        value="R$ 45.200" 
-                        icon={FileText} 
+            {/* MÉTRICAS FINANCEIRAS */}
+            <motion.div
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.3 }}
+            >
+                <h2 className="text-sm font-semibold text-slate-700 uppercase tracking-wider mb-4">Métricas Financeiras</h2>
+                <motion.div
+                    variants={staggerContainer}
+                    initial="initial"
+                    animate="animate"
+                    className="grid grid-cols-1 md:grid-cols-3 gap-6"
+                >
+                    <MetricCard
+                        title="Valor Orçado"
+                        value="R$ 45.200"
+                        icon={FileText}
+                        color="cyan"
                     />
-                    <MetricCard 
-                        title="Valor Faturado" 
-                        value="R$ 12.800" 
-                        icon={Wallet} 
+                    <MetricCard
+                        title="Valor Faturado"
+                        value="R$ 12.800"
+                        icon={Wallet}
+                        color="teal"
                     />
-                    <MetricCard 
-                        title="Valor Pago" 
-                        value="R$ 8.500" 
+                    <MetricCard
+                        title="Valor Pago"
+                        value="R$ 8.500"
                         subtext="66% do Faturado"
-                        trend="positive"
-                        icon={CreditCard} 
+                        icon={CreditCard}
+                        color="emerald"
+                        trend="up"
                     />
-                </div>
-            </DashboardSection>
+                </motion.div>
+            </motion.div>
 
         </div>
     );
 };
-
-// Helper for Section 5 Icon (DollarSign was not imported in main list above, importing locally or using lucide-react)
-import { DollarSign } from 'lucide-react'; 

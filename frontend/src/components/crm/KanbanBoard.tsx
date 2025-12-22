@@ -24,29 +24,29 @@ const CRMCard: React.FC<CRMCardProps> = ({ deal, type, onStatusUpdate }) => {
     const displayTime = new Date(deal.lastContact).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
 
     return (
-        <Card className="hover:shadow-md transition-shadow border-slate-200">
+        <Card className="hover:shadow-lg hover:-translate-y-0.5 transition-all border-slate-200 bg-white">
             <CardContent className="p-5">
                 {/* Header */}
                 <div className="flex justify-between items-start mb-3">
                     <div className="flex flex-col gap-1">
                         <div className="flex items-center gap-2">
-                            <span className="text-xs font-bold text-blue-600 bg-blue-50 px-2 py-0.5 rounded">
+                            <span className="text-xs font-bold text-cyan-600 bg-cyan-50 px-2 py-0.5 rounded-md">
                                 {type === 'appointment' ? `Agendamento #${mockId}` : `Lead #${mockId}`}
                             </span>
                             <span className="text-[10px] text-slate-400">há 2 horas</span>
                         </div>
                         {deal.status === 'qualifying' && (
-                            <Badge variant="secondary" className="w-fit bg-emerald-100 text-emerald-700 hover:bg-emerald-200 text-[10px] px-2 h-5">
+                            <Badge variant="secondary" className="w-fit bg-teal-100 text-teal-700 hover:bg-teal-200 text-[10px] px-2 h-5">
                                 Novo
                             </Badge>
                         )}
                         {type === 'appointment' && (
-                            <Badge variant="secondary" className="w-fit bg-orange-100 text-orange-700 hover:bg-orange-200 text-[10px] px-2 h-5">
+                            <Badge variant="secondary" className="w-fit bg-purple-100 text-purple-700 hover:bg-purple-200 text-[10px] px-2 h-5">
                                 Clinicorp: Sincronizado
                             </Badge>
                         )}
                     </div>
-                    <Button variant="ghost" size="icon" className="h-6 w-6 text-slate-400">
+                    <Button variant="ghost" size="icon" className="h-6 w-6 text-slate-400 hover:text-slate-600">
                         <MoreVertical className="w-4 h-4" />
                     </Button>
                 </div>
