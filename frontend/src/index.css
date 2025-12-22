@@ -2,92 +2,135 @@
 @tailwind components;
 @tailwind utilities;
 
+/* ========================================
+   DESIGN SYSTEM: NOTION-INSPIRED
+   Emerald Green Theme + Clean Aesthetics
+   ======================================== */
+
 @layer base {
   :root {
-    /* Bem-Querer Brand Colors converted to HSL for Shadcn */
-    /* Primary Blue: #00A3E0 -> 196 100% 44% */
+    /* Base Colors - Notion Clean Style */
+    --background: 0 0% 100%; /* Pure White */
+    --foreground: 222 47% 11%; /* Dark Slate for Text */
+
+    /* Emerald Primary Palette */
+    --primary: 160 84% 39%; /* Emerald 600 - Main Brand */
+    --primary-hover: 160 84% 35%; /* Darker on hover */
+    --primary-foreground: 0 0% 100%; /* White text on emerald */
     
-    --background: 210 20% 98%; /* Light Gray Blueish (#F2F4F8) */
-    --foreground: 222.2 84% 4.9%;
-
-    --card: 0 0% 100%;
-    --card-foreground: 222.2 84% 4.9%;
-
+    /* Secondary - Neutral Grays */
+    --secondary: 215 16% 97%; /* Slate 50 - Very Light Bg */
+    --secondary-foreground: 222 47% 11%; /* Dark text */
+    
+    /* Accent - Soft Emerald for highlights */
+    --accent: 160 60% 96%; /* Very light emerald */
+    --accent-foreground: 160 84% 24%; /* Dark emerald text */
+    
+    /* UI Elements */
+    --muted: 220 14% 96%; /* Light gray background */
+    --muted-foreground: 220 9% 46%; /* Medium gray text */
+    
+    --card: 0 0% 100%; /* White cards */
+    --card-foreground: 222 47% 11%;
+    
     --popover: 0 0% 100%;
-    --popover-foreground: 222.2 84% 4.9%;
-
-    --primary: 196 100% 44%; /* Bem-Querer Blue */
-    --primary-foreground: 210 40% 98%;
-
-    --secondary: 210 40% 96.1%;
-    --secondary-foreground: 222.2 47.4% 11.2%;
-
-    --muted: 210 40% 96.1%;
-    --muted-foreground: 215.4 16.3% 46.9%;
-
-    --accent: 210 40% 96.1%;
-    --accent-foreground: 222.2 47.4% 11.2%;
-
-    --destructive: 0 84.2% 60.2%;
-    --destructive-foreground: 210 40% 98%;
-
-    --border: 214.3 31.8% 91.4%;
-    --input: 214.3 31.8% 91.4%;
-    --ring: 196 100% 44%;
-
-    --radius: 0.5rem;
+    --popover-foreground: 222 47% 11%;
+    
+    /* Borders & Inputs */
+    --border: 220 13% 91%; /* Subtle gray borders */
+    --input: 220 13% 91%;
+    --ring: 160 84% 39%; /* Emerald focus ring */
+    
+    /* States */
+    --destructive: 0 84% 60%; /* Red for errors */
+    --destructive-foreground: 0 0% 98%;
+    
+    /* Notion-specific additions */
+    --radius: 0.5rem; /* 8px - Notion's rounded corners */
+    --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.05);
+    --shadow: 0 1px 3px 0 rgb(0 0 0 / 0.1), 0 1px 2px -1px rgb(0 0 0 / 0.1);
+    --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
+    --shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1);
   }
 
+  /* Dark mode (optional - Notion style) */
   .dark {
-    --background: 222.2 84% 4.9%;
-    --foreground: 210 40% 98%;
-
-    --card: 222.2 84% 4.9%;
-    --card-foreground: 210 40% 98%;
-
-    --popover: 222.2 84% 4.9%;
-    --popover-foreground: 210 40% 98%;
-
-    --primary: 196 100% 50%;
-    --primary-foreground: 222.2 47.4% 11.2%;
-
-    --secondary: 217.2 32.6% 17.5%;
-    --secondary-foreground: 210 40% 98%;
-
-    --muted: 217.2 32.6% 17.5%;
-    --muted-foreground: 215 20.2% 65.1%;
-
-    --accent: 217.2 32.6% 17.5%;
+    --background: 224 71% 4%;
+    --foreground: 213 31% 91%;
+    
+    --primary: 160 84% 39%;
+    --primary-foreground: 0 0% 100%;
+    
+    --secondary: 222 47% 11%;
+    --secondary-foreground: 213 31% 91%;
+    
+    --accent: 216 34% 17%;
     --accent-foreground: 210 40% 98%;
-
-    --destructive: 0 62.8% 30.6%;
+    
+    --muted: 223 47% 11%;
+    --muted-foreground: 215 20% 65%;
+    
+    --card: 224 71% 4%;
+    --card-foreground: 213 31% 91%;
+    
+    --popover: 224 71% 4%;
+    --popover-foreground: 213 31% 91%;
+    
+    --border: 216 34% 17%;
+    --input: 216 34% 17%;
+    --ring: 160 84% 39%;
+    
+    --destructive: 0 63% 31%;
     --destructive-foreground: 210 40% 98%;
-
-    --border: 217.2 32.6% 17.5%;
-    --input: 217.2 32.6% 17.5%;
-    --ring: 196 100% 50%;
   }
 }
 
 @layer base {
   * {
-    border-color: hsl(var(--border)); /* CORREÇÃO AQUI: Uso direto da variável em vez de @apply */
+    @apply border-border;
   }
+  
   body {
     @apply bg-background text-foreground;
-    font-family: 'Nunito', sans-serif;
+    font-feature-settings: "rlig" 1, "calt" 1;
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', sans-serif;
+  }
+  
+  /* Smooth scrolling - Notion style */
+  html {
+    scroll-behavior: smooth;
+  }
+  
+  /* Focus styles - Notion inspired */
+  *:focus-visible {
+    @apply outline-none ring-2 ring-ring ring-offset-2 ring-offset-background;
   }
 }
 
-/* Custom Scrollbar */
-::-webkit-scrollbar {
-  width: 5px;
-  height: 5px;
-}
-::-webkit-scrollbar-track {
-  background: transparent;
-}
-::-webkit-scrollbar-thumb {
-  background: hsl(var(--muted-foreground) / 0.3);
-  border-radius: 10px;
+/* ========================================
+   CUSTOM UTILITIES
+   ======================================== */
+
+@layer utilities {
+  /* Notion-style card hover effect */
+  .card-hover {
+    @apply transition-all duration-200 hover:shadow-md hover:-translate-y-0.5;
+  }
+  
+  /* Glassmorphism effect */
+  .glass {
+    background: rgba(255, 255, 255, 0.9);
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+  }
+  
+  /* Smooth transitions */
+  .transition-smooth {
+    @apply transition-all duration-300 ease-out;
+  }
+  
+  /* Text gradient - Emerald */
+  .text-gradient-emerald {
+    @apply bg-gradient-to-r from-emerald-600 to-emerald-400 bg-clip-text text-transparent;
+  }
 }
