@@ -10,7 +10,20 @@ import { LoginPage } from './components/auth/LoginPage';
 import { SignUpPage } from './components/auth/SignUpPage';
 import { Button } from './components/ui/button';
 import { Avatar, AvatarImage, AvatarFallback } from './components/ui/avatar';
-// ... imports
+import { 
+    MessageSquare, 
+    Users, 
+    Settings, 
+    Bell, 
+    Menu, 
+    Home,
+    FileText,
+    Layers,
+    Type,
+    Plus,
+    Calendar as CalendarIcon
+} from 'lucide-react';
+import clsx from 'clsx';
 
 type ViewType = 'dashboard' | 'chat' | 'crm' | 'followup' | 'prompt-config' | 'clinic-config' | 'settings';
 

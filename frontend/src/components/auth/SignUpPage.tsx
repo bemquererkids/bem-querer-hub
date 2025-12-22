@@ -38,7 +38,7 @@ export const SignUpPage: React.FC<{ onBack: () => void, onSuccess: () => void }>
 
             // 2. Create Clinic (Tenant)
             const { data: clinicData, error: clinicError } = await supabase
-                .table('clinicas')
+                .from('clinicas')
                 .insert({ 
                     nome_fantasia: clinicName,
                     slug: clinicName.toLowerCase().replace(/ /g, '-'), // Simple slug
@@ -51,7 +51,7 @@ export const SignUpPage: React.FC<{ onBack: () => void, onSuccess: () => void }>
 
             // 3. Create Profile (Link User -> Clinic)
             const { error: profileError } = await supabase
-                .table('perfis')
+                .from('perfis')
                 .insert({
                     id: userId,
                     clinica_id: clinicData.id,
