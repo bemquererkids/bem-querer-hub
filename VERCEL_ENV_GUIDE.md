@@ -5,8 +5,10 @@ Para que o **Bem-Querer Hub** funcione corretamente em produção, você deve co
 ## 🚀 Obrigatórias (Core)
 | Variável | Descrição | Onde conseguir |
 | :--- | :--- | :--- |
-| `SUPABASE_URL` | URL do seu projeto Supabase | Dashboard Supabase > Settings > API |
-| `SUPABASE_KEY` | Anon Key (Public) | Dashboard Supabase > Settings > API |
+| `SUPABASE_URL` | URL do seu projeto Supabase (Backend) | Dashboard Supabase > Settings > API |
+| `SUPABASE_KEY` | Anon Key (Public) (Backend) | Dashboard Supabase > Settings > API |
+| `VITE_SUPABASE_URL` | IGUAL ao SUPABASE_URL (Front) | Necessário para o Vite ver a variável |
+| `VITE_SUPABASE_KEY` | IGUAL ao SUPABASE_KEY (Front) | Necessário para o Vite ver a variável |
 | `SUPABASE_SERVICE_KEY`| Service Role Key (Bypass RLS) | Dashboard Supabase > Settings > API |
 | `SECRET_KEY` | Chave para tokens JWT | Use o `backend\generate_secret.bat` |
 

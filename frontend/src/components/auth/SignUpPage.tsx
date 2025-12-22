@@ -21,6 +21,14 @@ export const SignUpPage: React.FC<{ onBack: () => void, onSuccess: () => void }>
 
     const handleSignUp = async (e: React.FormEvent) => {
         e.preventDefault();
+
+        // Check if keys are present (Vercel Build Check)
+        if (!supabaseUrl || !supabaseKey) {
+            setError("⚠️ ERRO CRÍTICO: Chaves do Supabase não encontradas no Frontend! Você fez o 'Redeploy' na Vercel?");
+            setLoading(false);
+            return;
+        }
+
         setLoading(true);
         setError('');
 
@@ -39,7 +47,7 @@ export const SignUpPage: React.FC<{ onBack: () => void, onSuccess: () => void }>
             // 2. Create Clinic (Tenant)
             const { data: clinicData, error: clinicError } = await supabase
                 .from('clinicas')
-                .insert({ 
+                .insert({
                     nome_fantasia: clinicName,
                     slug: clinicName.toLowerCase().replace(/ /g, '-'), // Simple slug
                     status: 'ativo'
@@ -92,12 +100,12 @@ export const SignUpPage: React.FC<{ onBack: () => void, onSuccess: () => void }>
                                 {error}
                             </div>
                         )}
-                        
+
                         <div className="space-y-2">
                             <Label htmlFor="clinic">Nome da Clínica</Label>
-                            <Input 
-                                id="clinic" 
-                                placeholder="Ex: OdontoSmile" 
+                            <Input
+                                id="clinic"
+                                placeholder="Ex: OdontoSmile"
                                 value={clinicName}
                                 onChange={(e) => setClinicName(e.target.value)}
                                 required
@@ -106,9 +114,9 @@ export const SignUpPage: React.FC<{ onBack: () => void, onSuccess: () => void }>
 
                         <div className="space-y-2">
                             <Label htmlFor="name">Seu Nome Completo</Label>
-                            <Input 
-                                id="name" 
-                                placeholder="Dra. Ana Silva" 
+                            <Input
+                                id="name"
+                                placeholder="Dra. Ana Silva"
                                 value={fullName}
                                 onChange={(e) => setFullName(e.target.value)}
                                 required
@@ -117,21 +125,21 @@ export const SignUpPage: React.FC<{ onBack: () => void, onSuccess: () => void }>
 
                         <div className="space-y-2">
                             <Label htmlFor="email">Email Corporativo</Label>
-                            <Input 
-                                id="email" 
-                                type="email" 
+                            <Input
+                                id="email"
+                                type="email"
                                 placeholder="contato@clinica.com"
                                 value={email}
                                 onChange={(e) => setEmail(e.target.value)}
                                 required
                             />
                         </div>
-                        
+
                         <div className="space-y-2">
                             <Label htmlFor="password">Senha</Label>
-                            <Input 
-                                id="password" 
-                                type="password" 
+                            <Input
+                                id="password"
+                                type="password"
                                 placeholder="Crie uma senha forte"
                                 value={password}
                                 onChange={(e) => setPassword(e.target.value)}

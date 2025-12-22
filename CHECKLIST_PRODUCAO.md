@@ -9,6 +9,7 @@ Para transformar este protótipo em um sistema de produção real, siga este che
 
 ## 2. 🚀 Infraestrutura (Vercel)
 - [ ] **Variáveis de Ambiente**: Preencher todas as chaves no painel da Vercel (conforme o guia criado).
+- [ ] **Atenção Frontend**: Garantiu que as chaves do Supabase foram duplicadas com o prefixo `VITE_`? (Ex: `VITE_SUPABASE_URL`). Sem isso, o cadastro não funciona.
 - [ ] **Build Check**: Mover o `requirements.txt` para a raiz para a Vercel instalar as dependências corretamente.
 - [ ] **OpenAI Plan**: Garantir que a conta na OpenAI tenha créditos, pois o modelo `gpt-4-turbo` é pago por uso.
 
