@@ -1,7 +1,7 @@
 import { createClient } from '@supabase/supabase-js';
 
-const supabaseUrl = import.meta.env.VITE_SUPABASE_URL || '';
-const supabaseKey = import.meta.env.VITE_SUPABASE_KEY || '';
+const supabaseUrl = (import.meta.env.VITE_SUPABASE_URL || '').trim();
+const supabaseKey = (import.meta.env.VITE_SUPABASE_KEY || '').trim();
 
 // Log para depuração (visível no console do navegador)
 console.log("[Supabase Service] Inicializando com URL:", supabaseUrl);

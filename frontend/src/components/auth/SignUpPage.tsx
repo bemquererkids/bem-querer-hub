@@ -85,7 +85,7 @@ export const SignUpPage: React.FC<{ onBack: () => void, onSuccess: () => void }>
                             ✨
                         </div>
                     </div>
-                    <CardTitle className="text-2xl font-bold text-slate-800">Nova Clínica</CardTitle>
+                    <CardTitle className="text-2xl font-bold text-slate-800">Nova Clínica (V4)</CardTitle>
                     <CardDescription>Cadastre-se para acessar o Bem-Querer Hub</CardDescription>
                 </CardHeader>
                 <form onSubmit={handleSignUp}>
