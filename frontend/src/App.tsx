@@ -1,171 +1,168 @@
 import { useState } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
 import { ChatLayout } from './components/chat/ChatLayout';
 import { KanbanBoard } from './components/crm/KanbanBoard';
 import { IntegrationsSettings } from './components/settings/IntegrationsSettings';
 import { ConfigPromptPage } from './components/settings/ConfigPromptPage';
 import { DashboardHome } from './components/dashboard/DashboardHome';
+import { UIElementsPage } from './components/dashboard/UIElementsPage';
 import { FollowUpPage } from './components/crm/FollowUpPage';
 import { LoginPage } from './components/auth/LoginPage';
 import { SignUpPage } from './components/auth/SignUpPage';
 import { Button } from './components/ui/button';
 import { Avatar, AvatarImage, AvatarFallback } from './components/ui/avatar';
-import {
-    MessageSquare,
-    Users,
-    Settings,
-    Bell,
+import { 
+    MessageSquare, 
+    Users, 
+    Settings, 
+    Bell, 
+    Menu, 
     Home,
-    Calendar as CalendarIcon,
-    LayoutDashboard,
-    Search,
-    Plus
+    FileText,
+    Layers,
+    Type,
+    Plus,
+    Calendar as CalendarIcon
 } from 'lucide-react';
 import clsx from 'clsx';
-import { fadeIn } from './utils/animations';
 
 type ViewType = 'dashboard' | 'chat' | 'crm' | 'followup' | 'prompt-config' | 'clinic-config' | 'settings';
 
 function App() {
-    const [isAuthenticated, setIsAuthenticated] = useState(false);
-    const [isSigningUp, setIsSigningUp] = useState(false);
-    const [currentView, setCurrentView] = useState<ViewType>('dashboard');
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [isSigningUp, setIsSigningUp] = useState(false);
+  const [currentView, setCurrentView] = useState<ViewType>('dashboard');
+  const [sidebarOpen, setSidebarOpen] = useState(true);
 
-    if (!isAuthenticated) {
-        if (isSigningUp) {
-            return <SignUpPage onBack={() => setIsSigningUp(false)} onSuccess={() => setIsSigningUp(false)} />;
-        }
-        return <LoginPage onLogin={() => setIsAuthenticated(true)} onSignUp={() => setIsSigningUp(true)} />;
-    }
+  if (!isAuthenticated) {
+      if (isSigningUp) {
+          return <SignUpPage onBack={() => setIsSigningUp(false)} onSuccess={() => setIsSigningUp(false)} />;
+      }
+      return <LoginPage onLogin={() => setIsAuthenticated(true)} onSignUp={() => setIsSigningUp(true)} />;
+  }
 
-    // Jampack-Style Sidebar Item
-    const SidebarItem = ({ id, icon: Icon, label, badge }: any) => {
-        const isActive = currentView === id;
-
-        return (
-            <button
-                onClick={() => setCurrentView(id)}
-                className={clsx(
-    \"w-full flex items-center gap-3 px-4 py-2.5 text-sm font-medium transition-all rounded-lg group relative\",
-    isActive
-        ?\"text-white bg-cyan-500 shadow-lg shadow-cyan-500/30\" 
-              : \"text-slate-400 hover:text-white hover:bg-slate-700/50\"
-          )
-}
+  // Template Style: Clean White Sidebar with specific styling
+// ... rest of code
+  const SidebarItem = ({ id, icon: Icon, label, badge, isHeader }: any) => {
+      if (isHeader) {
+          return <p className="px-6 text-[11px] font-bold text-muted-foreground uppercase tracking-wider mb-2 mt-6">{label}</p>;
+      }
+      return (
+        <Button 
+          variant="ghost"
+          onClick={() => setCurrentView(id)}
+          className={clsx(
+            "w-full justify-start gap-3 px-6 h-11 text-sm font-medium transition-all rounded-none border-l-[3px]",
+            currentView === id 
+              ? "text-blue-600 bg-blue-50 border-blue-600" 
+              : "text-slate-600 hover:text-slate-900 hover:bg-slate-50 border-transparent"
+          )}
         >
-          <Icon className={clsx(\"w-5 h-5\", isActive ? \"text-white\" : \"text-slate-400 group-hover:text-white\")} />
-          <span className=\"flex-1 text-left\">{label}</span>
+          <Icon className={clsx("w-4 h-4", currentView === id ? "text-blue-600" : "text-slate-400")} />
+          <span>{label}</span>
           {badge && (
-              <span className=\"bg-cyan-500 text-white text-[10px] px-2 py-0.5 rounded-full font-bold\">
+              <span className="ml-auto bg-green-500 text-white text-[10px] px-1.5 py-0.5 rounded font-bold shadow-sm">
                   {badge}
               </span>
           )}
-        </button>
+        </Button>
       );
   };
 
   return (
-    <div className=\"h-screen w-screen flex overflow-hidden bg-slate-100 font-sans\">
+    <div className="h-screen w-screen flex flex-col overflow-hidden bg-background font-sans">
       
-      {/* JAMPACK-STYLE DARK SIDEBAR */}
-      <aside className=\"w-64 bg-slate-800 flex flex-col shadow-2xl z-30\">
-          {/* Logo Header */}
-          <div className=\"h-16 flex items-center gap-2 px-4 border-b border-slate-700\">
-              <div className=\"w-8 h-8 bg-gradient-to-br from-cyan-500 to-teal-500 rounded-lg flex items-center justify-center text-white text-lg shadow-lg\">
-                  🦷
-              </div>
-              <span className=\"font-bold text-white text-lg tracking-tight\">Bem-Querer</span>
-          </div >
+      {/* 1. TOP NAVBAR (Template Style: Blue Background) */}
+      <header className="h-16 bg-[#1a97d4] text-white shadow-md z-30 flex items-center justify-between px-4 lg:px-6">
+         <div className="flex items-center gap-4 w-64">
+            <div className="flex items-center gap-2">
+                <span className="font-bold text-xl tracking-tight flex items-center gap-2">
+                    <span className="text-yellow-400">🦷</span> Bem-Querer
+                </span>
+            </div>
+            <Button variant="ghost" size="icon" onClick={() => setSidebarOpen(!sidebarOpen)} className="text-white/80 hover:text-white hover:bg-white/10 lg:hidden">
+                <Menu className="w-6 h-6" />
+            </Button>
+         </div>
 
-    {/* Search Bar */ }
-    < div className =\"p-4\">
-        < div className =\"relative\">
-            < Search className =\"absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400\" />
-                < input
-type =\"text\" 
-placeholder =\"Buscar...\" 
-className =\"w-full bg-slate-700/50 text-white placeholder-slate-400 pl-10 pr-4 py-2 rounded-lg text-sm border border-slate-600 focus:border-cyan-500 focus:ring-2 focus:ring-cyan-500/20 transition-all\"
-    />
-              </div >
-          </div >
+         {/* Center Tabs (Template Style) */}
+         <div className="hidden md:flex items-center gap-1">
+             {['Agenda', 'Financeiro', 'Indicadores'].map(tab => (
+                 <Button key={tab} variant="ghost" className="text-white/80 hover:text-white hover:bg-white/10 h-8 text-xs uppercase font-bold tracking-wide">
+                     {tab}
+                 </Button>
+             ))}
+         </div>
 
-    {/* Navigation */ }
-    < nav className =\"flex-1 overflow-y-auto px-3 pb-4 space-y-1\">
-        < p className =\"text-[10px] font-bold text-slate-500 uppercase tracking-wider px-3 mb-2 mt-2\">Menu Principal</p>
-            < SidebarItem id =\"dashboard\" icon={LayoutDashboard} label=\"Dashboard\" />
-                < SidebarItem id =\"crm\" icon={Users} label=\"CRM\" />
-                    < SidebarItem id =\"chat\" icon={MessageSquare} label=\"Chat\" badge=\"80\" />
-                        < SidebarItem id =\"followup\" icon={CalendarIcon} label=\"Follow-up\" />
+         {/* Right Actions */}
+         <div className="flex items-center gap-4">
+            <div className="relative cursor-pointer">
+                <FileText className="w-5 h-5 text-white/80 hover:text-white" />
+            </div>
+            <div className="relative cursor-pointer">
+                <Bell className="w-5 h-5 text-white/80 hover:text-white" />
+                <span className="absolute -top-1 -right-1 w-2.5 h-2.5 bg-red-500 rounded-full border-2 border-[#1a97d4]"></span>
+            </div>
+            
+            <div className="flex items-center gap-3 pl-4 ml-2 border-l border-white/20 cursor-pointer">
+                <div className="text-right hidden md:block">
+                    <p className="text-xs font-bold leading-none">Dra. Ana Silva</p>
+                    <p className="text-xs opacity-70">Dentista Admin</p>
+                </div>
+                <Avatar className="w-8 h-8 border-2 border-white/50">
+                    <AvatarImage src="https://ui-avatars.com/api/?name=Ana+Silva&background=333&color=fff" />
+                    <AvatarFallback>AS</AvatarFallback>
+                </Avatar>
+            </div>
+         </div>
+      </header>
 
-                            < p className =\"text-[10px] font-bold text-slate-500 uppercase tracking-wider px-3 mb-2 mt-6\">Configurações</p>
-                                < SidebarItem id =\"prompt-config\" icon={Settings} label=\"Configurar Prompt\" />
-                                    < SidebarItem id =\"clinic-config\" icon={Settings} label=\"Clínica\" />
-          </nav >
+      <div className="flex flex-1 overflow-hidden">
+        
+        {/* 2. SIDEBAR (Template Style: White with Profile) */}
+        <aside className={clsx(
+            "w-64 bg-white shadow-xl z-20 flex flex-col transition-all duration-300 absolute lg:relative h-full border-r border-slate-100",
+            sidebarOpen ? "translate-x-0" : "-translate-x-full lg:translate-x-0 lg:w-0 lg:overflow-hidden"
+        )}>
+            {/* Menu Items */}
+            <nav className="flex-1 overflow-y-auto pb-4 pt-4">
+                <p className="px-6 text-[11px] font-bold text-muted-foreground uppercase tracking-wider mb-2 mt-2">MENU PRINCIPAL</p>
+                <SidebarItem id="dashboard" icon={Home} label="Dashboard" />
+                <SidebarItem id="crm" icon={Users} label="CRM" />
+                <SidebarItem id="chat" icon={MessageSquare} label="Chat" badge="80" />
+                
+                <SidebarItem id="followup" icon={CalendarIcon} label="Follow-up" />
+                
+                <p className="px-6 text-[11px] font-bold text-muted-foreground uppercase tracking-wider mb-2 mt-6">CONFIGURAÇÕES</p>
+                <SidebarItem id="prompt-config" icon={Type} label="Configurar Prompt" />
+                <SidebarItem id="clinic-config" icon={Settings} label="Configuração da Clínica" />
+            </nav>
+        </aside>
 
-    {/* User Profile (Bottom) */ }
-    < div className =\"p-4 border-t border-slate-700\">
-        < div className =\"flex items-center gap-3 cursor-pointer hover:bg-slate-700/50 p-2 rounded-lg transition-all\">
-            < Avatar className =\"w-9 h-9 border-2 border-slate-600\">
-                < AvatarImage src =\"https://ui-avatars.com/api/?name=Ana+Silva&background=00ACC1&color=fff\" />
-                    < AvatarFallback > AS</AvatarFallback >
-                  </Avatar >
-    <div className=\"flex-1 min-w-0\">
-        < p className =\"text-sm font-medium text-white truncate\">Dra. Ana Silva</p>
-            < div className = "flex-1 min-w-0" >
-        <p className="text-sm font-medium text-white truncate">Dra. Ana Silva</p>
-            <p className="text-xs text-slate-400 truncate">Dentista Admin</p>
-                  </div >
-              </div >
-          </div >
-      </aside >
-
-    {/* MAIN CONTENT AREA */ }
-    < div className = "flex-1 flex flex-col overflow-hidden" >
-
-        {/* TOP HEADER BAR (Simple, Clean) */ }
-        < header className = "h-16 bg-white border-b border-slate-200 flex items-center justify-between px-6 shadow-sm z-20" >
-              <div className="flex items-center gap-4">
-                  <h1 className="text-xl font-semibold text-slate-800">
-                      {currentView === 'dashboard' && 'Dashboard'}
-                      {currentView === 'chat' && 'Chat'}
-                      {currentView === 'crm' && 'CRM'}
-                      {currentView === 'followup' && 'Follow-up'}
-                      {currentView === 'prompt-config' && 'Configurar Prompt'}
-                      {currentView === 'clinic-config' && 'Configurações da Clínica'}
-                  </h1>
-              </div>
-              
-              <div className="flex items-center gap-4">
-                  <Button size="sm" className="bg-gradient-to-r from-cyan-500 to-teal-500 hover:from-cyan-600 hover:to-teal-600 text-white shadow-lg shadow-cyan-500/30">
-                      <Plus className="w-4 h-4 mr-2" /> Novo
-                  </Button>
-                  
-                  <div className="relative cursor-pointer hover:bg-slate-100 p-2 rounded-lg transition-all">
-                      <Bell className="w-5 h-5 text-slate-600" />
-                      <span className="absolute top-1 right-1 w-2 h-2 bg-red-500 rounded-full border-2 border-white"></span>
-                  </div>
-              </div>
-          </header >
-
-    {/* CONTENT */ }
-    < main className = "flex-1 overflow-y-auto bg-slate-50" >
-        <AnimatePresence mode="wait">
-            <motion.div
-                key={currentView}
-                {...fadeIn}
-                className="w-full h-full"
-            >
+        {/* 3. MAIN CONTENT */}
+        <main className="flex-1 overflow-y-auto bg-[#f2f8f9] relative flex flex-col">
+            <div className="flex-1 w-full max-w-7xl mx-auto">
                 {currentView === 'dashboard' && <DashboardHome />}
                 {currentView === 'chat' && <ChatLayout />}
                 {currentView === 'crm' && <KanbanBoard />}
                 {currentView === 'followup' && <FollowUpPage />}
-                {currentView === 'prompt-config' && <ConfigPromptPage />}
+                {currentView === 'prompt-config' && <ConfigPromptPage />} 
                 {currentView === 'clinic-config' && <IntegrationsSettings />}
-            </motion.div>
-        </AnimatePresence>
-          </main >
-      </div >
-    </div >
+                
+                {/* Fallback for other mock views */}
+                {['future-view'].includes(currentView) && (
+                     <div className="p-8 flex flex-col items-center justify-center h-full text-center">
+                        <div className="bg-white p-12 rounded-lg shadow-sm">
+                            <Layers className="w-16 h-16 text-slate-300 mx-auto mb-4" />
+                            <h2 className="text-2xl font-bold text-slate-700">Page under construction</h2>
+                            <p className="text-slate-500 mt-2">The requested view "{currentView}" is being built.</p>
+                            <Button className="mt-6" variant="outline" onClick={() => setCurrentView('dashboard')}>Go Home</Button>
+                        </div>
+                     </div>
+                )}
+            </div>
+        </main>
+      </div>
+    </div>
   );
 }
 
