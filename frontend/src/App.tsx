@@ -1,29 +1,20 @@
 import { useState } from 'react';
-import { LoginPage } from './components/auth/LoginPage';
 import { ChatLayout } from './components/chat/ChatLayout';
 import { KanbanBoard } from './components/crm/KanbanBoard';
 import { IntegrationsSettings } from './components/settings/IntegrationsSettings';
 import { ConfigPromptPage } from './components/settings/ConfigPromptPage';
 import { DashboardHome } from './components/dashboard/DashboardHome';
-import { UIElementsPage } from './components/dashboard/UIElementsPage';
 import { FollowUpPage } from './components/crm/FollowUpPage';
 import { Button } from './components/ui/button';
-import { Input } from './components/ui/input';
 import { Avatar, AvatarImage, AvatarFallback } from './components/ui/avatar';
 import { 
     MessageSquare, 
-    LayoutDashboard, 
     Users, 
     Settings, 
-    LogOut, 
     Bell, 
-    Search, 
     Menu, 
-    Plus,
-    ChevronDown,
     Home,
     FileText,
-    PieChart,
     Layers,
     Type,
     Calendar as CalendarIcon
