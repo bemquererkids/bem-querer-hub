@@ -16,14 +16,6 @@ export const SignUpPage: React.FC<{ onBack: () => void, onSuccess: () => void }>
 
     const handleSignUp = async (e: React.FormEvent) => {
         e.preventDefault();
-
-        // Check if keys are present (Vercel Build Check)
-        if (!supabaseUrl || !supabaseKey) {
-            setError("⚠️ ERRO CRÍTICO: Chaves do Supabase não encontradas no Frontend! Você fez o 'Redeploy' na Vercel?");
-            setLoading(false);
-            return;
-        }
-
         setLoading(true);
         setError('');
 
