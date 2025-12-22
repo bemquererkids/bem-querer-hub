@@ -1,8 +1,8 @@
 import axios from 'axios';
 import { Deal } from '../types/crm';
 
-// TODO: Get from env var
-const API_URL = 'http://localhost:8000'; 
+// Get API URL from Environment (Vite) or fallback to local
+const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000'; 
 
 export const api = axios.create({
   baseURL: API_URL,
