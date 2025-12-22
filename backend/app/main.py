@@ -48,14 +48,24 @@ async def catch_exceptions_middleware(request: Request, call_next):
 # Multi-tenant Middleware
 app.add_middleware(TenantMiddleware)
 
-# Include Routers
-app.include_router(webhooks.router)
-app.include_router(crm.router)
-app.include_router(integration.router)
-app.include_router(clinicorp_webhook.router)
-app.include_router(chat.router)
+# Global API Router with /api prefix
+from fastapi import APIRouter
+main_router = APIRouter(prefix="/api")
+
+# Include Routers with /api prefix
+main_router.include_router(webhooks.router)
+main_router.include_router(crm.router)
+main_router.include_router(integration.router)
+main_router.include_router(clinicorp_webhook.router)
+main_router.include_router(chat.router)
+
+app.include_router(main_router)
 
 
+
+@app.get("/favicon.ico", include_in_schema=False)
+async def favicon():
+    return {}
 
 @app.get("/")
 async def root():
