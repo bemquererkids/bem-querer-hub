@@ -3,83 +3,98 @@
 @tailwind utilities;
 
 /* ========================================
-   DESIGN SYSTEM: NOTION-INSPIRED
-   Emerald Green Theme + Clean Aesthetics
+   DESIGN SYSTEM: JAMPACK-INSPIRED
+   Turquoise/Teal Theme + Ultra Clean
    ======================================== */
 
 @layer base {
   :root {
-    /* Base Colors - Notion Clean Style */
-    --background: 0 0% 100%; /* Pure White */
-    --foreground: 222 47% 11%; /* Dark Slate for Text */
+    /* Base Colors - Jampack Clean Style */
+    --background: 0 0% 100%;
+    /* Pure White */
+    --foreground: 222 47% 11%;
+    /* Dark Slate for Text */
 
-    /* Emerald Primary Palette */
-    --primary: 160 84% 39%; /* Emerald 600 - Main Brand */
-    --primary-hover: 160 84% 35%; /* Darker on hover */
-    --primary-foreground: 0 0% 100%; /* White text on emerald */
-    
+    /* Turquoise/Teal Primary Palette (Jampack Style) */
+    --primary: 178 76% 52%;
+    /* Turquoise #47C1BF - Main Brand */
+    --primary-hover: 178 76% 45%;
+    /* Darker on hover */
+    --primary-foreground: 0 0% 100%;
+    /* White text on teal */
+
     /* Secondary - Neutral Grays */
-    --secondary: 215 16% 97%; /* Slate 50 - Very Light Bg */
-    --secondary-foreground: 222 47% 11%; /* Dark text */
-    
-    /* Accent - Soft Emerald for highlights */
-    --accent: 160 60% 96%; /* Very light emerald */
-    --accent-foreground: 160 84% 24%; /* Dark emerald text */
-    
+    --secondary: 220 14% 96%;
+    /* Very Light Gray Bg */
+    --secondary-foreground: 222 47% 11%;
+    /* Dark text */
+
+    /* Accent - Soft Teal for highlights */
+    --accent: 178 60% 96%;
+    /* Very light teal */
+    --accent-foreground: 178 76% 32%;
+    /* Dark teal text */
+
     /* UI Elements */
-    --muted: 220 14% 96%; /* Light gray background */
-    --muted-foreground: 220 9% 46%; /* Medium gray text */
-    
-    --card: 0 0% 100%; /* White cards */
+    --muted: 220 14% 96%;
+    /* Light gray background */
+    --muted-foreground: 220 9% 46%;
+    /* Medium gray text */
+
+    --card: 0 0% 100%;
+    /* White cards */
     --card-foreground: 222 47% 11%;
-    
+
     --popover: 0 0% 100%;
     --popover-foreground: 222 47% 11%;
-    
+
     /* Borders & Inputs */
-    --border: 220 13% 91%; /* Subtle gray borders */
+    --border: 220 13% 91%;
+    /* Subtle gray borders */
     --input: 220 13% 91%;
-    --ring: 160 84% 39%; /* Emerald focus ring */
-    
+    --ring: 178 76% 52%;
+    /* Teal focus ring */
+
     /* States */
-    --destructive: 0 84% 60%; /* Red for errors */
+    --destructive: 0 84% 60%;
+    /* Red for errors */
     --destructive-foreground: 0 0% 98%;
-    
-    /* Notion-specific additions */
-    --radius: 0.5rem; /* 8px - Notion's rounded corners */
+
+    /* Jampack-specific additions */
+    --radius: 0.75rem;
+    /* 12px - Rounded corners */
     --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.05);
     --shadow: 0 1px 3px 0 rgb(0 0 0 / 0.1), 0 1px 2px -1px rgb(0 0 0 / 0.1);
     --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
     --shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1);
   }
 
-  /* Dark mode (optional - Notion style) */
   .dark {
     --background: 224 71% 4%;
     --foreground: 213 31% 91%;
-    
-    --primary: 160 84% 39%;
+
+    --primary: 178 76% 52%;
     --primary-foreground: 0 0% 100%;
-    
+
     --secondary: 222 47% 11%;
     --secondary-foreground: 213 31% 91%;
-    
+
     --accent: 216 34% 17%;
     --accent-foreground: 210 40% 98%;
-    
+
     --muted: 223 47% 11%;
     --muted-foreground: 215 20% 65%;
-    
+
     --card: 224 71% 4%;
     --card-foreground: 213 31% 91%;
-    
+
     --popover: 224 71% 4%;
     --popover-foreground: 213 31% 91%;
-    
+
     --border: 216 34% 17%;
     --input: 216 34% 17%;
-    --ring: 160 84% 39%;
-    
+    --ring: 178 76% 52%;
+
     --destructive: 0 63% 31%;
     --destructive-foreground: 210 40% 98%;
   }
@@ -89,19 +104,19 @@
   * {
     @apply border-border;
   }
-  
+
   body {
     @apply bg-background text-foreground;
     font-feature-settings: "rlig" 1, "calt" 1;
     font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', sans-serif;
   }
-  
-  /* Smooth scrolling - Notion style */
+
+  /* Smooth scrolling */
   html {
     scroll-behavior: smooth;
   }
-  
-  /* Focus styles - Notion inspired */
+
+  /* Focus styles - Jampack inspired */
   *:focus-visible {
     @apply outline-none ring-2 ring-ring ring-offset-2 ring-offset-background;
   }
@@ -112,25 +127,31 @@
    ======================================== */
 
 @layer utilities {
-  /* Notion-style card hover effect */
+
+  /* Jampack-style card hover effect */
   .card-hover {
-    @apply transition-all duration-200 hover:shadow-md hover:-translate-y-0.5;
+    @apply transition-all duration-200 hover:shadow-lg hover:-translate-y-1;
   }
-  
+
   /* Glassmorphism effect */
   .glass {
-    background: rgba(255, 255, 255, 0.9);
+    background: rgba(255, 255, 255, 0.95);
     backdrop-filter: blur(10px);
     -webkit-backdrop-filter: blur(10px);
   }
-  
+
   /* Smooth transitions */
   .transition-smooth {
-    @apply transition-all duration-300 ease-out;
+    @apply transition-all duration-300;
   }
-  
-  /* Text gradient - Emerald */
-  .text-gradient-emerald {
-    @apply bg-gradient-to-r from-emerald-600 to-emerald-400 bg-clip-text text-transparent;
+
+  /* Text gradient - Teal */
+  .text-gradient-teal {
+    @apply bg-gradient-to-r from-cyan-500 to-teal-400 bg-clip-text text-transparent;
+  }
+
+  /* Diagonal gradient background (like Jampack headers) */
+  .bg-teal-diagonal {
+    background: linear-gradient(135deg, rgba(71, 193, 191, 0.1) 0%, rgba(255, 255, 255, 0) 50%);
   }
 }

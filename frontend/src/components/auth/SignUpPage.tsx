@@ -85,12 +85,12 @@ export const SignUpPage: React.FC<{ onBack: () => void, onSuccess: () => void }>
     };
 
     return (
-        <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-slate-50 via-emerald-50/30 to-slate-50 p-4">
+        <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-white via-cyan-50/20 to-white p-4">
             <motion.div
                 {...scaleIn}
                 className="w-full max-w-md"
             >
-                <Card className="shadow-xl border-slate-200/60 backdrop-blur-sm bg-white/80">
+                <Card className="shadow-2xl border-slate-100 backdrop-blur-sm bg-white">
                     <CardHeader className="space-y-1 text-center pb-6">
                         <motion.div
                             className="flex justify-center mb-4"
@@ -98,11 +98,11 @@ export const SignUpPage: React.FC<{ onBack: () => void, onSuccess: () => void }>
                             animate={{ scale: 1, rotate: 0 }}
                             transition={{ type: "spring", duration: 0.6, delay: 0.1 }}
                         >
-                            <div className="w-16 h-16 bg-gradient-to-br from-emerald-500 to-emerald-600 rounded-2xl flex items-center justify-center text-white text-2xl shadow-lg shadow-emerald-500/30">
+                            <div className="w-16 h-16 bg-gradient-to-br from-cyan-500 to-teal-500 rounded-2xl flex items-center justify-center text-white text-2xl shadow-lg shadow-cyan-500/30">
                                 <Sparkles className="w-8 h-8" />
                             </div>
                         </motion.div>
-                        <CardTitle className="text-3xl font-bold bg-gradient-to-r from-emerald-600 to-emerald-500 bg-clip-text text-transparent">
+                        <CardTitle className="text-3xl font-bold bg-gradient-to-r from-cyan-600 to-teal-500 bg-clip-text text-transparent">
                             Nova Clínica
                         </CardTitle>
                         <CardDescription className="text-slate-600">
@@ -132,7 +132,7 @@ export const SignUpPage: React.FC<{ onBack: () => void, onSuccess: () => void }>
                                     <Input
                                         id="clinic"
                                         placeholder="Ex: OdontoSmile"
-                                        className="border-slate-200 focus:border-emerald-500 focus:ring-emerald-500/20"
+                                        className="border-slate-200 focus:border-cyan-500 focus:ring-cyan-500/20"
                                         value={clinicName}
                                         onChange={(e) => setClinicName(e.target.value)}
                                         required
@@ -144,7 +144,7 @@ export const SignUpPage: React.FC<{ onBack: () => void, onSuccess: () => void }>
                                     <Input
                                         id="name"
                                         placeholder="Dra. Ana Silva"
-                                        className="border-slate-200 focus:border-emerald-500 focus:ring-emerald-500/20"
+                                        className="border-slate-200 focus:border-cyan-500 focus:ring-cyan-500/20"
                                         value={fullName}
                                         onChange={(e) => setFullName(e.target.value)}
                                         required
@@ -157,7 +157,7 @@ export const SignUpPage: React.FC<{ onBack: () => void, onSuccess: () => void }>
                                         id="email"
                                         type="email"
                                         placeholder="contato@clinica.com"
-                                        className="border-slate-200 focus:border-emerald-500 focus:ring-emerald-500/20"
+                                        className="border-slate-200 focus:border-cyan-500 focus:ring-cyan-500/20"
                                         value={email}
                                         onChange={(e) => setEmail(e.target.value)}
                                         required
@@ -170,7 +170,7 @@ export const SignUpPage: React.FC<{ onBack: () => void, onSuccess: () => void }>
                                         id="password"
                                         type="password"
                                         placeholder="Crie uma senha forte"
-                                        className="border-slate-200 focus:border-emerald-500 focus:ring-emerald-500/20"
+                                        className="border-slate-200 focus:border-cyan-500 focus:ring-cyan-500/20"
                                         value={password}
                                         onChange={(e) => setPassword(e.target.value)}
                                         required
@@ -183,7 +183,7 @@ export const SignUpPage: React.FC<{ onBack: () => void, onSuccess: () => void }>
                         <CardFooter className="flex-col gap-3 pt-2">
                             <motion.div className="w-full" whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}>
                                 <Button
-                                    className="w-full bg-gradient-to-r from-emerald-600 to-emerald-500 hover:from-emerald-700 hover:to-emerald-600 text-white shadow-lg shadow-emerald-500/30 transition-all"
+                                    className="w-full bg-gradient-to-r from-cyan-500 to-teal-500 hover:from-cyan-600 hover:to-teal-600 text-white shadow-lg shadow-cyan-500/30 transition-all"
                                     disabled={loading}
                                 >
                                     {loading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <UserPlus className="mr-2 h-4 w-4" />}
@@ -191,7 +191,7 @@ export const SignUpPage: React.FC<{ onBack: () => void, onSuccess: () => void }>
                                 </Button>
                             </motion.div>
 
-                            <Button variant="ghost" className="w-full text-slate-600 hover:text-emerald-600 hover:bg-emerald-50" onClick={onBack} type="button">
+                            <Button variant="ghost" className="w-full text-slate-600 hover:text-cyan-600 hover:bg-cyan-50" onClick={onBack} type="button">
                                 <ArrowLeft className="mr-2 h-4 w-4" /> Voltar para Login
                             </Button>
                         </CardFooter>
