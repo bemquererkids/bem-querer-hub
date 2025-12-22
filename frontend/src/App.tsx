@@ -4,36 +4,31 @@ import { KanbanBoard } from './components/crm/KanbanBoard';
 import { IntegrationsSettings } from './components/settings/IntegrationsSettings';
 import { ConfigPromptPage } from './components/settings/ConfigPromptPage';
 import { DashboardHome } from './components/dashboard/DashboardHome';
+import { UIElementsPage } from './components/dashboard/UIElementsPage';
 import { FollowUpPage } from './components/crm/FollowUpPage';
 import { LoginPage } from './components/auth/LoginPage';
+import { SignUpPage } from './components/auth/SignUpPage';
 import { Button } from './components/ui/button';
 import { Avatar, AvatarImage, AvatarFallback } from './components/ui/avatar';
-import { 
-    MessageSquare, 
-    Users, 
-    Settings, 
-    Bell, 
-    Menu, 
-    Home,
-    FileText,
-    Layers,
-    Type,
-    Calendar as CalendarIcon
-} from 'lucide-react';
-import clsx from 'clsx';
+// ... imports
 
 type ViewType = 'dashboard' | 'chat' | 'crm' | 'followup' | 'prompt-config' | 'clinic-config' | 'settings';
 
 function App() {
-  const [isAuthenticated, setIsAuthenticated] = useState(false); // Start as false to show Login
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [isSigningUp, setIsSigningUp] = useState(false);
   const [currentView, setCurrentView] = useState<ViewType>('dashboard');
   const [sidebarOpen, setSidebarOpen] = useState(true);
 
   if (!isAuthenticated) {
-      return <LoginPage onLogin={() => setIsAuthenticated(true)} />;
+      if (isSigningUp) {
+          return <SignUpPage onBack={() => setIsSigningUp(false)} onSuccess={() => setIsSigningUp(false)} />;
+      }
+      return <LoginPage onLogin={() => setIsAuthenticated(true)} onSignUp={() => setIsSigningUp(true)} />;
   }
 
   // Template Style: Clean White Sidebar with specific styling
+// ... rest of code
   const SidebarItem = ({ id, icon: Icon, label, badge, isHeader }: any) => {
       if (isHeader) {
           return <p className="px-6 text-[11px] font-bold text-muted-foreground uppercase tracking-wider mb-2 mt-6">{label}</p>;

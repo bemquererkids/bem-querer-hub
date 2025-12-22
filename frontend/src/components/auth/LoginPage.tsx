@@ -5,7 +5,7 @@ import { Button } from '../ui/button';
 import { Label } from '../ui/label';
 import { Loader2, Lock } from 'lucide-react';
 
-export const LoginPage: React.FC<{ onLogin: () => void }> = ({ onLogin }) => {
+export const LoginPage: React.FC<{ onLogin: () => void, onSignUp: () => void }> = ({ onLogin, onSignUp }) => {
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
     const [loading, setLoading] = useState(false);
@@ -13,11 +13,9 @@ export const LoginPage: React.FC<{ onLogin: () => void }> = ({ onLogin }) => {
     const handleLogin = (e: React.FormEvent) => {
         e.preventDefault();
         setLoading(true);
-        
-        // Simulação de Login
+        // ... (auth logic)
         setTimeout(() => {
             setLoading(false);
-            // Aqui chamaríamos supabase.auth.signInWithPassword({ email, password })
             onLogin(); 
         }, 1500);
     };
@@ -25,6 +23,7 @@ export const LoginPage: React.FC<{ onLogin: () => void }> = ({ onLogin }) => {
     return (
         <div className="min-h-screen flex items-center justify-center bg-[#f2f8f9] p-4">
             <Card className="w-full max-w-md shadow-xl border-slate-200">
+                {/* ... Header ... */}
                 <CardHeader className="space-y-1 text-center">
                     <div className="flex justify-center mb-4">
                         <div className="w-12 h-12 bg-[#1a97d4] rounded-full flex items-center justify-center text-white text-2xl shadow-lg">
@@ -36,6 +35,7 @@ export const LoginPage: React.FC<{ onLogin: () => void }> = ({ onLogin }) => {
                 </CardHeader>
                 <form onSubmit={handleLogin}>
                     <CardContent className="space-y-4">
+                        {/* ... Inputs ... */}
                         <div className="space-y-2">
                             <Label htmlFor="email">Email Corporativo</Label>
                             <Input 
@@ -62,16 +62,17 @@ export const LoginPage: React.FC<{ onLogin: () => void }> = ({ onLogin }) => {
                             />
                         </div>
                     </CardContent>
-                    <CardFooter>
+                    <CardFooter className="flex-col gap-3">
                         <Button className="w-full bg-[#1a97d4] hover:bg-[#1585bc]" disabled={loading}>
                             {loading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Lock className="mr-2 h-4 w-4" />}
                             Entrar no Sistema
                         </Button>
+                        <div className="text-center text-sm text-slate-500">
+                            Não tem uma conta? <button type="button" onClick={onSignUp} className="text-[#1a97d4] font-bold hover:underline">Cadastre sua clínica</button>
+                        </div>
                     </CardFooter>
                 </form>
-                <div className="p-4 text-center text-xs text-slate-400 bg-slate-50 rounded-b-xl border-t border-slate-100">
-                    Protegido por criptografia de ponta-a-ponta.
-                </div>
+                {/* ... Footer ... */}
             </Card>
         </div>
     );
