@@ -62,7 +62,21 @@ export const SignUpPage: React.FC<{ onBack: () => void, onSuccess: () => void }>
 
         } catch (err: any) {
             console.error(err);
-            setError(err.message || "Erro ao criar conta. Tente novamente.");
+
+            // Traduzir erros comuns para mensagens amigáveis
+            let friendlyMessage = "Erro ao criar conta. Tente novamente.";
+
+            if (err.message?.includes("User already registered")) {
+                friendlyMessage = "⚠️ Este email já está cadastrado. Por favor, faça login ou use outro email.";
+            } else if (err.message?.includes("Invalid email")) {
+                friendlyMessage = "❌ Email inválido. Verifique e tente novamente.";
+            } else if (err.message?.includes("Password")) {
+                friendlyMessage = "❌ A senha deve ter no mínimo 6 caracteres.";
+            } else if (err.message?.includes("violates")) {
+                friendlyMessage = "⚠️ Erro ao criar perfil. Entre em contato com o suporte.";
+            }
+
+            setError(friendlyMessage);
         } finally {
             setLoading(false);
         }
