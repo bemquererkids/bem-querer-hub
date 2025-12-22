@@ -1,4 +1,4 @@
-import { ChatContact, Message } from "../types/chat";
+import { ChatContact, ChatMessage } from '../types/chat';
 
 export const MOCK_CHATS: ChatContact[] = [
     {
@@ -7,7 +7,7 @@ export const MOCK_CHATS: ChatContact[] = [
         lastMessage: 'Meu filho está com muita dor de dente, é urgente!',
         lastMessageTime: '10:45',
         unreadCount: 2,
-        status: 'open',
+        status: 'online',
         tags: ['emergency']
     },
     {
@@ -16,7 +16,7 @@ export const MOCK_CHATS: ChatContact[] = [
         lastMessage: 'Gostaria de saber o preço do aparelho invisível.',
         lastMessageTime: '09:30',
         unreadCount: 0,
-        status: 'open',
+        status: 'online',
         tags: ['financial', 'question']
     },
     {
@@ -25,12 +25,12 @@ export const MOCK_CHATS: ChatContact[] = [
         lastMessage: 'Confirmado para amanhã às 14h.',
         lastMessageTime: 'Ontem',
         unreadCount: 0,
-        status: 'waiting',
+        status: 'offline',
         tags: ['schedule']
     }
 ];
 
-export const MOCK_MESSAGES: Message[] = [
+export const MOCK_MESSAGES: ChatMessage[] = [
     {
         id: 'm1',
         content: 'Olá, bom dia! Gostaria de marcar uma consulta.',
