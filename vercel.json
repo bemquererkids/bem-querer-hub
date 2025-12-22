@@ -4,10 +4,5 @@
     { "source": "/docs", "destination": "/api/index.py" },
     { "source": "/openapi.json", "destination": "/api/index.py" },
     { "source": "/(.*)", "destination": "/frontend/index.html" }
-  ],
-  "functions": {
-    "api/*.py": {
-      "runtime": "python3.11"
-    }
-  }
+  ]
 }
