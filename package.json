@@ -1,7 +1,7 @@
 {
   "scripts": {
     "dev": "cd frontend && vite",
-    "build": "cd frontend && npm install && npm run build",
+    "build": "cd frontend && npm install && npm run build && cp -r dist ../dist",
     "preview": "cd frontend && vite preview"
   },
   "devDependencies": {
