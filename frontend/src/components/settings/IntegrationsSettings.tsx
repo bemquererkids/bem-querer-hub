@@ -285,12 +285,16 @@ export const IntegrationsSettings: React.FC = () => {
                 </Card>
 
                 {/* 2. CLINICORP CARD */}
-                <Card className="border-l-4 border-l-cyan-500 shadow-sm">
+                <Card className="border-l-4 border-l-orange-500 shadow-sm">
                     <CardHeader>
                         <div className="flex justify-between items-start">
                             <div className="flex items-center gap-2">
-                                <div className="p-2 bg-cyan-100 rounded-lg">
-                                    <Calendar className="w-6 h-6 text-cyan-600" />
+                                <div className="p-1 bg-white rounded-lg border border-orange-100 shadow-sm overflow-hidden flex items-center justify-center w-10 h-10">
+                                    <img
+                                        src="/assets/clinicorp-logo.png"
+                                        alt="Clinicorp Logo"
+                                        className="w-full h-full object-contain"
+                                    />
                                 </div>
                                 <div>
                                     <CardTitle>Clinicorp</CardTitle>
@@ -318,7 +322,7 @@ export const IntegrationsSettings: React.FC = () => {
                                         placeholder="Ex: bemquerer ou ID da aplicação"
                                         value={clinicorpClientId}
                                         onChange={(e) => setClinicorpClientId(e.target.value)}
-                                        className="font-mono text-sm"
+                                        className="font-mono text-sm focus:ring-orange-500"
                                     />
                                 </div>
                                 <div className="space-y-1">
@@ -329,9 +333,10 @@ export const IntegrationsSettings: React.FC = () => {
                                         placeholder="Ex: Token (8b6b...) ou Senha"
                                         value={clinicorpSecret}
                                         onChange={(e) => setClinicorpSecret(e.target.value)}
+                                        className="focus:ring-orange-500"
                                     />
                                 </div>
-                                <div className="bg-cyan-50 text-cyan-700 text-xs p-3 rounded border border-cyan-100">
+                                <div className="bg-orange-50 text-orange-700 text-xs p-3 rounded border border-orange-100">
                                     ℹ️ Solicite estas credenciais ao suporte da Clinicorp.
                                 </div>
                             </div>
@@ -355,7 +360,7 @@ export const IntegrationsSettings: React.FC = () => {
                             <Button
                                 onClick={handleConnectClinicorp}
                                 disabled={loading}
-                                className="w-full sm:w-auto gap-2 bg-gradient-to-r from-cyan-500 to-teal-500 hover:from-cyan-600 hover:to-teal-600 text-white shadow-lg shadow-cyan-500/30"
+                                className="w-full sm:w-auto gap-2 bg-gradient-to-r from-orange-500 to-orange-600 hover:from-orange-600 hover:to-orange-700 text-white shadow-lg shadow-orange-500/30 font-bold"
                             >
                                 {loading && <RefreshCw className="w-4 h-4 animate-spin" />}
                                 Conectar Clinicorp
@@ -364,7 +369,7 @@ export const IntegrationsSettings: React.FC = () => {
                             <Button
                                 variant="outline"
                                 onClick={() => setClinicorpStatus('disconnected')}
-                                className="w-full sm:w-auto gap-2 text-destructive hover:text-destructive"
+                                className="w-full sm:w-auto gap-2 text-destructive hover:text-destructive border-orange-200"
                             >
                                 <LinkIcon className="w-4 h-4" /> Desvincular
                             </Button>
