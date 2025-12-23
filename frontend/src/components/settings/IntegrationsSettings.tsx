@@ -262,7 +262,7 @@ export const IntegrationsSettings: React.FC = () => {
                     </CardContent>
                     <CardFooter className="justify-between border-t bg-slate-50/50 p-4">
                         {whatsappStatus === 'connected' ? (
-                            <Button variant="destructive" size="sm" onClick={handleDisconnectWhatsapp} className="w-full sm:w-auto gap-2">
+                            <Button variant="destructive" size="sm" onClick={handleDisconnectWhatsapp} className="w-full gap-2 font-bold">
                                 <Power className="w-4 h-4" /> Desconectar Sessão
                             </Button>
                         ) : (
@@ -270,7 +270,7 @@ export const IntegrationsSettings: React.FC = () => {
                                 size="sm"
                                 onClick={handleConnectWhatsapp}
                                 disabled={loading || whatsappStatus === 'connecting'}
-                                className="w-full sm:w-auto gap-2 bg-gradient-to-r from-green-500 to-emerald-500 hover:from-green-600 hover:to-emerald-600 text-white shadow-lg shadow-green-500/30"
+                                className="w-full gap-2 bg-gradient-to-r from-green-500 to-emerald-500 hover:from-green-600 hover:to-emerald-600 text-white shadow-lg shadow-green-500/30 font-bold transition-all active:scale-[0.98]"
                             >
                                 {loading || whatsappStatus === 'connecting' ? (
                                     <>
@@ -364,7 +364,7 @@ export const IntegrationsSettings: React.FC = () => {
                             <Button
                                 onClick={handleConnectClinicorp}
                                 disabled={loading}
-                                className="w-full sm:w-auto gap-2 bg-gradient-to-r from-orange-500 to-orange-600 hover:from-orange-600 hover:to-orange-700 text-white shadow-lg shadow-orange-500/30 font-bold"
+                                className="w-full gap-2 bg-gradient-to-r from-orange-500 to-orange-600 hover:from-orange-600 hover:to-orange-700 text-white shadow-lg shadow-orange-500/30 font-bold transition-all active:scale-[0.98]"
                             >
                                 {loading && <RefreshCw className="w-4 h-4 animate-spin" />}
                                 Conectar Clinicorp
@@ -373,9 +373,9 @@ export const IntegrationsSettings: React.FC = () => {
                             <Button
                                 variant="outline"
                                 onClick={() => setClinicorpStatus('disconnected')}
-                                className="w-full sm:w-auto gap-2 text-destructive hover:text-destructive border-orange-200"
+                                className="w-full gap-2 text-destructive hover:text-white hover:bg-destructive transition-colors font-bold border-orange-200"
                             >
-                                <LinkIcon className="w-4 h-4" /> Desvincular
+                                <LinkIcon className="w-4 h-4" /> Desvincular Clinicorp
                             </Button>
                         )}
                     </CardFooter>
@@ -426,8 +426,11 @@ export const IntegrationsSettings: React.FC = () => {
                         </div>
                     </CardContent>
                     <CardFooter className="justify-between border-t bg-slate-50/50 p-4">
-                        <Button size="sm" className="w-full bg-blue-600 hover:bg-blue-700 text-white font-medium">
-                            Configurar Gemini
+                        <Button
+                            size="sm"
+                            className="w-full gap-2 bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 text-white shadow-lg shadow-blue-500/30 font-bold transition-all active:scale-[0.98]"
+                        >
+                            Configurar Google Gemini
                         </Button>
                     </CardFooter>
                 </Card>
@@ -469,8 +472,11 @@ export const IntegrationsSettings: React.FC = () => {
                         </div>
                     </CardContent>
                     <CardFooter className="justify-between border-t bg-slate-50/50 p-4">
-                        <Button variant="outline" size="sm" className="w-full border-slate-900 hover:bg-slate-900 hover:text-white text-slate-900 font-bold transition-colors">
-                            Conectar ChatGPT
+                        <Button
+                            size="sm"
+                            className="w-full gap-2 bg-gradient-to-r from-slate-800 to-slate-900 border-slate-900 hover:from-slate-900 hover:to-black text-white shadow-lg shadow-slate-900/30 font-bold transition-all active:scale-[0.98]"
+                        >
+                            Conectar OpenAI ChatGPT
                         </Button>
                     </CardFooter>
                 </Card>
