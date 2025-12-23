@@ -150,10 +150,10 @@ export const IntegrationsSettings: React.FC = () => {
                 <p className="text-muted-foreground">Gerencie a conexão com seus canais de atendimento e sistemas externos.</p>
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 items-stretch">
 
                 {/* 1. WHATSAPP CARD */}
-                <Card className="border-l-4 border-l-green-500 shadow-sm">
+                <Card className="border-l-4 border-l-green-500 shadow-sm hover:shadow-md transition-shadow flex flex-col min-h-[440px]">
                     <CardHeader>
                         <div className="flex justify-between items-start">
                             <div className="flex items-center gap-2">
@@ -289,7 +289,7 @@ export const IntegrationsSettings: React.FC = () => {
                 </Card>
 
                 {/* 2. CLINICORP CARD */}
-                <Card className="border-l-4 border-l-orange-500 shadow-sm">
+                <Card className="border-l-4 border-l-orange-500 shadow-sm hover:shadow-md transition-shadow flex flex-col min-h-[440px]">
                     <CardHeader>
                         <div className="flex justify-between items-start">
                             <div className="flex items-center gap-2">
