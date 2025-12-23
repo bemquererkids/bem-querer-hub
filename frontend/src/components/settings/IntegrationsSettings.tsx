@@ -382,30 +382,99 @@ export const IntegrationsSettings: React.FC = () => {
                 </Card>
             </div>
 
-            {/* 3. GEMINI AI CARD (Simplified) */}
-            <Card className="border-l-4 border-l-purple-500 shadow-sm opacity-80 hover:opacity-100 transition-opacity">
-                <CardHeader>
-                    <div className="flex justify-between items-start">
-                        <div className="flex items-center gap-2">
-                            <div className="p-2 bg-purple-100 rounded-lg">
-                                <Key className="w-6 h-6 text-purple-600" />
+            {/* 3. AI INTEGRATIONS SECTION */}
+            <div className="flex flex-col gap-1 pt-4 border-t">
+                <h3 className="text-xl font-bold tracking-tight">Inteligência Artificial</h3>
+                <p className="text-muted-foreground">Configure as IAs que potencializam o atendimento da Carol.</p>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                {/* 3.1 GOOGLE GEMINI CARD */}
+                <Card className="border-l-4 border-l-blue-500 shadow-sm hover:shadow-md transition-shadow">
+                    <CardHeader>
+                        <div className="flex justify-between items-start">
+                            <div className="flex items-center gap-2">
+                                <div className="p-1 bg-white rounded-lg border border-blue-100 shadow-sm overflow-hidden flex items-center justify-center w-10 h-10">
+                                    <img
+                                        src="/assets/gemini-logo.png"
+                                        alt="Google Gemini Logo"
+                                        className="w-full h-full object-contain"
+                                    />
+                                </div>
+                                <div>
+                                    <CardTitle>Google Gemini</CardTitle>
+                                    <CardDescription>2.0 Flash & Pro</CardDescription>
+                                </div>
                             </div>
-                            <div>
-                                <CardTitle>Inteligência Artificial</CardTitle>
-                                <CardDescription>Personalidade e Cérebro da Carol</CardDescription>
+                            <Badge variant="outline" className="text-blue-600 border-blue-200 bg-blue-50">Ativo</Badge>
+                        </div>
+                    </CardHeader>
+                    <CardContent className="space-y-4">
+                        <div className="space-y-3">
+                            <div className="space-y-1">
+                                <Label htmlFor="gemini_key">Google AI Studio Key</Label>
+                                <Input
+                                    id="gemini_key"
+                                    type="password"
+                                    placeholder="AIzaSy..."
+                                    className="focus:ring-blue-500"
+                                />
+                            </div>
+                            <div className="bg-blue-50 text-blue-700 text-[10px] p-2 rounded border border-blue-100 italic">
+                                ✨ Ideal para respostas rápidas e baixo custo.
                             </div>
                         </div>
-                        <span className="bg-purple-100 text-purple-700 text-xs px-2 py-1 rounded-full font-bold flex items-center gap-1">
-                            Google Gemini 2.0
-                        </span>
-                    </div>
-                </CardHeader>
-                <CardContent>
-                    <p className="text-sm text-muted-foreground">
-                        A IA está configurada globalmente pelo administrador do sistema. Para ajustes de prompt ou personalidade, contate o suporte técnico.
-                    </p>
-                </CardContent>
-            </Card>
+                    </CardContent>
+                    <CardFooter className="justify-between border-t bg-slate-50/50 p-4">
+                        <Button size="sm" className="w-full bg-blue-600 hover:bg-blue-700 text-white font-medium">
+                            Configurar Gemini
+                        </Button>
+                    </CardFooter>
+                </Card>
+
+                {/* 3.2 OPENAI CHATGPT CARD */}
+                <Card className="border-l-4 border-l-emerald-600 shadow-sm hover:shadow-md transition-shadow">
+                    <CardHeader>
+                        <div className="flex justify-between items-start">
+                            <div className="flex items-center gap-2">
+                                <div className="p-1 bg-white rounded-lg border border-emerald-100 shadow-sm overflow-hidden flex items-center justify-center w-10 h-10">
+                                    <img
+                                        src="/assets/chatgpt-logo.png"
+                                        alt="OpenAI Logo"
+                                        className="w-full h-full object-containScale"
+                                    />
+                                </div>
+                                <div>
+                                    <CardTitle>OpenAI ChatGPT</CardTitle>
+                                    <CardDescription>GPT-4o & GPT-4 Turbo</CardDescription>
+                                </div>
+                            </div>
+                            <Badge variant="outline" className="text-slate-400 border-slate-200">Inativo</Badge>
+                        </div>
+                    </CardHeader>
+                    <CardContent className="space-y-4">
+                        <div className="space-y-3">
+                            <div className="space-y-1">
+                                <Label htmlFor="openai_key">OpenAI API Key</Label>
+                                <Input
+                                    id="openai_key"
+                                    type="password"
+                                    placeholder="sk-..."
+                                    className="focus:ring-emerald-500"
+                                />
+                            </div>
+                            <div className="bg-emerald-50 text-emerald-700 text-[10px] p-2 rounded border border-emerald-100 italic">
+                                🧠 Cérebro avançado para negociações complexas.
+                            </div>
+                        </div>
+                    </CardContent>
+                    <CardFooter className="justify-between border-t bg-slate-50/50 p-4">
+                        <Button variant="outline" size="sm" className="w-full border-emerald-200 hover:bg-emerald-50 text-emerald-700 font-medium">
+                            Conectar ChatGPT
+                        </Button>
+                    </CardFooter>
+                </Card>
+            </div>
 
         </div>
     );
