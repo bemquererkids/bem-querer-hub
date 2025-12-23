@@ -262,15 +262,15 @@ export const IntegrationsSettings: React.FC = () => {
                     </CardContent>
                     <CardFooter className="justify-between border-t bg-slate-50/50 p-4">
                         {whatsappStatus === 'connected' ? (
-                            <Button variant="destructive" size="sm" onClick={handleDisconnectWhatsapp} className="w-full gap-2 font-bold">
-                                <Power className="w-4 h-4" /> Desconectar Sessão
+                            <Button variant="destructive" size="sm" onClick={handleDisconnectWhatsapp} className="w-full gap-2 font-bold tracking-tight">
+                                <Power className="w-4 h-4" /> Desconectar WhatsApp
                             </Button>
                         ) : (
                             <Button
                                 size="sm"
                                 onClick={handleConnectWhatsapp}
                                 disabled={loading || whatsappStatus === 'connecting'}
-                                className="w-full gap-2 bg-gradient-to-r from-green-500 to-emerald-500 hover:from-green-600 hover:to-emerald-600 text-white shadow-lg shadow-green-500/30 font-bold transition-all active:scale-[0.98]"
+                                className="w-full gap-2 bg-gradient-to-r from-green-500 to-emerald-500 hover:from-green-600 hover:to-emerald-600 text-white shadow-lg shadow-green-500/30 font-bold tracking-tight transition-all active:scale-[0.98]"
                             >
                                 {loading || whatsappStatus === 'connecting' ? (
                                     <>
@@ -280,7 +280,7 @@ export const IntegrationsSettings: React.FC = () => {
                                 ) : (
                                     <>
                                         <QrCode className="w-4 h-4" />
-                                        <span>{whatsappStatus === 'qrcode' ? 'Gerar Outro QR Code' : 'Conectar WhatsApp'}</span>
+                                        <span>{whatsappStatus === 'qrcode' ? 'Gerar Novo QR Code' : 'Conectar WhatsApp'}</span>
                                     </>
                                 )}
                             </Button>
@@ -364,7 +364,7 @@ export const IntegrationsSettings: React.FC = () => {
                             <Button
                                 onClick={handleConnectClinicorp}
                                 disabled={loading}
-                                className="w-full gap-2 bg-gradient-to-r from-orange-500 to-orange-600 hover:from-orange-600 hover:to-orange-700 text-white shadow-lg shadow-orange-500/30 font-bold transition-all active:scale-[0.98]"
+                                className="w-full gap-2 bg-gradient-to-r from-orange-500 to-orange-600 hover:from-orange-600 hover:to-orange-700 text-white shadow-lg shadow-orange-500/30 font-bold tracking-tight transition-all active:scale-[0.98]"
                             >
                                 {loading && <RefreshCw className="w-4 h-4 animate-spin" />}
                                 Conectar Clinicorp
@@ -373,9 +373,9 @@ export const IntegrationsSettings: React.FC = () => {
                             <Button
                                 variant="outline"
                                 onClick={() => setClinicorpStatus('disconnected')}
-                                className="w-full gap-2 text-destructive hover:text-white hover:bg-destructive transition-colors font-bold border-orange-200"
+                                className="w-full gap-2 text-destructive hover:text-white hover:bg-destructive transition-colors font-bold tracking-tight border-orange-200"
                             >
-                                <LinkIcon className="w-4 h-4" /> Desvincular Clinicorp
+                                <LinkIcon className="w-4 h-4" /> Desconectar Clinicorp
                             </Button>
                         )}
                     </CardFooter>
