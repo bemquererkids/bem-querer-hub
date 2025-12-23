@@ -54,5 +54,13 @@ export const integrationService = {
       client_secret: clientSecret
     });
     return response.data;
+  },
+  connectWhatsApp: async () => {
+    const response = await api.post('/integrations/whatsapp/connect');
+    return response.data;
+  },
+  getWhatsAppStatus: async () => {
+    const response = await api.get('/integrations/whatsapp/status');
+    return response.data;
   }
 };

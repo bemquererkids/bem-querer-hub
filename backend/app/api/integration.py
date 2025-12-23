@@ -1,11 +1,13 @@
-"""
-Integration Endpoints
-Exposes external system capabilities (Clinicorp) to the Frontend and AI.
-"""
 from typing import List, Optional
 from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel
+from app.core.database import get_supabase
+from app.services.uazapi_service import get_uazapi_service, UazAPIService
 from app.services.clinicorp_service import ClinicorpClient
+from app.core.config import settings
+import logging
+
+logger = logging.getLogger(__name__)
 
 router = APIRouter(prefix="/integrations", tags=["integrations"])
 
@@ -72,6 +74,80 @@ async def configure_clinicorp(config: ClinicorpConfig):
         raise
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
+
+@router.post("/whatsapp/connect")
+async def connect_whatsapp():
+    """
+    Triggers QR code generation for the WhatsApp instance.
+    The frontend will use the returned base64/string to show the QR.
+    """
+    try:
+        uazapi = get_uazapi_service()
+        # In this demo we use the configured instance in .env
+        instance_name = "bemquerer" 
+        
+        # 1. Generate QR
+        result = await uazapi.connect_instance(instance_name)
+        
+        # Ensure qrcode is at the root for the frontend
+        if isinstance(result, dict):
+            if "instance" in result and isinstance(result["instance"], dict) and "qrcode" in result["instance"]:
+                result["qrcode"] = result["instance"]["qrcode"]
+        
+        return result
+    except Exception as e:
+        logger.error(f"Failed to connect WhatsApp: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+@router.get("/whatsapp/status")
+async def get_whatsapp_status(
+    uazapi: UazAPIService = Depends(get_uazapi_service)
+):
+    """
+    Checks if WhatsApp is connected and triggers sync if newly connected.
+    """
+    try:
+        instance_name = getattr(settings, "UAZAPI_INSTANCE", "bemquerer")
+        status = await uazapi.get_instance_status(instance_name)
+        
+        # Auto-configure webhook on status check if connected
+        is_connected = False
+        if isinstance(status, dict):
+            # Check various response structures
+            is_connected = status.get("status", {}).get("connected") or status.get("connected")
+            
+            if is_connected:
+                try:
+                    public_url = getattr(settings, "PUBLIC_URL", "http://seu-dominio.com")
+                    webhook_url = f"{public_url}/api/webhooks/whatsapp"
+                    await uazapi.configure_webhook_sync(instance_name, webhook_url)
+                    logger.info("Webhook sync triggered automatically")
+                except:
+                    pass
+                
+        return {
+            **status,
+            "config": {
+                "token": getattr(settings, "UAZAPI_TOKEN", "Não configurado"),
+                "instance": instance_name
+            }
+        }
+    except Exception as e:
+        status_code = getattr(e, "response", None).status_code if hasattr(e, "response") and hasattr(e.response, "status_code") else 500
+        error_msg = str(e)
+        if status_code == 401:
+            error_msg = "Token inválido ou expirado na UazAPI (401). Verifique seu arquivo .env ou o painel UazAPI."
+        
+        logger.error(f"Status check failed: {error_msg}")
+        return {
+            "connected": False, 
+            "error": error_msg,
+            "status_code": status_code,
+            "config": {
+                "token": getattr(settings, "UAZAPI_TOKEN", "Não configurado"),
+                "instance": getattr(settings, "UAZAPI_INSTANCE", "bemquerer")
+            }
+        }
 
 @router.post("/clinicorp/availability")
 async def check_availability(

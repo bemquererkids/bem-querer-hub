@@ -42,7 +42,12 @@ async def catch_exceptions_middleware(request: Request, call_next):
         from fastapi.responses import JSONResponse
         return JSONResponse(
             status_code=500,
-            content={"detail": str(e), "traceback": traceback.format_exc()}
+            content={"detail": str(e), "traceback": traceback.format_exc()},
+            headers={
+                "Access-Control-Allow-Origin": "*",
+                "Access-Control-Allow-Methods": "*",
+                "Access-Control-Allow-Headers": "*"
+            }
         )
 
 # Multi-tenant Middleware

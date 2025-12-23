@@ -17,20 +17,51 @@ class UazApiMessage(BaseModel):
 @router.post("/whatsapp")
 async def receive_whatsapp_message(payload: dict, background_tasks: BackgroundTasks):
     """
-    Recebe notificação de nova mensagem via UazAPI.
+    Receives notification from UazAPI (messages, history, connection, etc).
     """
     try:
-        # Extrair dados básicos
+        event = payload.get('event', 'messages.upsert')
+        instance_id = payload.get('instance', 'main')
         data = payload.get('data', {})
-        message_info = data.get('message', {})
-        instance_id = payload.get('instance', 'main') # Pega o nome da instância (ex: bemquerer-whatsapp)
-        
-        # Ignorar mensagens enviadas por MIM (fromMe)
-        if data.get('key', {}).get('fromMe'):
-            return {"status": "ignored", "reason": "from_me"}
 
+        # 1. Handle Historical Sync (MASSIVE HISTORY)
+        if event == 'messaging-history.set':
+            messages = data.get('messages', [])
+            print(f"📦 Recebendo histórico: {len(messages)} mensagens.")
+            for msg in messages:
+                background_tasks.add_task(process_single_message_data, msg, instance_id)
+            return {"status": "sync_started", "count": len(messages)}
+
+        # 2. Handle Real-time Messages
+        if event == 'messages.upsert':
+            # Upsert sends a single message or array
+            messages = data.get('messages', []) if isinstance(data.get('messages'), list) else [data]
+            for message_data in messages:
+                # Ignorar mensagens enviadas por MIM (fromMe)
+                if message_data.get('key', {}).get('fromMe'):
+                    continue
+                
+                background_tasks.add_task(process_single_message_data, message_data, instance_id)
+            
+            return {"status": "upsert_processed"}
+
+        return {"status": "event_unhandled", "event": event}
+
+    except Exception as e:
+        logger.error(f"Erro no webhook: {e}")
+        return {"status": "error", "detail": str(e)}
+
+async def process_single_message_data(data: dict, instance_id: str):
+    """
+    Helper to extract details and queue the lead processor.
+    """
+    try:
         remote_jid = data.get('key', {}).get('remoteJid')
+        if not remote_jid or '@s.whatsapp.net' not in remote_jid:
+            return
+
         push_name = data.get('pushName', 'Desconhecido')
+        message_info = data.get('message', {})
         
         # Tentar extrair texto
         text_content = ""
@@ -38,21 +69,17 @@ async def receive_whatsapp_message(payload: dict, background_tasks: BackgroundTa
             text_content = message_info['conversation']
         elif 'extendedTextMessage' in message_info:
             text_content = message_info['extendedTextMessage'].get('text', '')
+        elif 'imageMessage' in message_info:
+            text_content = message_info['imageMessage'].get('caption', '[Imagem]')
+        elif 'videoMessage' in message_info:
+            text_content = message_info['videoMessage'].get('caption', '[Vídeo]')
             
         if not text_content:
-            return {"status": "ignored", "reason": "no_text"}
+            return
 
-        print(f"📩 Nova mensagem de {push_name} ({remote_jid}): {text_content}")
-
-        # Processar em Background para não travar a API
-        background_tasks.add_task(process_new_lead, remote_jid, push_name, text_content, instance_id)
-
-        return {"status": "processing", "instance": instance_id}
-
+        await process_new_lead(remote_jid, push_name, text_content, instance_id)
     except Exception as e:
-        print(f"Erro no webhook: {e}")
-        # Retornar 200 para a API não ficar tentando reenviar infinitamente em caso de erro de parse
-        return {"status": "error", "detail": str(e)}
+        logger.error(f"Error processing single message: {e}")
 
 async def process_new_lead(phone: str, name: str, message: str, instance_id: str = "main"):
     """

@@ -159,7 +159,7 @@ export const DashboardHome: React.FC = () => {
             >
                 <h2 className="text-sm font-semibold text-slate-700 uppercase tracking-wider mb-4">Funil de Conversão</h2>
                 <div className="bg-white p-6 rounded-2xl shadow-sm border border-slate-100">
-                    <div className="h-[320px] w-full">
+                    <div className="h-[320px] w-full min-w-[300px]">
                         <ResponsiveContainer width="100%" height="100%">
                             <BarChart data={funnelData} layout="vertical" margin={{ top: 5, right: 30, left: 40, bottom: 5 }}>
                                 <CartesianGrid strokeDasharray="3 3" horizontal={false} stroke="#e2e8f0" />

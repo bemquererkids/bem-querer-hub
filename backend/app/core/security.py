@@ -22,14 +22,16 @@ class TenantMiddleware(BaseHTTPMiddleware):
         # Skip auth for public endpoints
         # Allows crm and integrations to be accessed without token for Prototype/Demo
         public_paths = [
-            "/", "/health", "/docs", "/openapi.json", 
+            "/", "/health", "/docs", "/openapi.json",
+            "/api", "/api/", "/api/health",
             "/webhook/whatsapp", "/webhooks/whatsapp", 
             "/webhook/clinicorp", "/webhooks/clinicorp",
-            "/chat/message"
+            "/api/chat/message"
         ]
-        public_prefixes = ["/crm", "/integrations"]
+        public_prefixes = ["/crm", "/integrations", "/chat", "/api/crm", "/api/integrations", "/api/chat", "/api/webhooks"]
         
-        if request.url.path in public_paths or any(request.url.path.startswith(prefix) for prefix in public_prefixes):
+        path = request.url.path
+        if path in public_paths or any(path.startswith(prefix) for prefix in public_prefixes):
             return await call_next(request)
         
         # Extract JWT token from Authorization header

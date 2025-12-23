@@ -26,8 +26,10 @@ class Settings(BaseSettings):
     OPENAI_API_KEY: Optional[str] = "sk-placeholder"
     
     # UazAPI
-    UAZAPI_BASE_URL: Optional[str] = "https://api.uazapi.com"
+    UAZAPI_BASE_URL: Optional[str] = "https://free.uazapi.com"
     UAZAPI_TOKEN: Optional[str] = "placeholder_token"
+    UAZAPI_ADMIN_TOKEN: Optional[str] = None
+    UAZAPI_INSTANCE: Optional[str] = "bemquerer"
     
     # Clinicorp (Future Integration)
     CLINICORP_API_URL: Optional[str] = None

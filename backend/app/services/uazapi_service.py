@@ -17,7 +17,7 @@ class UazAPIService:
         self.base_url = settings.UAZAPI_BASE_URL
         self.token = settings.UAZAPI_TOKEN
         self.headers = {
-            "Authorization": f"Bearer {self.token}",
+            "token": self.token,  # UazAPI uses 'token' header
             "Content-Type": "application/json"
         }
     
@@ -32,7 +32,7 @@ class UazAPIService:
         Send a text message via UazAPI
         
         Args:
-            instance: WhatsApp instance name
+            instance: No longer used in URL path in v2.0, but kept for signature compatibility
             phone: Recipient phone number (with country code)
             message: Message text
             quoted_message_id: Optional message ID to quote/reply to
@@ -41,7 +41,8 @@ class UazAPIService:
             API response with message ID
         """
         try:
-            url = f"{self.base_url}/message/sendText/{instance}"
+            # v2.0 Endpoint: /send/text
+            url = f"{self.base_url}/send/text"
             
             payload = {
                 "number": phone,
@@ -49,18 +50,14 @@ class UazAPIService:
             }
             
             if quoted_message_id:
-                payload["quoted"] = {
-                    "key": {
-                        "id": quoted_message_id
-                    }
-                }
+                payload["replyid"] = quoted_message_id
             
             async with httpx.AsyncClient() as client:
                 response = await client.post(
                     url,
                     json=payload,
                     headers=self.headers,
-                    timeout=10.0
+                    timeout=15.0
                 )
                 response.raise_for_status()
                 return response.json()
@@ -81,7 +78,8 @@ class UazAPIService:
     ) -> Dict[str, Any]:
         """Send an image message"""
         try:
-            url = f"{self.base_url}/message/sendImage/{instance}"
+            # v2.0 Endpoint: /send/image
+            url = f"{self.base_url}/send/image"
             
             payload = {
                 "number": phone,
@@ -96,7 +94,7 @@ class UazAPIService:
                     url,
                     json=payload,
                     headers=self.headers,
-                    timeout=15.0
+                    timeout=20.0
                 )
                 response.raise_for_status()
                 return response.json()
@@ -108,18 +106,16 @@ class UazAPIService:
     async def get_instance_status(self, instance: str) -> Dict[str, Any]:
         """
         Get WhatsApp instance connection status
-        
-        Returns:
-            Status info (connected, qrcode, etc.)
         """
         try:
-            url = f"{self.base_url}/instance/connectionState/{instance}"
+            # v2.0 Endpoint: /instance/status
+            url = f"{self.base_url}/instance/status"
             
             async with httpx.AsyncClient() as client:
                 response = await client.get(
                     url,
                     headers=self.headers,
-                    timeout=5.0
+                    timeout=10.0
                 )
                 response.raise_for_status()
                 return response.json()
@@ -128,6 +124,49 @@ class UazAPIService:
             logger.error(f"Error getting instance status: {str(e)}")
             raise
     
+    async def connect_instance(self, instance: str) -> Dict[str, Any]:
+        """
+        Generate/Retrieve QR code for WhatsApp connection
+        """
+        try:
+            url = f"{self.base_url}/instance/connect"
+            async with httpx.AsyncClient() as client:
+                response = await client.post(
+                    url,
+                    headers=self.headers,
+                    json={},  # Body can be empty for QR
+                    timeout=20.0
+                )
+                response.raise_for_status()
+                return response.json()
+        except Exception as e:
+            logger.error(f"Error connecting instance: {str(e)}")
+            raise
+
+    async def configure_webhook_sync(self, instance: str, webhook_url: str) -> Dict[str, Any]:
+        """
+        Configure webhook to enable historical message sync
+        """
+        try:
+            url = f"{self.base_url}/webhook"
+            payload = {
+                "enabled": True,
+                "url": webhook_url,
+                "events": ["messages", "history", "connection", "status"]
+            }
+            async with httpx.AsyncClient() as client:
+                response = await client.post(
+                    url,
+                    headers=self.headers,
+                    json=payload,
+                    timeout=10.0
+                )
+                response.raise_for_status()
+                return response.json()
+        except Exception as e:
+            logger.error(f"Error configuring webhook: {str(e)}")
+            raise
+
     async def mark_as_read(
         self,
         instance: str,
