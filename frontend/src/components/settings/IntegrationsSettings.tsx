@@ -428,9 +428,9 @@ export const IntegrationsSettings: React.FC = () => {
                     <CardFooter className="justify-between border-t bg-slate-50/50 p-4">
                         <Button
                             size="sm"
-                            className="w-full gap-2 bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 text-white shadow-lg shadow-blue-500/30 font-bold transition-all active:scale-[0.98]"
+                            className="w-full gap-2 bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 text-white shadow-lg shadow-blue-500/30 font-bold tracking-tight transition-all active:scale-[0.98]"
                         >
-                            Configurar Google Gemini
+                            Configurar Gemini
                         </Button>
                     </CardFooter>
                 </Card>
@@ -474,9 +474,9 @@ export const IntegrationsSettings: React.FC = () => {
                     <CardFooter className="justify-between border-t bg-slate-50/50 p-4">
                         <Button
                             size="sm"
-                            className="w-full gap-2 bg-gradient-to-r from-slate-800 to-slate-900 border-slate-900 hover:from-slate-900 hover:to-black text-white shadow-lg shadow-slate-900/30 font-bold transition-all active:scale-[0.98]"
+                            className="w-full gap-2 bg-gradient-to-r from-slate-800 to-slate-900 border-slate-900 hover:from-slate-900 hover:to-black text-white shadow-lg shadow-slate-900/30 font-bold tracking-tight transition-all active:scale-[0.98]"
                         >
-                            Conectar OpenAI ChatGPT
+                            Conectar ChatGPT
                         </Button>
                     </CardFooter>
                 </Card>
