@@ -4,14 +4,23 @@ import { Button } from '../ui/button';
 import { Input } from '../ui/input';
 import { Label } from '../ui/label';
 import { Badge } from '../ui/badge';
-import { QrCode, CheckCircle2, AlertCircle, RefreshCw, MessageSquare, Calendar, Key, Link as LinkIcon, Power } from 'lucide-react';
+import { QrCode, CheckCircle2, AlertCircle, RefreshCw, MessageSquare, Calendar, Key, Link as LinkIcon, Power, BrainCircuit } from 'lucide-react';
 import { integrationService } from '../../services/api';
+import { TabsNavigation } from '../ui/tabs-navigation';
 
 export const IntegrationsSettings: React.FC = () => {
     // State for Integrations
     const [whatsappStatus, setWhatsappStatus] = useState<'connected' | 'disconnected' | 'connecting' | 'qrcode'>('disconnected');
     const [qrCode, setQrCode] = useState<string | null>(null);
     const [clinicorpStatus, setClinicorpStatus] = useState<'connected' | 'disconnected'>('disconnected');
+    const [activeTab, setActiveTab] = useState('channels');
+
+    // Tab definitions
+    const tabs = [
+        { id: 'channels', label: 'Canais de Chat', icon: MessageSquare },
+        { id: 'systems', label: 'Sistemas Externos', icon: LinkIcon },
+        { id: 'ai', label: 'Inteligência Artificial', icon: QrCode }, // Using QrCode as a generic AI/Tech icon or Brain if available
+    ];
     const [loading, setLoading] = useState(false);
     const [initialLoading, setInitialLoading] = useState(true);
     const [pollingInterval, setPollingInterval] = useState<NodeJS.Timeout | null>(null);
