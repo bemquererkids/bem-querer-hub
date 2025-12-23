@@ -157,8 +157,12 @@ export const IntegrationsSettings: React.FC = () => {
                     <CardHeader>
                         <div className="flex justify-between items-start">
                             <div className="flex items-center gap-2">
-                                <div className="p-2 bg-green-100 rounded-lg">
-                                    <MessageSquare className="w-6 h-6 text-green-600" />
+                                <div className="p-1 bg-white rounded-lg border border-green-100 shadow-sm overflow-hidden flex items-center justify-center w-10 h-10">
+                                    <img
+                                        src="/assets/whatsapp-logo.png"
+                                        alt="WhatsApp Logo"
+                                        className="w-full h-full object-contain"
+                                    />
                                 </div>
                                 <div>
                                     <CardTitle>WhatsApp (UazAPI)</CardTitle>
