@@ -433,15 +433,15 @@ export const IntegrationsSettings: React.FC = () => {
                 </Card>
 
                 {/* 3.2 OPENAI CHATGPT CARD */}
-                <Card className="border-l-4 border-l-emerald-600 shadow-sm hover:shadow-md transition-shadow">
+                <Card className="border-l-4 border-l-slate-900 shadow-sm hover:shadow-md transition-shadow">
                     <CardHeader>
                         <div className="flex justify-between items-start">
                             <div className="flex items-center gap-2">
-                                <div className="p-1 bg-white rounded-lg border border-emerald-100 shadow-sm overflow-hidden flex items-center justify-center w-10 h-10">
+                                <div className="p-1 bg-white rounded-lg border border-slate-200 shadow-sm overflow-hidden flex items-center justify-center w-10 h-10">
                                     <img
                                         src="/assets/chatgpt-logo.png"
                                         alt="OpenAI Logo"
-                                        className="w-full h-full object-containScale"
+                                        className="w-full h-full object-contain"
                                     />
                                 </div>
                                 <div>
@@ -460,16 +460,16 @@ export const IntegrationsSettings: React.FC = () => {
                                     id="openai_key"
                                     type="password"
                                     placeholder="sk-..."
-                                    className="focus:ring-emerald-500"
+                                    className="focus:ring-slate-900"
                                 />
                             </div>
-                            <div className="bg-emerald-50 text-emerald-700 text-[10px] p-2 rounded border border-emerald-100 italic">
+                            <div className="bg-slate-900 text-slate-100 text-[10px] p-2 rounded border border-slate-800 italic">
                                 🧠 Cérebro avançado para negociações complexas.
                             </div>
                         </div>
                     </CardContent>
                     <CardFooter className="justify-between border-t bg-slate-50/50 p-4">
-                        <Button variant="outline" size="sm" className="w-full border-emerald-200 hover:bg-emerald-50 text-emerald-700 font-medium">
+                        <Button variant="outline" size="sm" className="w-full border-slate-900 hover:bg-slate-900 hover:text-white text-slate-900 font-bold transition-colors">
                             Conectar ChatGPT
                         </Button>
                     </CardFooter>
