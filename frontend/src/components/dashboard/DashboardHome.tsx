@@ -37,7 +37,16 @@ const funnelData = [
 ];
 
 // Jampack-Style Metric Card
-const MetricCard = ({ title, value, subtext, icon: Icon, trend, color = 'cyan' }: any) => {
+interface MetricCardProps {
+    title: string;
+    value: string | number;
+    subtext?: string;
+    icon: any;
+    trend?: 'up' | 'down';
+    color?: 'cyan' | 'teal' | 'emerald' | 'purple';
+}
+
+const MetricCard = ({ title, value, subtext, icon: Icon, trend, color = 'cyan' }: MetricCardProps) => {
     const colorClasses = {
         cyan: 'bg-cyan-50 text-cyan-600',
         teal: 'bg-teal-50 text-teal-600',
