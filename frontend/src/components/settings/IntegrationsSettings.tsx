@@ -143,17 +143,17 @@ export const IntegrationsSettings: React.FC = () => {
     }
 
     return (
-        <div className="p-6 max-w-5xl mx-auto space-y-8 animate-in fade-in duration-500">
+        <div className="p-4 max-w-5xl mx-auto space-y-4 animate-in fade-in duration-500">
 
-            <div className="flex flex-col gap-1">
-                <h2 className="text-2xl font-bold tracking-tight">Integrações</h2>
-                <p className="text-muted-foreground">Gerencie a conexão com seus canais de atendimento e sistemas externos.</p>
+            <div className="flex flex-col">
+                <h2 className="text-xl font-bold tracking-tight">Integrações</h2>
+                <p className="text-sm text-muted-foreground">Gerencie a conexão com seus canais e sistemas externos.</p>
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 items-stretch">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 items-stretch">
 
                 {/* 1. WHATSAPP CARD */}
-                <Card className="border-l-4 border-l-green-500 shadow-sm hover:shadow-md transition-shadow flex flex-col min-h-[440px]">
+                <Card className="border-l-4 border-l-green-500 shadow-sm hover:shadow-md transition-shadow flex flex-col min-h-[380px]">
                     <CardHeader>
                         <div className="flex justify-between items-start">
                             <div className="flex items-center gap-2">
@@ -260,7 +260,7 @@ export const IntegrationsSettings: React.FC = () => {
                             )}
                         </div>
                     </CardContent>
-                    <CardFooter className="mt-auto border-t bg-slate-50/50 p-4">
+                    <CardFooter className="mt-auto border-t bg-slate-50/50 p-3">
                         {whatsappStatus === 'connected' ? (
                             <Button variant="destructive" size="sm" onClick={handleDisconnectWhatsapp} className="w-full h-11 gap-2 font-bold tracking-tight">
                                 <Power className="w-4 h-4" /> Desconectar WhatsApp
@@ -289,8 +289,8 @@ export const IntegrationsSettings: React.FC = () => {
                 </Card>
 
                 {/* 2. CLINICORP CARD */}
-                <Card className="border-l-4 border-l-orange-500 shadow-sm hover:shadow-md transition-shadow flex flex-col min-h-[440px]">
-                    <CardHeader>
+                <Card className="border-l-4 border-l-orange-500 shadow-sm hover:shadow-md transition-shadow flex flex-col min-h-[380px]">
+                    <CardHeader className="py-3 px-4">
                         <div className="flex justify-between items-start">
                             <div className="flex items-center gap-2">
                                 <div className="p-1 bg-white rounded-lg border border-orange-100 shadow-sm overflow-hidden flex items-center justify-center w-10 h-10">
@@ -359,7 +359,7 @@ export const IntegrationsSettings: React.FC = () => {
                             </div>
                         )}
                     </CardContent>
-                    <CardFooter className="mt-auto border-t bg-slate-50/50 p-4">
+                    <CardFooter className="mt-auto border-t bg-slate-50/50 p-3">
                         {clinicorpStatus === 'disconnected' ? (
                             <Button
                                 onClick={handleConnectClinicorp}
@@ -383,15 +383,15 @@ export const IntegrationsSettings: React.FC = () => {
             </div>
 
             {/* 3. AI INTEGRATIONS SECTION */}
-            <div className="flex flex-col gap-1 pt-4 border-t">
-                <h3 className="text-xl font-bold tracking-tight">Inteligência Artificial</h3>
-                <p className="text-muted-foreground">Configure as IAs que potencializam o atendimento da Carol.</p>
+            <div className="flex flex-col pt-2 border-t">
+                <h3 className="text-lg font-bold tracking-tight">Inteligência Artificial</h3>
+                <p className="text-xs text-muted-foreground">Configure as IAs que potencializam o atendimento da Carol.</p>
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 items-stretch">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 items-stretch">
                 {/* 3.1 GOOGLE GEMINI CARD */}
-                <Card className="border-l-4 border-l-blue-500 shadow-sm hover:shadow-md transition-shadow flex flex-col min-h-[300px]">
-                    <CardHeader>
+                <Card className="border-l-4 border-l-blue-500 shadow-sm hover:shadow-md transition-shadow flex flex-col min-h-[220px]">
+                    <CardHeader className="py-3 px-4">
                         <div className="flex justify-between items-start">
                             <div className="flex items-center gap-2">
                                 <div className="p-1 bg-white rounded-lg border border-blue-100 shadow-sm overflow-hidden flex items-center justify-center w-10 h-10">
@@ -425,7 +425,7 @@ export const IntegrationsSettings: React.FC = () => {
                             </div>
                         </div>
                     </CardContent>
-                    <CardFooter className="mt-auto border-t bg-slate-50/50 p-4">
+                    <CardFooter className="mt-auto border-t bg-slate-50/50 p-3">
                         <Button
                             size="sm"
                             className="w-full h-11 gap-2 bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 text-white shadow-lg shadow-blue-500/30 font-bold tracking-tight transition-all active:scale-[0.98]"
@@ -436,8 +436,8 @@ export const IntegrationsSettings: React.FC = () => {
                 </Card>
 
                 {/* 3.2 OPENAI CHATGPT CARD */}
-                <Card className="border-l-4 border-l-slate-900 shadow-sm hover:shadow-md transition-shadow flex flex-col min-h-[300px]">
-                    <CardHeader>
+                <Card className="border-l-4 border-l-slate-900 shadow-sm hover:shadow-md transition-shadow flex flex-col min-h-[220px]">
+                    <CardHeader className="py-3 px-4">
                         <div className="flex justify-between items-start">
                             <div className="flex items-center gap-2">
                                 <div className="p-1 bg-white rounded-lg border border-slate-200 shadow-sm overflow-hidden flex items-center justify-center w-10 h-10">
@@ -471,7 +471,7 @@ export const IntegrationsSettings: React.FC = () => {
                             </div>
                         </div>
                     </CardContent>
-                    <CardFooter className="mt-auto border-t bg-slate-50/50 p-4">
+                    <CardFooter className="mt-auto border-t bg-slate-50/50 p-3">
                         <Button
                             size="sm"
                             className="w-full h-11 gap-2 bg-gradient-to-r from-slate-800 to-slate-900 border-slate-900 hover:from-slate-900 hover:to-black text-white shadow-lg shadow-slate-900/30 font-bold tracking-tight transition-all active:scale-[0.98]"
