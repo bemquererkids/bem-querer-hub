@@ -39,7 +39,7 @@ function App() {
     }
 
     // Jampack-Style Sidebar Item
-    const SidebarItem = ({ id, icon: Icon, label, badge }: any) => {
+    const SidebarItem = ({ id, icon: Icon, label, badge }: { id: ViewType; icon: any; label: string; badge?: string }) => {
         const isActive = currentView === id;
 
         return (
