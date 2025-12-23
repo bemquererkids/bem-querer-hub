@@ -155,340 +155,350 @@ export const IntegrationsSettings: React.FC = () => {
         <div className="p-4 max-w-5xl mx-auto space-y-4 animate-in fade-in duration-500">
 
             <div className="flex flex-col">
-                <h2 className="text-xl font-bold tracking-tight">Integrações</h2>
-                <p className="text-sm text-muted-foreground">Gerencie a conexão com seus canais e sistemas externos.</p>
+                <h2 className="text-xl font-bold tracking-tight">Integrações Connect</h2>
+                <p className="text-sm text-muted-foreground">Central de conexões com canais, sistemas e inteligência artificial.</p>
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 items-stretch">
+            <TabsNavigation
+                tabs={tabs}
+                activeTab={activeTab}
+                onChange={setActiveTab}
+            />
 
-                {/* 1. WHATSAPP CARD */}
-                <Card className="border-l-4 border-l-green-500 shadow-sm hover:shadow-md transition-shadow flex flex-col min-h-[380px]">
-                    <CardHeader className="py-3 px-4">
-                        <div className="flex justify-between items-start">
-                            <div className="flex items-center gap-2">
-                                <div className="p-1 bg-white rounded-lg border border-green-100 shadow-sm overflow-hidden flex items-center justify-center w-10 h-10">
-                                    <img
-                                        src="/assets/whatsapp-logo.png"
-                                        alt="WhatsApp Logo"
-                                        className="w-full h-full object-contain"
-                                    />
+            <div className="mt-6">
+                {/* 1. CHANNELS TAB */}
+                {activeTab === 'channels' && (
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4 items-stretch animate-in slide-in-from-left-4 duration-300">
+                        <Card className="border-l-4 border-l-green-500 shadow-sm hover:shadow-md transition-shadow flex flex-col min-h-[380px]">
+                            <CardHeader className="py-3 px-4">
+                                <div className="flex justify-between items-start">
+                                    <div className="flex items-center gap-2">
+                                        <div className="p-1 bg-white rounded-lg border border-green-100 shadow-sm overflow-hidden flex items-center justify-center w-10 h-10">
+                                            <img
+                                                src="/assets/whatsapp-logo.png"
+                                                alt="WhatsApp Logo"
+                                                className="w-full h-full object-contain"
+                                            />
+                                        </div>
+                                        <div>
+                                            <CardTitle>WhatsApp (UazAPI)</CardTitle>
+                                            <CardDescription>Canal principal de atendimento</CardDescription>
+                                        </div>
+                                    </div>
+                                    {whatsappStatus === 'connected' ? (
+                                        <span className="bg-green-100 text-green-700 text-xs px-2 py-1 rounded-full font-bold flex items-center gap-1">
+                                            <CheckCircle2 className="w-3 h-3" /> Online
+                                        </span>
+                                    ) : (
+                                        <span className="bg-red-100 text-red-700 text-xs px-2 py-1 rounded-full font-bold flex items-center gap-1">
+                                            <AlertCircle className="w-3 h-3" /> Offline
+                                        </span>
+                                    )}
                                 </div>
-                                <div>
-                                    <CardTitle>WhatsApp (UazAPI)</CardTitle>
-                                    <CardDescription>Canal principal de atendimento</CardDescription>
-                                </div>
-                            </div>
-                            {whatsappStatus === 'connected' ? (
-                                <span className="bg-green-100 text-green-700 text-xs px-2 py-1 rounded-full font-bold flex items-center gap-1">
-                                    <CheckCircle2 className="w-3 h-3" /> Online
-                                </span>
-                            ) : (
-                                <span className="bg-red-100 text-red-700 text-xs px-2 py-1 rounded-full font-bold flex items-center gap-1">
-                                    <AlertCircle className="w-3 h-3" /> Offline
-                                </span>
-                            )}
-                        </div>
-                    </CardHeader>
-                    <CardContent className="space-y-4">
-                        {whatsappStatus === 'connected' ? (
-                            <div className="bg-slate-50 p-4 rounded-lg border border-slate-100">
-                                <div className="flex items-center justify-between mb-2">
-                                    <span className="text-sm text-slate-500">Sessão Ativa</span>
-                                    <span className="text-sm font-medium text-slate-900">{sessionInfo?.name || "Bem-Querer Matriz"}</span>
-                                </div>
-                                <div className="flex items-center justify-between">
-                                    <span className="text-sm text-slate-500">Número</span>
-                                    <span className="text-sm font-medium text-slate-900">
-                                        {sessionInfo?.number ? `+${sessionInfo.number}` : "+55 11 99999-9999"}
-                                    </span>
-                                </div>
-                            </div>
-                        ) : whatsappStatus === 'qrcode' && qrCode ? (
-                            <div className="flex flex-col items-center justify-center py-6 bg-white rounded-lg border-2 border-dashed border-cyan-200 animate-in zoom-in duration-300">
-                                <img
-                                    src={qrCode.startsWith('data:') ? qrCode : `data:image/png;base64,${qrCode}`}
-                                    alt="WhatsApp QR Code"
-                                    className="w-48 h-48 mb-4 shadow-md rounded-md border border-slate-100"
-                                />
-                                <div className="flex items-center gap-2 text-cyan-600 animate-pulse text-sm font-medium">
-                                    <RefreshCw className="w-4 h-4 animate-spin" />
-                                    Aguardando leitura do QR Code...
-                                </div>
-                            </div>
-                        ) : whatsappStatus === 'connecting' ? (
-                            <div className="flex flex-col items-center justify-center py-12 bg-slate-50 rounded-lg border border-slate-200">
-                                <RefreshCw className="w-10 h-10 text-cyan-500 animate-spin mb-4" />
-                                <p className="text-sm text-slate-500 font-medium">Iniciando conexão...</p>
-                            </div>
-                        ) : (
-                            <div className="flex flex-col items-center justify-center py-8 bg-slate-50 rounded-lg border border-dashed border-slate-300">
-                                {statusError?.includes("401") ? (
-                                    <>
-                                        <AlertCircle className="w-12 h-12 text-amber-500 mb-2" />
-                                        <p className="text-sm font-semibold text-amber-700 text-center px-4">
-                                            Token Expirado ou Inválido
-                                        </p>
-                                        <p className="text-xs text-slate-500 text-center px-6 mt-1">
-                                            A conexão com a UazAPI falhou. Por favor, verifique suas credenciais no painel ou gere um novo QR Code.
-                                        </p>
-                                    </>
+                            </CardHeader>
+                            <CardContent className="space-y-4">
+                                {whatsappStatus === 'connected' ? (
+                                    <div className="bg-slate-50 p-4 rounded-lg border border-slate-100">
+                                        <div className="flex items-center justify-between mb-2">
+                                            <span className="text-sm text-slate-500">Sessão Ativa</span>
+                                            <span className="text-sm font-medium text-slate-900">{sessionInfo?.name || "Bem-Querer Matriz"}</span>
+                                        </div>
+                                        <div className="flex items-center justify-between">
+                                            <span className="text-sm text-slate-500">Número</span>
+                                            <span className="text-sm font-medium text-slate-900">
+                                                {sessionInfo?.number ? `+${sessionInfo.number}` : "+55 11 99999-9999"}
+                                            </span>
+                                        </div>
+                                    </div>
+                                ) : whatsappStatus === 'qrcode' && qrCode ? (
+                                    <div className="flex flex-col items-center justify-center py-6 bg-white rounded-lg border-2 border-dashed border-cyan-200 animate-in zoom-in duration-300">
+                                        <img
+                                            src={qrCode.startsWith('data:') ? qrCode : `data:image/png;base64,${qrCode}`}
+                                            alt="WhatsApp QR Code"
+                                            className="w-48 h-48 mb-4 shadow-md rounded-md border border-slate-100"
+                                        />
+                                        <div className="flex items-center gap-2 text-cyan-600 animate-pulse text-sm font-medium">
+                                            <RefreshCw className="w-4 h-4 animate-spin" />
+                                            Aguardando leitura do QR Code...
+                                        </div>
+                                    </div>
+                                ) : whatsappStatus === 'connecting' ? (
+                                    <div className="flex flex-col items-center justify-center py-12 bg-slate-50 rounded-lg border border-slate-200">
+                                        <RefreshCw className="w-10 h-10 text-cyan-500 animate-spin mb-4" />
+                                        <p className="text-sm text-slate-500 font-medium">Iniciando conexão...</p>
+                                    </div>
                                 ) : (
-                                    <>
-                                        <QrCode className="w-16 h-16 text-slate-300 mb-2" />
-                                        <p className="text-sm text-slate-500 text-center max-w-[200px]">
-                                            Clique no botão abaixo para gerar o QR Code.
-                                        </p>
-                                    </>
+                                    <div className="flex flex-col items-center justify-center py-8 bg-slate-50 rounded-lg border border-dashed border-slate-300">
+                                        {statusError?.includes("401") ? (
+                                            <>
+                                                <AlertCircle className="w-12 h-12 text-amber-500 mb-2" />
+                                                <p className="text-sm font-semibold text-amber-700 text-center px-4">
+                                                    Token Expirado ou Inválido
+                                                </p>
+                                                <p className="text-xs text-slate-500 text-center px-6 mt-1">
+                                                    A conexão com a UazAPI falhou. Por favor, verifique suas credenciais no painel ou gere um novo QR Code.
+                                                </p>
+                                            </>
+                                        ) : (
+                                            <>
+                                                <QrCode className="w-16 h-16 text-slate-300 mb-2" />
+                                                <p className="text-sm text-slate-500 text-center max-w-[200px]">
+                                                    Clique no botão abaixo para gerar o QR Code.
+                                                </p>
+                                            </>
+                                        )}
+                                    </div>
                                 )}
-                            </div>
-                        )}
 
-                        {/* Advanced Config Debug */}
-                        <div className="pt-2 border-t mt-4">
-                            <button
-                                onClick={() => setShowAdvanced(!showAdvanced)}
-                                className="text-[10px] text-slate-400 hover:text-slate-600 transition-colors flex items-center gap-1"
-                            >
-                                <Key className="w-3 h-3" />
-                                {showAdvanced ? 'Esconder Configuração' : 'Ver Configuração Técnica'}
-                            </button>
-                            {showAdvanced && currentConfig && (
-                                <div className="mt-2 p-2 bg-slate-900 rounded text-[10px] font-mono text-slate-300 overflow-x-auto">
-                                    <div className="flex justify-between border-b border-slate-700 pb-1 mb-1">
-                                        <span>Instância:</span>
-                                        <span className="text-cyan-400">{currentConfig.instance}</span>
-                                    </div>
-                                    <div className="flex flex-col gap-1">
-                                        <span>Token Atual (no .env):</span>
-                                        <span className="text-amber-400 break-all">{currentConfig.token}</span>
-                                    </div>
-                                    <p className="mt-2 text-slate-500 italic">
-                                        Se o token acima for diferente do seu painel UazAPI, atualize seu arquivo .env.
-                                    </p>
+                                {/* Advanced Config Debug */}
+                                <div className="pt-2 border-t mt-4">
+                                    <button
+                                        onClick={() => setShowAdvanced(!showAdvanced)}
+                                        className="text-[10px] text-slate-400 hover:text-slate-600 transition-colors flex items-center gap-1"
+                                    >
+                                        <Key className="w-3 h-3" />
+                                        {showAdvanced ? 'Esconder Configuração' : 'Ver Configuração Técnica'}
+                                    </button>
+                                    {showAdvanced && currentConfig && (
+                                        <div className="mt-2 p-2 bg-slate-900 rounded text-[10px] font-mono text-slate-300 overflow-x-auto">
+                                            <div className="flex justify-between border-b border-slate-700 pb-1 mb-1">
+                                                <span>Instância:</span>
+                                                <span className="text-cyan-400">{currentConfig.instance}</span>
+                                            </div>
+                                            <div className="flex flex-col gap-1">
+                                                <span>Token Atual (no .env):</span>
+                                                <span className="text-amber-400 break-all">{currentConfig.token}</span>
+                                            </div>
+                                            <p className="mt-2 text-slate-500 italic">
+                                                Se o token acima for diferente do seu painel UazAPI, atualize seu arquivo .env.
+                                            </p>
+                                        </div>
+                                    )}
                                 </div>
-                            )}
-                        </div>
-                    </CardContent>
-                    <CardFooter className="mt-auto border-t bg-slate-50/50 p-3">
-                        {whatsappStatus === 'connected' ? (
-                            <Button variant="destructive" size="sm" onClick={handleDisconnectWhatsapp} className="w-full h-11 gap-2 font-bold tracking-tight">
-                                <Power className="w-4 h-4" /> Desconectar WhatsApp
-                            </Button>
-                        ) : (
-                            <Button
-                                size="sm"
-                                onClick={handleConnectWhatsapp}
-                                disabled={loading || whatsappStatus === 'connecting'}
-                                className="w-full h-11 gap-2 bg-gradient-to-r from-green-500 to-emerald-500 hover:from-green-600 hover:to-emerald-600 text-white shadow-lg shadow-green-500/30 font-bold tracking-tight transition-all active:scale-[0.98]"
-                            >
-                                {loading || whatsappStatus === 'connecting' ? (
-                                    <>
-                                        <RefreshCw className="w-4 h-4 animate-spin" />
-                                        <span>Conectando...</span>
-                                    </>
+                            </CardContent>
+                            <CardFooter className="mt-auto border-t bg-slate-50/50 p-3">
+                                {whatsappStatus === 'connected' ? (
+                                    <Button variant="destructive" size="sm" onClick={handleDisconnectWhatsapp} className="w-full h-11 gap-2 font-bold tracking-tight">
+                                        <Power className="w-4 h-4" /> Desconectar WhatsApp
+                                    </Button>
                                 ) : (
-                                    <>
-                                        <QrCode className="w-4 h-4" />
-                                        <span>{whatsappStatus === 'qrcode' ? 'Gerar Novo QR Code' : 'Conectar WhatsApp'}</span>
-                                    </>
+                                    <Button
+                                        size="sm"
+                                        onClick={handleConnectWhatsapp}
+                                        disabled={loading || whatsappStatus === 'connecting'}
+                                        className="w-full h-11 gap-2 bg-gradient-to-r from-green-500 to-emerald-500 hover:from-green-600 hover:to-emerald-600 text-white shadow-lg shadow-green-500/30 font-bold tracking-tight transition-all active:scale-[0.98]"
+                                    >
+                                        {loading || whatsappStatus === 'connecting' ? (
+                                            <>
+                                                <RefreshCw className="w-4 h-4 animate-spin" />
+                                                <span>Conectando...</span>
+                                            </>
+                                        ) : (
+                                            <>
+                                                <QrCode className="w-4 h-4" />
+                                                <span>{whatsappStatus === 'qrcode' ? 'Gerar Novo QR Code' : 'Conectar WhatsApp'}</span>
+                                            </>
+                                        )}
+                                    </Button>
                                 )}
-                            </Button>
-                        )}
-                    </CardFooter>
-                </Card>
+                            </CardFooter>
+                        </Card>
+                    </div>
+                )}
 
-                {/* 2. CLINICORP CARD */}
-                <Card className="border-l-4 border-l-orange-500 shadow-sm hover:shadow-md transition-shadow flex flex-col min-h-[380px]">
-                    <CardHeader className="py-3 px-4">
-                        <div className="flex justify-between items-start">
-                            <div className="flex items-center gap-2">
-                                <div className="p-1 bg-white rounded-lg border border-orange-100 shadow-sm overflow-hidden flex items-center justify-center w-10 h-10">
-                                    <img
-                                        src="/assets/clinicorp-logo.png"
-                                        alt="Clinicorp Logo"
-                                        className="w-full h-full object-contain"
-                                    />
-                                </div>
-                                <div>
-                                    <CardTitle>Clinicorp</CardTitle>
-                                    <CardDescription>Agendamento e Prontuário</CardDescription>
-                                </div>
-                            </div>
-                            {clinicorpStatus === 'connected' ? (
-                                <span className="bg-green-100 text-green-700 text-xs px-2 py-1 rounded-full font-bold flex items-center gap-1">
-                                    <CheckCircle2 className="w-3 h-3" /> Sincronizado
-                                </span>
-                            ) : (
-                                <span className="bg-slate-100 text-slate-600 text-xs px-2 py-1 rounded-full font-bold flex items-center gap-1">
-                                    <LinkIcon className="w-3 h-3" /> Não vinculado
-                                </span>
-                            )}
-                        </div>
-                    </CardHeader>
-                    <CardContent className="space-y-4">
-                        {clinicorpStatus === 'disconnected' ? (
-                            <div className="space-y-3">
-                                <div className="space-y-1">
-                                    <Label htmlFor="client_id">Client ID / Usuário</Label>
-                                    <Input
-                                        id="client_id"
-                                        placeholder="Ex: bemquerer ou ID da aplicação"
-                                        value={clinicorpClientId}
-                                        onChange={(e) => setClinicorpClientId(e.target.value)}
-                                        className="font-mono text-sm focus:ring-orange-500"
-                                    />
-                                </div>
-                                <div className="space-y-1">
-                                    <Label htmlFor="client_secret">Client Secret / Token API</Label>
-                                    <Input
-                                        id="client_secret"
-                                        type="password"
-                                        placeholder="Ex: Token (8b6b...) ou Senha"
-                                        value={clinicorpSecret}
-                                        onChange={(e) => setClinicorpSecret(e.target.value)}
-                                        className="focus:ring-orange-500"
-                                    />
-                                </div>
-                                <div className="bg-orange-50 text-orange-700 text-xs p-3 rounded border border-orange-100">
-                                    ℹ️ Solicite estas credenciais ao suporte da Clinicorp.
-                                </div>
-                            </div>
-                        ) : (
-                            <div className="space-y-4">
-                                <div className="bg-slate-50 p-4 rounded-lg border border-slate-100">
-                                    <div className="flex items-center justify-between mb-2">
-                                        <span className="text-sm text-slate-500">Clínica Vinculada</span>
-                                        <span className="text-sm font-medium text-slate-900">Bem-Querer Matriz</span>
+                {/* 2. SYSTEMS TAB */}
+                {activeTab === 'systems' && (
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4 items-stretch animate-in slide-in-from-right-4 duration-300">
+                        <Card className="border-l-4 border-l-orange-500 shadow-sm hover:shadow-md transition-shadow flex flex-col min-h-[380px]">
+                            <CardHeader className="py-3 px-4">
+                                <div className="flex justify-between items-start">
+                                    <div className="flex items-center gap-2">
+                                        <div className="p-1 bg-white rounded-lg border border-orange-100 shadow-sm overflow-hidden flex items-center justify-center w-10 h-10">
+                                            <img
+                                                src="/assets/clinicorp-logo.png"
+                                                alt="Clinicorp Logo"
+                                                className="w-full h-full object-contain"
+                                            />
+                                        </div>
+                                        <div>
+                                            <CardTitle>Clinicorp</CardTitle>
+                                            <CardDescription>Agendamento e Prontuário</CardDescription>
+                                        </div>
                                     </div>
-                                    <div className="flex items-center justify-between">
-                                        <span className="text-sm text-slate-500">Última Sincronia</span>
-                                        <span className="text-sm font-medium text-slate-900">Há 2 minutos</span>
+                                    {clinicorpStatus === 'connected' ? (
+                                        <span className="bg-green-100 text-green-700 text-xs px-2 py-1 rounded-full font-bold flex items-center gap-1">
+                                            <CheckCircle2 className="w-3 h-3" /> Sincronizado
+                                        </span>
+                                    ) : (
+                                        <span className="bg-slate-100 text-slate-600 text-xs px-2 py-1 rounded-full font-bold flex items-center gap-1">
+                                            <LinkIcon className="w-3 h-3" /> Não vinculado
+                                        </span>
+                                    )}
+                                </div>
+                            </CardHeader>
+                            <CardContent className="space-y-4">
+                                {clinicorpStatus === 'disconnected' ? (
+                                    <div className="space-y-3">
+                                        <div className="space-y-1">
+                                            <Label htmlFor="client_id">Client ID / Usuário</Label>
+                                            <Input
+                                                id="client_id"
+                                                placeholder="Ex: bemquerer ou ID da aplicação"
+                                                value={clinicorpClientId}
+                                                onChange={(e) => setClinicorpClientId(e.target.value)}
+                                                className="font-mono text-sm focus:ring-orange-500"
+                                            />
+                                        </div>
+                                        <div className="space-y-1">
+                                            <Label htmlFor="client_secret">Client Secret / Token API</Label>
+                                            <Input
+                                                id="client_secret"
+                                                type="password"
+                                                placeholder="Ex: Token (8b6b...) ou Senha"
+                                                value={clinicorpSecret}
+                                                onChange={(e) => setClinicorpSecret(e.target.value)}
+                                                className="focus:ring-orange-500"
+                                            />
+                                        </div>
+                                        <div className="bg-orange-50 text-orange-700 text-xs p-3 rounded border border-orange-100">
+                                            ℹ️ Solicite estas credenciais ao suporte da Clinicorp.
+                                        </div>
+                                    </div>
+                                ) : (
+                                    <div className="space-y-4">
+                                        <div className="bg-slate-50 p-4 rounded-lg border border-slate-100">
+                                            <div className="flex items-center justify-between mb-2">
+                                                <span className="text-sm text-slate-500">Clínica Vinculada</span>
+                                                <span className="text-sm font-medium text-slate-900">Bem-Querer Matriz</span>
+                                            </div>
+                                            <div className="flex items-center justify-between">
+                                                <span className="text-sm text-slate-500">Última Sincronia</span>
+                                                <span className="text-sm font-medium text-slate-900">Há 2 minutos</span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                )}
+                            </CardContent>
+                            <CardFooter className="mt-auto border-t bg-slate-50/50 p-3">
+                                {clinicorpStatus === 'disconnected' ? (
+                                    <Button
+                                        onClick={handleConnectClinicorp}
+                                        disabled={loading}
+                                        className="w-full h-11 gap-2 bg-gradient-to-r from-orange-500 to-orange-600 hover:from-orange-600 hover:to-orange-700 text-white shadow-lg shadow-orange-500/30 font-bold tracking-tight transition-all active:scale-[0.98]"
+                                    >
+                                        {loading && <RefreshCw className="w-4 h-4 animate-spin" />}
+                                        Conectar Clinicorp
+                                    </Button>
+                                ) : (
+                                    <Button
+                                        variant="outline"
+                                        onClick={() => setClinicorpStatus('disconnected')}
+                                        className="w-full h-11 gap-2 text-destructive hover:text-white hover:bg-destructive transition-colors font-bold tracking-tight border-orange-200"
+                                    >
+                                        <LinkIcon className="w-4 h-4" /> Desconectar Clinicorp
+                                    </Button>
+                                )}
+                            </CardFooter>
+                        </Card>
+                    </div>
+                )}
+
+                {/* 3. AI TAB */}
+                {activeTab === 'ai' && (
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4 items-stretch animate-in slide-in-from-bottom-4 duration-300">
+                        {/* 3.1 GOOGLE GEMINI CARD */}
+                        <Card className="border-l-4 border-l-blue-500 shadow-sm hover:shadow-md transition-shadow flex flex-col min-h-[220px]">
+                            <CardHeader className="py-3 px-4">
+                                <div className="flex justify-between items-start">
+                                    <div className="flex items-center gap-2">
+                                        <div className="p-1 bg-white rounded-lg border border-blue-100 shadow-sm overflow-hidden flex items-center justify-center w-10 h-10">
+                                            <img
+                                                src="/assets/gemini-logo.png"
+                                                alt="Google Gemini Logo"
+                                                className="w-full h-full object-contain"
+                                            />
+                                        </div>
+                                        <div>
+                                            <CardTitle>Google Gemini</CardTitle>
+                                            <CardDescription>2.0 Flash & Pro</CardDescription>
+                                        </div>
+                                    </div>
+                                    <Badge variant="outline" className="text-blue-600 border-blue-200 bg-blue-50">Ativo</Badge>
+                                </div>
+                            </CardHeader>
+                            <CardContent className="space-y-4">
+                                <div className="space-y-3">
+                                    <div className="space-y-1">
+                                        <Label htmlFor="gemini_key">Google AI Studio Key</Label>
+                                        <Input
+                                            id="gemini_key"
+                                            type="password"
+                                            placeholder="AIzaSy..."
+                                            className="focus:ring-blue-500"
+                                        />
+                                    </div>
+                                    <div className="bg-blue-50 text-blue-700 text-[10px] p-2 rounded border border-blue-100 italic">
+                                        ✨ Ideal para respostas rápidas e baixo custo.
                                     </div>
                                 </div>
-                            </div>
-                        )}
-                    </CardContent>
-                    <CardFooter className="mt-auto border-t bg-slate-50/50 p-3">
-                        {clinicorpStatus === 'disconnected' ? (
-                            <Button
-                                onClick={handleConnectClinicorp}
-                                disabled={loading}
-                                className="w-full h-11 gap-2 bg-gradient-to-r from-orange-500 to-orange-600 hover:from-orange-600 hover:to-orange-700 text-white shadow-lg shadow-orange-500/30 font-bold tracking-tight transition-all active:scale-[0.98]"
-                            >
-                                {loading && <RefreshCw className="w-4 h-4 animate-spin" />}
-                                Conectar Clinicorp
-                            </Button>
-                        ) : (
-                            <Button
-                                variant="outline"
-                                onClick={() => setClinicorpStatus('disconnected')}
-                                className="w-full h-11 gap-2 text-destructive hover:text-white hover:bg-destructive transition-colors font-bold tracking-tight border-orange-200"
-                            >
-                                <LinkIcon className="w-4 h-4" /> Desconectar Clinicorp
-                            </Button>
-                        )}
-                    </CardFooter>
-                </Card>
-            </div>
+                            </CardContent>
+                            <CardFooter className="mt-auto border-t bg-slate-50/50 p-3">
+                                <Button
+                                    size="sm"
+                                    className="w-full h-11 gap-2 bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 text-white shadow-lg shadow-blue-500/30 font-bold tracking-tight transition-all active:scale-[0.98]"
+                                >
+                                    Conectar Gemini
+                                </Button>
+                            </CardFooter>
+                        </Card>
 
-            {/* 3. AI INTEGRATIONS SECTION */}
-            <div className="flex flex-col pt-2 border-t">
-                <h3 className="text-lg font-bold tracking-tight">Inteligência Artificial</h3>
-                <p className="text-xs text-muted-foreground">Configure as IAs que potencializam o atendimento da Carol.</p>
-            </div>
-
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 items-stretch">
-                {/* 3.1 GOOGLE GEMINI CARD */}
-                <Card className="border-l-4 border-l-blue-500 shadow-sm hover:shadow-md transition-shadow flex flex-col min-h-[220px]">
-                    <CardHeader className="py-3 px-4">
-                        <div className="flex justify-between items-start">
-                            <div className="flex items-center gap-2">
-                                <div className="p-1 bg-white rounded-lg border border-blue-100 shadow-sm overflow-hidden flex items-center justify-center w-10 h-10">
-                                    <img
-                                        src="/assets/gemini-logo.png"
-                                        alt="Google Gemini Logo"
-                                        className="w-full h-full object-contain"
-                                    />
+                        {/* 3.2 OPENAI CHATGPT CARD */}
+                        <Card className="border-l-4 border-l-slate-900 shadow-sm hover:shadow-md transition-shadow flex flex-col min-h-[220px]">
+                            <CardHeader className="py-3 px-4">
+                                <div className="flex justify-between items-start">
+                                    <div className="flex items-center gap-2">
+                                        <div className="p-1 bg-white rounded-lg border border-slate-200 shadow-sm overflow-hidden flex items-center justify-center w-10 h-10">
+                                            <img
+                                                src="/assets/chatgpt-logo.png"
+                                                alt="OpenAI Logo"
+                                                className="w-full h-full object-contain"
+                                            />
+                                        </div>
+                                        <div>
+                                            <CardTitle>OpenAI ChatGPT</CardTitle>
+                                            <CardDescription>GPT-4o & GPT-4 Turbo</CardDescription>
+                                        </div>
+                                    </div>
+                                    <Badge variant="outline" className="text-slate-400 border-slate-200">Inativo</Badge>
                                 </div>
-                                <div>
-                                    <CardTitle>Google Gemini</CardTitle>
-                                    <CardDescription>2.0 Flash & Pro</CardDescription>
+                            </CardHeader>
+                            <CardContent className="space-y-4">
+                                <div className="space-y-3">
+                                    <div className="space-y-1">
+                                        <Label htmlFor="openai_key">OpenAI API Key</Label>
+                                        <Input
+                                            id="openai_key"
+                                            type="password"
+                                            placeholder="sk-..."
+                                            className="focus:ring-slate-900"
+                                        />
+                                    </div>
+                                    <div className="bg-slate-900 text-slate-100 text-[10px] p-2 rounded border border-slate-800 italic">
+                                        🧠 Cérebro avançado para negociações complexas.
+                                    </div>
                                 </div>
-                            </div>
-                            <Badge variant="outline" className="text-blue-600 border-blue-200 bg-blue-50">Ativo</Badge>
-                        </div>
-                    </CardHeader>
-                    <CardContent className="space-y-4">
-                        <div className="space-y-3">
-                            <div className="space-y-1">
-                                <Label htmlFor="gemini_key">Google AI Studio Key</Label>
-                                <Input
-                                    id="gemini_key"
-                                    type="password"
-                                    placeholder="AIzaSy..."
-                                    className="focus:ring-blue-500"
-                                />
-                            </div>
-                            <div className="bg-blue-50 text-blue-700 text-[10px] p-2 rounded border border-blue-100 italic">
-                                ✨ Ideal para respostas rápidas e baixo custo.
-                            </div>
-                        </div>
-                    </CardContent>
-                    <CardFooter className="mt-auto border-t bg-slate-50/50 p-3">
-                        <Button
-                            size="sm"
-                            className="w-full h-11 gap-2 bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 text-white shadow-lg shadow-blue-500/30 font-bold tracking-tight transition-all active:scale-[0.98]"
-                        >
-                            Conectar Gemini
-                        </Button>
-                    </CardFooter>
-                </Card>
-
-                {/* 3.2 OPENAI CHATGPT CARD */}
-                <Card className="border-l-4 border-l-slate-900 shadow-sm hover:shadow-md transition-shadow flex flex-col min-h-[220px]">
-                    <CardHeader className="py-3 px-4">
-                        <div className="flex justify-between items-start">
-                            <div className="flex items-center gap-2">
-                                <div className="p-1 bg-white rounded-lg border border-slate-200 shadow-sm overflow-hidden flex items-center justify-center w-10 h-10">
-                                    <img
-                                        src="/assets/chatgpt-logo.png"
-                                        alt="OpenAI Logo"
-                                        className="w-full h-full object-contain"
-                                    />
-                                </div>
-                                <div>
-                                    <CardTitle>OpenAI ChatGPT</CardTitle>
-                                    <CardDescription>GPT-4o & GPT-4 Turbo</CardDescription>
-                                </div>
-                            </div>
-                            <Badge variant="outline" className="text-slate-400 border-slate-200">Inativo</Badge>
-                        </div>
-                    </CardHeader>
-                    <CardContent className="space-y-4">
-                        <div className="space-y-3">
-                            <div className="space-y-1">
-                                <Label htmlFor="openai_key">OpenAI API Key</Label>
-                                <Input
-                                    id="openai_key"
-                                    type="password"
-                                    placeholder="sk-..."
-                                    className="focus:ring-slate-900"
-                                />
-                            </div>
-                            <div className="bg-slate-900 text-slate-100 text-[10px] p-2 rounded border border-slate-800 italic">
-                                🧠 Cérebro avançado para negociações complexas.
-                            </div>
-                        </div>
-                    </CardContent>
-                    <CardFooter className="mt-auto border-t bg-slate-50/50 p-3">
-                        <Button
-                            size="sm"
-                            className="w-full h-11 gap-2 bg-gradient-to-r from-slate-800 to-slate-900 border-slate-900 hover:from-slate-900 hover:to-black text-white shadow-lg shadow-slate-900/30 font-bold tracking-tight transition-all active:scale-[0.98]"
-                        >
-                            Conectar ChatGPT
-                        </Button>
-                    </CardFooter>
-                </Card>
+                            </CardContent>
+                            <CardFooter className="mt-auto border-t bg-slate-50/50 p-3">
+                                <Button
+                                    size="sm"
+                                    className="w-full h-11 gap-2 bg-gradient-to-r from-slate-800 to-slate-900 border-slate-900 hover:from-slate-900 hover:to-black text-white shadow-lg shadow-slate-900/30 font-bold tracking-tight transition-all active:scale-[0.98]"
+                                >
+                                    Conectar ChatGPT
+                                </Button>
+                            </CardFooter>
+                        </Card>
+                    </div>
+                )}
             </div>
 
         </div>
