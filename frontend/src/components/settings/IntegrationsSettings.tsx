@@ -154,7 +154,7 @@ export const IntegrationsSettings: React.FC = () => {
 
                 {/* 1. WHATSAPP CARD */}
                 <Card className="border-l-4 border-l-green-500 shadow-sm hover:shadow-md transition-shadow flex flex-col min-h-[380px]">
-                    <CardHeader>
+                    <CardHeader className="py-3 px-4">
                         <div className="flex justify-between items-start">
                             <div className="flex items-center gap-2">
                                 <div className="p-1 bg-white rounded-lg border border-green-100 shadow-sm overflow-hidden flex items-center justify-center w-10 h-10">
