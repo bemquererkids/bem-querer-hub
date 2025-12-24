@@ -79,25 +79,63 @@ async def configure_clinicorp(config: ClinicorpConfig):
 async def connect_whatsapp():
     """
     Triggers QR code generation for the WhatsApp instance.
-    The frontend will use the returned base64/string to show the QR.
     """
     try:
+        logger.info("Attempting to connect WhatsApp...")
+        logger.info(f"UAZAPI_BASE_URL: {settings.UAZAPI_BASE_URL}")
+        logger.info(f"UAZAPI_INSTANCE: {settings.UAZAPI_INSTANCE}")
+        
+        # Validar configurações
+        if not settings.UAZAPI_TOKEN or settings.UAZAPI_TOKEN == "placeholder_token":
+            logger.error("UAZAPI_TOKEN not configured")
+            raise HTTPException(
+                status_code=500,
+                detail="UAZAPI_TOKEN não configurado. Configure nas variáveis de ambiente da Vercel."
+            )
+        
+        if not settings.UAZAPI_BASE_URL or settings.UAZAPI_BASE_URL == "https://free.uazapi.com":
+            logger.error("UAZAPI_BASE_URL not configured properly")
+            raise HTTPException(
+                status_code=500,
+                detail="UAZAPI_BASE_URL não configurado. Use: https://bemquerer.uazapi.com"
+            )
+        
+        # Tentar conectar
         uazapi = get_uazapi_service()
-        # In this demo we use the configured instance in .env
-        instance_name = "bemquerer" 
+        result = await uazapi.connect_instance(settings.UAZAPI_INSTANCE)
         
-        # 1. Generate QR
-        result = await uazapi.connect_instance(instance_name)
+        logger.info(f"UazAPI connect response: {result}")
         
-        # Ensure qrcode is at the root for the frontend
+        # Extrair QR Code
+        qrcode = None
         if isinstance(result, dict):
-            if "instance" in result and isinstance(result["instance"], dict) and "qrcode" in result["instance"]:
-                result["qrcode"] = result["instance"]["qrcode"]
+            qrcode = (
+                result.get("qrcode") or 
+                result.get("instance", {}).get("qrcode") or
+                result.get("data", {}).get("qrcode")
+            )
         
-        return result
+        if not qrcode:
+            logger.error(f"QR Code not found in response: {result}")
+            raise HTTPException(
+                status_code=500,
+                detail="QR Code não retornado pela UazAPI. Verifique se a instância está configurada corretamente."
+            )
+        
+        return {
+            "success": True,
+            "qrcode": qrcode,
+            "instance": settings.UAZAPI_INSTANCE
+        }
+        
+    except HTTPException:
+        raise
     except Exception as e:
-        logger.error(f"Failed to connect WhatsApp: {e}")
-        raise HTTPException(status_code=500, detail=str(e))
+        logger.error(f"Failed to connect WhatsApp: {str(e)}", exc_info=True)
+        raise HTTPException(
+            status_code=500,
+            detail=f"Erro ao conectar WhatsApp: {str(e)}"
+        )
 
 @router.get("/whatsapp/status")
 async def get_whatsapp_status(
