@@ -5,7 +5,7 @@ Handles document embeddings and semantic search using OpenAI.
 import openai
 from typing import List, Dict, Any, Optional
 from app.core.config import settings
-from app.core.database import get_supabase_client
+from app.core.database import get_supabase
 import tiktoken
 
 class EmbeddingService:
@@ -13,7 +13,7 @@ class EmbeddingService:
         self.api_key = settings.OPENAI_API_KEY if hasattr(settings, 'OPENAI_API_KEY') else "sk-placeholder"
         self.model = "text-embedding-3-small"  # 1536 dimensions, cheaper
         self.max_tokens = 500  # Chunk size
-        self.supabase = get_supabase_client()
+        self.supabase = get_supabase()
     
     async def generate_embedding(self, text: str) -> List[float]:
         """

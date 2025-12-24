@@ -4,11 +4,11 @@ Provides metrics and statistics queries for Carol AI.
 """
 from typing import Dict, Any, List, Optional
 from datetime import datetime, timedelta
-from app.core.database import get_supabase_client
+from app.core.database import get_supabase
 
 class AnalyticsService:
     def __init__(self):
-        self.supabase = get_supabase_client()
+        self.supabase = get_supabase()
     
     async def get_metric(
         self,
