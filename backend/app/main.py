@@ -55,34 +55,52 @@ async def whatsapp_status():
                 "token_set": bool(token)
             }
         
-        # Chamar UazAPI - endpoint correto
-        url = f"{base_url}/instance/status"
-        headers = {
-            "Authorization": f"Bearer {token}",
-            "Content-Type": "application/json"
+        # Testar diferentes formatos de autenticação
+        auth_formats = [
+            {"apikey": token},  # Formato 1
+            {"Authorization": f"Bearer {token}"},  # Formato 2
+            {"x-api-key": token},  # Formato 3
+        ]
+        
+        for idx, auth_header in enumerate(auth_formats):
+            try:
+                url = f"{base_url}/instance/status"
+                headers = {**auth_header, "Content-Type": "application/json"}
+                
+                async with httpx.AsyncClient(timeout=10.0) as client:
+                    response = await client.get(url, headers=headers)
+                    
+                    if response.status_code == 200:
+                        data = response.json()
+                        
+                        # Verificar se está conectado
+                        is_connected = False
+                        if isinstance(data, dict):
+                            is_connected = (
+                                data.get("state") == "open" or 
+                                data.get("status") == "connected" or
+                                data.get("connected") == True
+                            )
+                        
+                        return {
+                            "connected": is_connected,
+                            "status": data,
+                            "auth_format_used": idx + 1,
+                            "config": {
+                                "base_url": base_url,
+                                "instance": instance
+                            }
+                        }
+            except:
+                continue
+        
+        # Se nenhum formato funcionou
+        return {
+            "connected": False,
+            "error": "Nenhum formato de autenticação funcionou",
+            "tried_formats": len(auth_formats)
         }
         
-        async with httpx.AsyncClient(timeout=10.0) as client:
-            response = await client.get(url, headers=headers)
-            data = response.json()
-            
-            # Verificar se está conectado
-            is_connected = False
-            if isinstance(data, dict):
-                is_connected = (
-                    data.get("state") == "open" or 
-                    data.get("status") == "connected" or
-                    data.get("connected") == True
-                )
-            
-            return {
-                "connected": is_connected,
-                "status": data,
-                "config": {
-                    "base_url": base_url,
-                    "instance": instance
-                }
-            }
     except Exception as e:
         return {
             "connected": False,
