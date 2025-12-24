@@ -1,4 +1,4 @@
-export type CRMStatus = 'new' | 'qualifying' | 'scheduled' | 'noshow' | 'won' | 'attended';
+export type CRMStatus = 'new' | 'qualifying' | 'scheduled' | 'noshow' | 'won' | 'attended' | 'lost';
 
 export interface Deal {
     id: string;
@@ -8,7 +8,8 @@ export interface Deal {
     value?: number;
     status: CRMStatus;
     lastContact: string;
-    source: 'instagram' | 'google' | 'indication';
+    source: 'instagram' | 'google' | 'facebook' | 'indication';
+    campaignId?: string; // ID da campanha de origem
     treatmentType?: string; // ex: "Ortodontia", "Limpeza"
     probability: 'low' | 'medium' | 'high';
 }

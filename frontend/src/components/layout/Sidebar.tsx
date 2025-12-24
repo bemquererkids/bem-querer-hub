@@ -1,15 +1,18 @@
 import React, { useState } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
+import { motion } from 'framer-motion';
+import { useAuth } from '../../context/AuthContext';
 import {
-    MessageSquare,
-    Users,
-    Settings,
-    LayoutDashboard,
-    Calendar as CalendarIcon,
-    ChevronLeft,
-    ChevronRight,
-    Search,
-} from 'lucide-react';
+    ChatBubbleLeftRightIcon,
+    UserGroupIcon,
+    Cog6ToothIcon,
+    Squares2X2Icon,
+    CalendarIcon,
+    ChevronLeftIcon,
+    ChevronRightIcon,
+    BuildingOfficeIcon,
+    UserPlusIcon,
+    CubeIcon,
+} from '@heroicons/react/24/outline';
 import clsx from 'clsx';
 import { Avatar, AvatarImage, AvatarFallback } from '../ui/avatar';
 import {
@@ -19,53 +22,67 @@ import {
     TooltipTrigger,
 } from '../ui/tooltip';
 
-export type ViewType = 'dashboard' | 'chat' | 'crm' | 'followup' | 'prompt-config' | 'clinic-config' | 'settings';
+export type ViewType = 'dashboard' | 'chat' | 'crm' | 'followup' | 'prompt-config' | 'clinic-config' | 'invite-management' | 'modules-settings' | 'settings';
 
 interface SidebarProps {
     currentView: ViewType;
     setCurrentView: (view: ViewType) => void;
+    isMobileMenuOpen: boolean;
+    setIsMobileMenuOpen: (open: boolean) => void;
 }
 
-export const Sidebar: React.FC<SidebarProps> = ({ currentView, setCurrentView }) => {
+export const Sidebar: React.FC<SidebarProps> = ({ currentView, setCurrentView, isMobileMenuOpen, setIsMobileMenuOpen }) => {
+    const { user } = useAuth();
     const [isCollapsed, setIsCollapsed] = useState(false);
 
     const navItems = [
-        { id: 'dashboard' as ViewType, icon: LayoutDashboard, label: 'Dashboard' },
-        { id: 'crm' as ViewType, icon: Users, label: 'CRM' },
-        { id: 'chat' as ViewType, icon: MessageSquare, label: 'Chat', badge: '80' },
+        { id: 'dashboard' as ViewType, icon: Squares2X2Icon, label: 'Dashboard' },
+        { id: 'chat' as ViewType, icon: ChatBubbleLeftRightIcon, label: 'Chat', badge: '80' },
+        { id: 'crm' as ViewType, icon: UserGroupIcon, label: 'CRM' },
         { id: 'followup' as ViewType, icon: CalendarIcon, label: 'Follow-up' },
     ];
 
     const configItems = [
-        { id: 'prompt-config' as ViewType, icon: Settings, label: 'Configurar Prompt' },
-        { id: 'clinic-config' as ViewType, icon: Settings, label: 'Clínica' },
+        { id: 'prompt-config' as ViewType, icon: Cog6ToothIcon, label: 'Configurar Prompt' },
+        { id: 'clinic-config' as ViewType, icon: BuildingOfficeIcon, label: 'Clínica' },
+        { id: 'modules-settings' as ViewType, icon: CubeIcon, label: 'Módulos' },
+        { id: 'invite-management' as ViewType, icon: UserPlusIcon, label: 'Gerenciar Acessos' },
     ];
+
+    const handleNavClick = (id: ViewType) => {
+        setCurrentView(id);
+        setIsMobileMenuOpen(false); // Close mobile menu after navigation
+    };
 
     const NavItem = ({ id, icon: Icon, label, badge }: { id: ViewType; icon: any; label: string; badge?: string }) => {
         const isActive = currentView === id;
 
         const content = (
             <button
-                onClick={() => setCurrentView(id)}
+                onClick={() => handleNavClick(id)}
                 className={clsx(
-                    "w-full flex items-center transition-all rounded-lg group relative",
+                    "w-full flex items-center transition-all rounded-md group relative",
                     isCollapsed ? "justify-center p-2" : "gap-3 px-3 py-2",
                     isActive
-                        ? "text-white bg-gray-800 shadow-md"
-                        : "text-gray-400 hover:text-white hover:bg-gray-800/50"
+                        ? "text-indigo-600 bg-indigo-50 shadow-sm ring-1 ring-indigo-100 dark:bg-primary/10 dark:text-primary dark:ring-primary/20"
+                        : "text-zinc-500 hover:text-zinc-900 hover:bg-zinc-50/80 dark:text-zinc-400 dark:hover:text-zinc-100 dark:hover:bg-white/5"
                 )}
             >
                 <Icon className={clsx(
                     "shrink-0",
-                    isCollapsed ? "w-6 h-6" : "w-5 h-5",
-                    isActive ? "text-cyan-400" : "text-gray-400 group-hover:text-white"
+                    isCollapsed ? "w-5 h-5" : "w-5 h-5"
                 )} />
 
                 {!isCollapsed && (
                     <>
                         <span className="flex-1 text-left text-sm font-medium truncate">{label}</span>
                         {badge && (
-                            <span className="bg-cyan-500 text-white text-[10px] px-1.5 py-0.5 rounded-full font-bold">
+                            <span className={clsx(
+                                "px-2 py-0.5 text-[10px] font-bold rounded-full",
+                                isActive
+                                    ? "bg-indigo-600 text-white dark:bg-primary dark:text-primary-foreground"
+                                    : "bg-zinc-100 text-zinc-600 dark:bg-zinc-800 dark:text-zinc-400"
+                            )}>
                                 {badge}
                             </span>
                         )}
@@ -76,14 +93,16 @@ export const Sidebar: React.FC<SidebarProps> = ({ currentView, setCurrentView })
 
         if (isCollapsed) {
             return (
-                <Tooltip delayDuration={0}>
-                    <TooltipTrigger asChild>
-                        {content}
-                    </TooltipTrigger>
-                    <TooltipContent side="right" className="bg-gray-900 border border-gray-800">
-                        {label} {badge && `(${badge})`}
-                    </TooltipContent>
-                </Tooltip>
+                <TooltipProvider>
+                    <Tooltip delayDuration={0}>
+                        <TooltipTrigger asChild>
+                            {content}
+                        </TooltipTrigger>
+                        <TooltipContent side="right" className="bg-white border-zinc-200 text-zinc-900 shadow-md dark:bg-zinc-900 dark:text-white dark:border-zinc-800">
+                            {label}
+                        </TooltipContent>
+                    </Tooltip>
+                </TooltipProvider>
             );
         }
 
@@ -91,61 +110,65 @@ export const Sidebar: React.FC<SidebarProps> = ({ currentView, setCurrentView })
     };
 
     return (
-        <TooltipProvider>
+        <>
+            {/* Mobile Menu Overlay */}
+            {isMobileMenuOpen && (
+                <div
+                    className="fixed inset-0 bg-black/50 z-40 lg:hidden"
+                    onClick={() => setIsMobileMenuOpen(false)}
+                />
+            )}
+
+            {/* Sidebar */}
             <motion.aside
                 initial={false}
-                animate={{ width: isCollapsed ? 80 : 256 }}
-                transition={{ type: 'spring', stiffness: 300, damping: 30 }}
-                className="h-screen bg-gray-950 flex flex-col shadow-2xl z-30 relative border-r border-gray-800"
+                animate={{ width: isCollapsed ? 72 : 240 }}
+                transition={{ duration: 0.2, ease: 'easeInOut' }}
+                className={clsx(
+                    "h-screen bg-white dark:bg-background flex flex-col z-50 relative border-r border-zinc-200 dark:border-border shadow-sm transition-colors duration-300",
+                    // Mobile: fixed position, slide in from left
+                    "fixed lg:relative",
+                    isMobileMenuOpen ? "translate-x-0" : "-translate-x-full lg:translate-x-0",
+                    "transition-transform duration-300 ease-in-out"
+                )}
             >
                 {/* Logo Header */}
                 <div className={clsx(
-                    "h-16 flex items-center border-b border-gray-800 shrink-0",
-                    isCollapsed ? "justify-center px-0" : "px-4 gap-3"
+                    "h-16 flex items-center shrink-0 transition-all border-b border-zinc-100/50 dark:border-zinc-800/50",
+                    isCollapsed ? "justify-center px-0" : "px-6 gap-3"
                 )}>
-                    <div className="w-8 h-8 bg-gradient-to-br from-cyan-500 to-teal-500 rounded-lg flex items-center justify-center text-white text-lg shadow-lg shrink-0">
-                        🦷
-                    </div>
-                    {!isCollapsed && (
-                        <span className="font-bold text-white text-lg tracking-tight truncate animate-in fade-in slide-in-from-left-2 duration-300">
-                            Bem-Querer
-                        </span>
+                    {isCollapsed ? (
+                        <div className="w-8 h-8 bg-indigo-600 dark:bg-primary rounded-md flex items-center justify-center text-white font-bold text-lg shadow-sm">
+                            N
+                        </div>
+                    ) : (
+                        <div className="flex items-center gap-2">
+                            <div className="w-6 h-6 bg-indigo-600 dark:bg-primary rounded flex items-center justify-center shrink-0">
+                                <svg className="w-3 h-3 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M13 10V3L4 14h7v7l9-11h-7z" />
+                                </svg>
+                            </div>
+                            <span className="font-bold text-zinc-900 dark:text-white text-lg tracking-wide animate-in fade-in">
+                                NEXUS
+                            </span>
+                        </div>
                     )}
                 </div>
 
                 {/* Toggle Button */}
                 <button
                     onClick={() => setIsCollapsed(!isCollapsed)}
-                    className="absolute -right-3 top-20 w-6 h-6 bg-gray-800 border border-gray-700 rounded-full flex items-center justify-center text-gray-400 hover:text-white shadow-lg z-40 transition-colors"
+                    className="absolute -right-3 top-20 w-6 h-6 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-700 rounded-full flex items-center justify-center text-zinc-400 hover:text-zinc-600 dark:hover:text-white shadow-md z-40 transition-colors hover:bg-zinc-50 dark:hover:bg-zinc-800"
                 >
-                    {isCollapsed ? <ChevronRight size={14} /> : <ChevronLeft size={14} />}
+                    {isCollapsed ? <ChevronRightIcon className="w-3 h-3" /> : <ChevronLeftIcon className="w-3 h-3" />}
                 </button>
 
-                {/* Search / Context */}
-                {!isCollapsed && (
-                    <div className="p-4 shrink-0">
-                        <div className="relative group">
-                            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-500 group-focus-within:text-cyan-400 transition-colors" />
-                            <input
-                                type="text"
-                                placeholder="Buscar..."
-                                className="w-full bg-gray-900/50 text-white placeholder-gray-500 pl-10 pr-4 py-2 rounded-lg text-sm border border-gray-800 focus:border-cyan-500/50 focus:ring-2 focus:ring-cyan-500/10 transition-all"
-                            />
-                        </div>
-                    </div>
-                )}
-                {isCollapsed && (
-                    <div className="flex justify-center p-4">
-                        <Search className="w-5 h-5 text-gray-500" />
-                    </div>
-                )}
-
                 {/* Navigation Items */}
-                <nav className="flex-1 overflow-y-auto px-3 py-4 space-y-6 scrollbar-hide">
+                <nav className="flex-1 overflow-y-auto px-3 py-6 space-y-8 scrollbar-hide">
                     {/* Main Menu */}
                     <div>
                         {!isCollapsed && (
-                            <p className="text-[10px] font-bold text-gray-500 uppercase tracking-widest px-3 mb-3">Principal</p>
+                            <p className="text-[11px] font-semibold text-zinc-400 dark:text-zinc-500 uppercase tracking-wider px-3 mb-2">Plataforma</p>
                         )}
                         <div className="space-y-1">
                             {navItems.map(item => (
@@ -157,7 +180,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ currentView, setCurrentView })
                     {/* Settings Menu */}
                     <div>
                         {!isCollapsed && (
-                            <p className="text-[10px] font-bold text-gray-500 uppercase tracking-widest px-3 mb-3">Configurações</p>
+                            <p className="text-[11px] font-semibold text-zinc-400 dark:text-zinc-500 uppercase tracking-wider px-3 mb-2">Administração</p>
                         )}
                         <div className="space-y-1">
                             {configItems.map(item => (
@@ -166,26 +189,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ currentView, setCurrentView })
                         </div>
                     </div>
                 </nav>
-
-                {/* User Profile (Bottom) */}
-                <div className="p-4 border-t border-gray-800 bg-gray-950/50">
-                    <div className={clsx(
-                        "flex items-center gap-3 cursor-pointer hover:bg-gray-800/50 p-2 rounded-lg transition-all",
-                        isCollapsed ? "justify-center" : ""
-                    )}>
-                        <Avatar className="w-9 h-9 border-2 border-gray-800 shrink-0">
-                            <AvatarImage src="https://ui-avatars.com/api/?name=Ana+Silva&background=00ACC1&color=fff" />
-                            <AvatarFallback>AS</AvatarFallback>
-                        </Avatar>
-                        {!isCollapsed && (
-                            <div className="flex-1 min-w-0 animate-in fade-in slide-in-from-left-2 duration-300">
-                                <p className="text-sm font-medium text-white truncate">Dra. Ana Silva</p>
-                                <p className="text-[10px] text-gray-500 uppercase font-bold tracking-wider truncate">Dentista Admin</p>
-                            </div>
-                        )}
-                    </div>
-                </div>
             </motion.aside>
-        </TooltipProvider>
+        </>
     );
 };

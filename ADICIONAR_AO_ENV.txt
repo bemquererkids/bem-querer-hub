@@ -1,0 +1,25 @@
+"""
+INSTRUÇÕES: Adicione estas linhas ao arquivo backend/.env
+
+IMPORTANTE: Abra o arquivo backend/.env e adicione as linhas abaixo.
+Se o arquivo não existir, crie ele copiando o backend/.env.example
+
+==============================================================
+COPIE E COLE ESTAS LINHAS NO ARQUIVO backend/.env:
+==============================================================
+
+# UazAPI WhatsApp Gateway
+UAZAPI_BASE_URL=https://free.uazapi.com
+UAZAPI_TOKEN=f2b56a94-37e1-4e6d-8921-7da54069d797
+UAZAPI_ADMIN_TOKEN=ZaW1qwTEkuq7Ub1cBUuyMiK5bNSu3nnMQ9lh7klElc2clSRV8t
+UAZAPI_INSTANCE=bemquerer
+
+==============================================================
+
+DEPOIS DE ADICIONAR:
+1. Salve o arquivo backend/.env
+2. Execute novamente: python test_whatsapp_integration.py
+
+ATENÇÃO: O arquivo .env está no .gitignore, então suas credenciais
+estão seguras e não serão enviadas para o GitHub.
+"""

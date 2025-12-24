@@ -6,6 +6,7 @@ from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
 from app.core.security import TenantMiddleware
 from app.api import webhooks, crm, integration, clinicorp_webhook, chat
+from app.routers import whatsapp
 
 app = FastAPI(
     title="Bem-Querer Hub API",
@@ -63,6 +64,7 @@ main_router.include_router(crm.router)
 main_router.include_router(integration.router)
 main_router.include_router(clinicorp_webhook.router)
 main_router.include_router(chat.router)
+main_router.include_router(whatsapp.router, prefix="/whatsapp", tags=["WhatsApp"])
 
 app.include_router(main_router)
 

@@ -1,10 +1,11 @@
 import React, { useState, useEffect } from 'react';
 import { ChatSidebar } from './ChatSidebar';
 import { ChatWindow } from './ChatWindow';
+import { WhatsAppEmptyState } from './WhatsAppEmptyState';
 import { chatService } from '../../services/api';
 import { ChatContact, ChatMessage } from '../../types/chat';
 import { Card } from '../ui/card';
-import { Loader2 } from 'lucide-react';
+import { RefreshCw } from 'lucide-react';
 
 export const ChatLayout: React.FC = () => {
     const [chats, setChats] = useState<ChatContact[]>([]);
@@ -12,25 +13,32 @@ export const ChatLayout: React.FC = () => {
     const [messages, setMessages] = useState<ChatMessage[]>([]);
     const [loading, setLoading] = useState(true);
 
-    // 1. Fetch Chat List
+    // Fetch Chat List with timeout
     useEffect(() => {
         const fetchChats = async () => {
             try {
                 const data = await chatService.getChats();
                 setChats(data);
-                if (data.length > 0 && !activeChatId) {
-                    // Do not auto-select to avoid noise, or select first
-                }
             } catch (error) {
                 console.error("Failed to fetch chats", error);
+                setChats([]);
             } finally {
                 setLoading(false);
             }
         };
-        fetchChats();
+
+        // Reduced timeout from 5s to 3s
+        const timeout = setTimeout(() => {
+            setLoading(false);
+            setChats([]);
+        }, 3000);
+
+        fetchChats().then(() => clearTimeout(timeout));
+
+        return () => clearTimeout(timeout);
     }, []);
 
-    // 2. Fetch Messages when Active Chat changes
+    // Fetch Messages when Active Chat changes
     useEffect(() => {
         if (!activeChatId) return;
 
@@ -46,28 +54,41 @@ export const ChatLayout: React.FC = () => {
     }, [activeChatId]);
 
     const handleSendMessage = (text: string) => {
-        // Optimistic update logic is now handled inside ChatWindow for better UX
-        // but we keep the state sync here if needed for global context
+        // Optimistic update logic handled in ChatWindow
     };
 
     const activeChat = chats.find(c => c.id === activeChatId);
 
     if (loading) {
-        return <div className="h-full flex items-center justify-center bg-white rounded-xl shadow-sm"><Loader2 className="animate-spin text-blue-500 w-8 h-8" /></div>;
+        return (
+            <div className="h-full flex items-center justify-center bg-white dark:bg-card rounded-lg">
+                <div className="flex flex-col items-center gap-2">
+                    <RefreshCw className="animate-spin text-indigo-600 dark:text-primary w-8 h-8" />
+                    <p className="text-sm text-zinc-500 dark:text-muted-foreground">Carregando conversas...</p>
+                </div>
+            </div>
+        );
+    }
+
+    // Show empty state if no chats available (WhatsApp not connected)
+    if (chats.length === 0) {
+        return <WhatsAppEmptyState />;
     }
 
     return (
-        <Card className="h-full flex overflow-hidden border-border shadow-sm rounded-xl bg-white">
-            <ChatSidebar
-                chats={chats}
-                activeChatId={activeChatId}
-                onSelectChat={setActiveChatId}
-            />
-            <ChatWindow
-                chat={activeChat}
-                messages={activeChatId ? messages : []}
-                onSendMessage={handleSendMessage}
-            />
-        </Card>
+        <div className="h-full animate-in fade-in slide-in-from-bottom-4 duration-300">
+            <Card className="h-full flex overflow-hidden border-zinc-200 dark:border-border shadow-sm rounded-lg bg-white dark:bg-card">
+                <ChatSidebar
+                    chats={chats}
+                    activeChatId={activeChatId}
+                    onSelectChat={setActiveChatId}
+                />
+                <ChatWindow
+                    chat={activeChat}
+                    messages={activeChatId ? messages : []}
+                    onSendMessage={handleSendMessage}
+                />
+            </Card>
+        </div>
     );
 };

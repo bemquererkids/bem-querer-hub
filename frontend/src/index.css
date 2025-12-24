@@ -3,100 +3,110 @@
 @tailwind utilities;
 
 /* ========================================
-   DESIGN SYSTEM: JAMPACK-INSPIRED
-   Turquoise/Teal Theme + Ultra Clean
+   DESIGN SYSTEM: NEXUS (Catalyst Pro)
+   Monochrome / Zinc Theme + Ultra Clean
    ======================================== */
 
 @layer base {
   :root {
-    /* Base Colors - Jampack Clean Style */
+    /* =========================================
+       PURPLE/INDIGO THEME - LIGHT MODE
+       ========================================= */
+
+    /* Base Layout */
     --background: 0 0% 100%;
-    /* Pure White */
-    --foreground: 222 47% 11%;
-    /* Dark Slate for Text */
+    /* White */
+    --foreground: 240 10% 3.9%;
+    /* Zinc-950 */
 
-    /* Turquoise/Teal Primary Palette (Jampack Style) */
-    --primary: 178 76% 52%;
-    /* Turquoise #47C1BF - Main Brand */
-    --primary-hover: 178 76% 45%;
-    /* Darker on hover */
+    /* Primary Brand: Indigo (Purple Theme) */
+    --primary: 249 98% 67%;
+    /* Indigo-500 (#6366f1) */
     --primary-foreground: 0 0% 100%;
-    /* White text on teal */
+    /* White */
 
-    /* Secondary - Neutral Grays */
-    --secondary: 220 14% 96%;
-    /* Very Light Gray Bg */
-    --secondary-foreground: 222 47% 11%;
-    /* Dark text */
-
-    /* Accent - Soft Teal for highlights */
-    --accent: 178 60% 96%;
-    /* Very light teal */
-    --accent-foreground: 178 76% 32%;
-    /* Dark teal text */
-
-    /* UI Elements */
-    --muted: 220 14% 96%;
-    /* Light gray background */
-    --muted-foreground: 220 9% 46%;
-    /* Medium gray text */
-
+    /* UI Surfaces */
     --card: 0 0% 100%;
-    /* White cards */
-    --card-foreground: 222 47% 11%;
-
+    --card-foreground: 240 10% 3.9%;
     --popover: 0 0% 100%;
-    --popover-foreground: 222 47% 11%;
+    --popover-foreground: 240 10% 3.9%;
+
+    /* Secondary / Muted - Subtle Purple Tint */
+    --secondary: 250 100% 98%;
+    /* Indigo-50 */
+    --secondary-foreground: 249 98% 67%;
+    /* Indigo-500 */
+    --muted: 240 4.8% 95.9%;
+    /* Zinc-100 (neutral backgrounds) */
+    --muted-foreground: 240 3.8% 46.1%;
+    /* Zinc-500 */
+    --accent: 250 100% 98%;
+    /* Indigo-50 */
+    --accent-foreground: 249 98% 67%;
+    /* Indigo-500 */
 
     /* Borders & Inputs */
-    --border: 220 13% 91%;
-    /* Subtle gray borders */
-    --input: 220 13% 91%;
-    --ring: 178 76% 52%;
-    /* Teal focus ring */
+    --border: 240 5.9% 90%;
+    /* Zinc-200 */
+    --input: 240 5.9% 90%;
+    --ring: 249 98% 67%;
+    /* Indigo-500 Focus Ring */
 
-    /* States */
-    --destructive: 0 84% 60%;
-    /* Red for errors */
+    /* Status */
+    --destructive: 0 84.2% 60.2%;
     --destructive-foreground: 0 0% 98%;
 
-    /* Jampack-specific additions */
-    --radius: 0.75rem;
-    /* 12px - Rounded corners */
-    --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.05);
-    --shadow: 0 1px 3px 0 rgb(0 0 0 / 0.1), 0 1px 2px -1px rgb(0 0 0 / 0.1);
-    --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
-    --shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1);
+    /* Radius */
+    --radius: 0.5rem;
+    /* 8px */
   }
 
+
   .dark {
-    --background: 224 71% 4%;
-    --foreground: 213 31% 91%;
+    /* =========================================
+       DARK THEME: DEEP NAVY + INDIGO (USER REQUEST)
+       ========================================= */
 
-    --primary: 178 76% 52%;
-    --primary-foreground: 0 0% 100%;
+    /* Base Layout - Deep Navy (Slate-950) */
+    --background: 222 47% 4%;
+    /* #020617 (Slate-950) */
+    --foreground: 210 40% 98%;
+    /* #f8fafc */
 
-    --secondary: 222 47% 11%;
-    --secondary-foreground: 213 31% 91%;
+    /* Primary Brand: Vivid Indigo */
+    --primary: 249 98% 67%;
+    /* Indigo-500 (#6366f1) */
+    --primary-foreground: 210 40% 98%;
+    /* White */
 
-    --accent: 216 34% 17%;
+    /* UI Surfaces - Slate-900 */
+    --card: 222 47% 11%;
+    /* #0f172a (Slate-900) */
+    --card-foreground: 210 40% 98%;
+    --popover: 222 47% 11%;
+    --popover-foreground: 210 40% 98%;
+
+    /* Secondary */
+    --secondary: 217 33% 20%;
+    /* Slate-800 */
+    --secondary-foreground: 210 40% 98%;
+    --muted: 217 33% 17%;
+    /* Slate-800/900 mix */
+    --muted-foreground: 215 20.2% 65.1%;
+    /* Slate-400 */
+    --accent: 249 98% 67%;
+    /* Indigo-500 (Same as primary for consistency in accents) */
     --accent-foreground: 210 40% 98%;
 
-    --muted: 223 47% 11%;
-    --muted-foreground: 215 20% 65%;
+    /* Borders */
+    --border: 217 33% 17%;
+    /* Slate-800 - Subtle divider */
+    --input: 217 33% 17%;
+    --ring: 249 98% 67%;
+    /* Indigo Ring */
 
-    --card: 224 71% 4%;
-    --card-foreground: 213 31% 91%;
-
-    --popover: 224 71% 4%;
-    --popover-foreground: 213 31% 91%;
-
-    --border: 216 34% 17%;
-    --input: 216 34% 17%;
-    --ring: 178 76% 52%;
-
-    --destructive: 0 63% 31%;
-    --destructive-foreground: 210 40% 98%;
+    --destructive: 0 62.8% 30.6%;
+    --destructive-foreground: 0 0% 98%;
   }
 }
 
@@ -116,7 +126,7 @@
     scroll-behavior: smooth;
   }
 
-  /* Focus styles - Jampack inspired */
+  /* Focus styles - Professional */
   *:focus-visible {
     @apply outline-none ring-2 ring-ring ring-offset-2 ring-offset-background;
   }
@@ -128,14 +138,20 @@
 
 @layer utilities {
 
-  /* Jampack-style card hover effect */
+  /* Catalyst Card Hover */
   .card-hover {
     @apply transition-all duration-200 hover:shadow-lg hover:-translate-y-1;
   }
 
-  /* Glassmorphism effect */
+  /* Glassmorphism effect with purple tint */
   .glass {
     background: rgba(255, 255, 255, 0.95);
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+  }
+
+  .glass-purple {
+    background: rgba(249, 245, 255, 0.95);
     backdrop-filter: blur(10px);
     -webkit-backdrop-filter: blur(10px);
   }
@@ -145,13 +161,13 @@
     @apply transition-all duration-300;
   }
 
-  /* Text gradient - Teal */
-  .text-gradient-teal {
-    @apply bg-gradient-to-r from-cyan-500 to-teal-400 bg-clip-text text-transparent;
+  /* Text gradient - Purple/Indigo */
+  .text-gradient-purple {
+    @apply bg-gradient-to-r from-indigo-600 via-purple-600 to-indigo-600 bg-clip-text text-transparent;
   }
 
-  /* Diagonal gradient background (like Jampack headers) */
-  .bg-teal-diagonal {
-    background: linear-gradient(135deg, rgba(71, 193, 191, 0.1) 0%, rgba(255, 255, 255, 0) 50%);
+  /* Legacy mono gradient (keep for backwards compatibility) */
+  .text-gradient-mono {
+    @apply bg-gradient-to-r from-zinc-900 to-zinc-600 bg-clip-text text-transparent;
   }
 }
