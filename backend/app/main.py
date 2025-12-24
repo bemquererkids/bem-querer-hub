@@ -55,8 +55,8 @@ async def whatsapp_status():
                 "token_set": bool(token)
             }
         
-        # Chamar UazAPI
-        url = f"{base_url}/instance/connectionState/{instance}"
+        # Chamar UazAPI - endpoint correto
+        url = f"{base_url}/instance/status"
         headers = {
             "apikey": token,
             "Content-Type": "application/json"
@@ -66,8 +66,17 @@ async def whatsapp_status():
             response = await client.get(url, headers=headers)
             data = response.json()
             
+            # Verificar se está conectado
+            is_connected = False
+            if isinstance(data, dict):
+                is_connected = (
+                    data.get("state") == "open" or 
+                    data.get("status") == "connected" or
+                    data.get("connected") == True
+                )
+            
             return {
-                "connected": data.get("state") == "open",
+                "connected": is_connected,
                 "status": data,
                 "config": {
                     "base_url": base_url,
@@ -92,8 +101,8 @@ async def whatsapp_connect():
         if not base_url or not token:
             raise HTTPException(status_code=500, detail="Variáveis não configuradas")
         
-        # Chamar UazAPI para gerar QR
-        url = f"{base_url}/instance/connect/{instance}"
+        # Chamar UazAPI para gerar QR - endpoint correto
+        url = f"{base_url}/instance/qrcode"
         headers = {
             "apikey": token,
             "Content-Type": "application/json"
@@ -104,10 +113,18 @@ async def whatsapp_connect():
             data = response.json()
             
             # Extrair QR Code
-            qrcode = data.get("qrcode") or data.get("base64")
+            qrcode = (
+                data.get("qrcode") or 
+                data.get("base64") or
+                data.get("code") or
+                data.get("pairingCode")
+            )
             
             if not qrcode:
-                raise HTTPException(status_code=500, detail="QR Code não retornado")
+                raise HTTPException(
+                    status_code=500, 
+                    detail=f"QR Code não retornado. Resposta: {data}"
+                )
             
             return {
                 "success": True,
