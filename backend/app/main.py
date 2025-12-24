@@ -58,7 +58,7 @@ async def whatsapp_status():
         # Chamar UazAPI - endpoint correto
         url = f"{base_url}/instance/status"
         headers = {
-            "apikey": token,
+            "Authorization": f"Bearer {token}",
             "Content-Type": "application/json"
         }
         
@@ -104,7 +104,7 @@ async def whatsapp_connect():
         # Chamar UazAPI para gerar QR - endpoint correto
         url = f"{base_url}/instance/qrcode"
         headers = {
-            "apikey": token,
+            "Authorization": f"Bearer {token}",
             "Content-Type": "application/json"
         }
         
