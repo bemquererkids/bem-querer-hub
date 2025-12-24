@@ -1,10 +1,16 @@
 """
-Bem-Querer Hub - VERSÃO MÍNIMA PARA DEBUG
+Bem-Querer Hub - FastAPI Backend
+Main Application Entry Point
 """
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi import APIRouter
 
-app = FastAPI(title="Bem-Querer Hub API - DEBUG")
+app = FastAPI(
+    title="Bem-Querer Hub API",
+    description="Sistema de CRM e WhatsApp para clínicas",
+    version="1.0.0"
+)
 
 # CORS
 app.add_middleware(
@@ -15,15 +21,15 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-@app.get("/")
-async def root():
-    return {"status": "ok", "message": "API funcionando!"}
+# Router principal
+main_router = APIRouter(prefix="/api")
 
-@app.get("/api/health")
+# Debug endpoints
+@main_router.get("/health")
 async def health():
-    return {"status": "healthy", "version": "minimal"}
+    return {"status": "healthy", "version": "1.0"}
 
-@app.get("/api/debug/env")
+@main_router.get("/debug/env")
 async def debug_env():
     import os
     return {
@@ -31,3 +37,20 @@ async def debug_env():
         "UAZAPI_TOKEN_SET": bool(os.getenv("UAZAPI_TOKEN")),
         "UAZAPI_INSTANCE": os.getenv("UAZAPI_INSTANCE", "NOT_SET"),
     }
+
+# Import routers essenciais
+from app.api import integration, webhooks, crm, clinicorp_webhook
+from app.routers import whatsapp
+
+# Registrar routers
+main_router.include_router(integration.router)
+main_router.include_router(webhooks.router)
+main_router.include_router(crm.router)
+main_router.include_router(clinicorp_webhook.router)
+main_router.include_router(whatsapp.router, prefix="/whatsapp", tags=["WhatsApp"])
+
+app.include_router(main_router)
+
+@app.get("/")
+async def root():
+    return {"status": "ok", "message": "Bem-Querer Hub API", "version": "1.0.0"}
