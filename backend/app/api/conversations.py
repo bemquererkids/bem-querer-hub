@@ -6,7 +6,7 @@ from fastapi import APIRouter, HTTPException
 from typing import List, Optional
 from pydantic import BaseModel
 from app.services.gpt_service import gpt_service
-from app.core.database import get_supabase_client
+from app.core.database import get_supabase
 from datetime import datetime
 
 router = APIRouter(prefix="/api/conversations", tags=["Conversations"])
@@ -39,7 +39,7 @@ async def chat_with_carol(request: MessageRequest):
     Cria nova thread se thread_id não for fornecido.
     """
     try:
-        supabase = get_supabase_client()
+        supabase = get_supabase()
         
         # 1. Criar ou usar thread existente
         if not request.thread_id:
@@ -130,7 +130,7 @@ async def list_threads(clinica_id: str, limit: int = 50):
     Listar threads de conversa de uma clínica.
     """
     try:
-        supabase = get_supabase_client()
+        supabase = get_supabase()
         response = supabase.table("conversation_threads").select(
             "id, titulo, status, criado_em, atualizado_em"
         ).eq(
@@ -151,7 +151,7 @@ async def get_thread_messages(thread_id: str):
     Obter todas as mensagens de uma thread.
     """
     try:
-        supabase = get_supabase_client()
+        supabase = get_supabase()
         response = supabase.rpc(
             "obter_historico_thread",
             {
@@ -172,7 +172,7 @@ async def archive_thread(thread_id: str):
     Arquivar thread (soft delete).
     """
     try:
-        supabase = get_supabase_client()
+        supabase = get_supabase()
         supabase.table("conversation_threads").update({
             "status": "arquivada"
         }).eq("id", thread_id).execute()

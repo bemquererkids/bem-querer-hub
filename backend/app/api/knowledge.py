@@ -6,7 +6,7 @@ from fastapi import APIRouter, UploadFile, File, HTTPException, Depends
 from typing import List, Optional
 from pydantic import BaseModel
 from app.services.embedding_service import embedding_service
-from app.core.database import get_supabase_client
+from app.core.database import get_supabase
 import PyPDF2
 import io
 
@@ -65,7 +65,7 @@ async def upload_document(
             raise HTTPException(status_code=400, detail="Formato não suportado. Use PDF ou TXT")
         
         # Salvar documento no banco
-        supabase = get_supabase_client()
+        supabase = get_supabase()
         doc_response = supabase.table("documentos_conhecimento").insert({
             "clinica_id": clinica_id,
             "titulo": titulo or file.filename,
@@ -97,7 +97,7 @@ async def create_text_document(doc: DocumentCreate):
     Criar documento a partir de texto direto (sem upload de arquivo).
     """
     try:
-        supabase = get_supabase_client()
+        supabase = get_supabase()
         
         # Salvar documento
         doc_response = supabase.table("documentos_conhecimento").insert({
@@ -129,7 +129,7 @@ async def list_documents(clinica_id: str):
     Listar todos os documentos de uma clínica.
     """
     try:
-        supabase = get_supabase_client()
+        supabase = get_supabase()
         response = supabase.table("documentos_conhecimento").select(
             "id, titulo, tipo, ativo, criado_em"
         ).eq("clinica_id", clinica_id).eq("ativo", True).execute()
@@ -146,7 +146,7 @@ async def delete_document(documento_id: str):
     Deletar documento (soft delete - marca como inativo).
     """
     try:
-        supabase = get_supabase_client()
+        supabase = get_supabase()
         supabase.table("documentos_conhecimento").update({
             "ativo": False
         }).eq("id", documento_id).execute()
