@@ -5,7 +5,7 @@ Main Application Entry Point
 from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
 from app.core.security import TenantMiddleware
-from app.api import webhooks, crm, integration, clinicorp_webhook, chat, knowledge, conversations
+from app.api import webhooks, crm, integration, clinicorp_webhook, chat, knowledge, conversations, debug
 from app.routers import whatsapp
 
 app = FastAPI(
@@ -59,6 +59,7 @@ from fastapi import APIRouter
 main_router = APIRouter(prefix="/api")
 
 # Include Routers with /api prefix
+main_router.include_router(debug.router)  # Debug endpoint (FIRST for easy access)
 main_router.include_router(webhooks.router)
 main_router.include_router(crm.router)
 main_router.include_router(integration.router)
