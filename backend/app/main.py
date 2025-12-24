@@ -5,7 +5,7 @@ Main Application Entry Point
 from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
 from app.core.security import TenantMiddleware
-from app.api import webhooks, crm, integration, clinicorp_webhook, chat
+from app.api import webhooks, crm, integration, clinicorp_webhook, chat, knowledge, conversations
 from app.routers import whatsapp
 
 app = FastAPI(
@@ -65,6 +65,8 @@ main_router.include_router(integration.router)
 main_router.include_router(clinicorp_webhook.router)
 main_router.include_router(chat.router)
 main_router.include_router(whatsapp.router, prefix="/whatsapp", tags=["WhatsApp"])
+main_router.include_router(knowledge.router)  # Knowledge Base (Documents & Embeddings)
+main_router.include_router(conversations.router)  # Conversations with Carol
 
 app.include_router(main_router)
 
