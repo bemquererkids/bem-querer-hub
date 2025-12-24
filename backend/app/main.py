@@ -2,9 +2,11 @@
 Bem-Querer Hub - FastAPI Backend
 Main Application Entry Point
 """
-from fastapi import FastAPI
+from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi import APIRouter
+import httpx
+import os
 
 app = FastAPI(
     title="Bem-Querer Hub API",
@@ -31,23 +33,91 @@ async def health():
 
 @main_router.get("/debug/env")
 async def debug_env():
-    import os
     return {
         "UAZAPI_BASE_URL": os.getenv("UAZAPI_BASE_URL", "NOT_SET"),
         "UAZAPI_TOKEN_SET": bool(os.getenv("UAZAPI_TOKEN")),
         "UAZAPI_INSTANCE": os.getenv("UAZAPI_INSTANCE", "NOT_SET"),
     }
 
-# Import routers essenciais
-from app.api import integration, webhooks, crm, clinicorp_webhook
-from app.routers import whatsapp
+# WhatsApp Status - Implementação direta
+@main_router.get("/integrations/whatsapp/status")
+async def whatsapp_status():
+    try:
+        base_url = os.getenv("UAZAPI_BASE_URL")
+        token = os.getenv("UAZAPI_TOKEN")
+        instance = os.getenv("UAZAPI_INSTANCE", "bemquerer")
+        
+        if not base_url or not token:
+            return {
+                "connected": False,
+                "error": "Variáveis não configuradas",
+                "base_url": base_url,
+                "token_set": bool(token)
+            }
+        
+        # Chamar UazAPI
+        url = f"{base_url}/instance/connectionState/{instance}"
+        headers = {
+            "apikey": token,
+            "Content-Type": "application/json"
+        }
+        
+        async with httpx.AsyncClient(timeout=10.0) as client:
+            response = await client.get(url, headers=headers)
+            data = response.json()
+            
+            return {
+                "connected": data.get("state") == "open",
+                "status": data,
+                "config": {
+                    "base_url": base_url,
+                    "instance": instance
+                }
+            }
+    except Exception as e:
+        return {
+            "connected": False,
+            "error": str(e),
+            "error_type": type(e).__name__
+        }
 
-# Registrar routers
-main_router.include_router(integration.router)
-main_router.include_router(webhooks.router)
-main_router.include_router(crm.router)
-main_router.include_router(clinicorp_webhook.router)
-main_router.include_router(whatsapp.router, prefix="/whatsapp", tags=["WhatsApp"])
+# WhatsApp Connect - Implementação direta
+@main_router.post("/integrations/whatsapp/connect")
+async def whatsapp_connect():
+    try:
+        base_url = os.getenv("UAZAPI_BASE_URL")
+        token = os.getenv("UAZAPI_TOKEN")
+        instance = os.getenv("UAZAPI_INSTANCE", "bemquerer")
+        
+        if not base_url or not token:
+            raise HTTPException(status_code=500, detail="Variáveis não configuradas")
+        
+        # Chamar UazAPI para gerar QR
+        url = f"{base_url}/instance/connect/{instance}"
+        headers = {
+            "apikey": token,
+            "Content-Type": "application/json"
+        }
+        
+        async with httpx.AsyncClient(timeout=20.0) as client:
+            response = await client.get(url, headers=headers)
+            data = response.json()
+            
+            # Extrair QR Code
+            qrcode = data.get("qrcode") or data.get("base64")
+            
+            if not qrcode:
+                raise HTTPException(status_code=500, detail="QR Code não retornado")
+            
+            return {
+                "success": True,
+                "qrcode": qrcode,
+                "instance": instance
+            }
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Erro: {str(e)}")
 
 app.include_router(main_router)
 
