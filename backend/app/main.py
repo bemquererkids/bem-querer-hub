@@ -5,8 +5,9 @@ Main Application Entry Point
 from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
 from app.core.security import TenantMiddleware
-from app.api import webhooks, crm, integration, clinicorp_webhook, chat, debug
-# Temporariamente desabilitado para debug
+from app.api import webhooks, crm, integration, clinicorp_webhook, debug
+# Temporariamente desabilitado para debug (importa gpt_service que importa Carol)
+# from app.api import chat
 # from app.api import knowledge, conversations
 from app.routers import whatsapp
 
@@ -60,15 +61,14 @@ app.add_middleware(TenantMiddleware)
 from fastapi import APIRouter
 main_router = APIRouter(prefix="/api")
 
-# Include Routers with /api prefix
-main_router.include_router(debug.router)  # Debug endpoint (FIRST for easy access)
+# Include Routers with /api prefix - APENAS ESSENCIAIS PARA WHATSAPP
+main_router.include_router(debug.router)
 main_router.include_router(webhooks.router)
 main_router.include_router(crm.router)
 main_router.include_router(integration.router)
 main_router.include_router(clinicorp_webhook.router)
-main_router.include_router(chat.router)
+# main_router.include_router(chat.router)  # Desabilitado (importa Carol)
 main_router.include_router(whatsapp.router, prefix="/whatsapp", tags=["WhatsApp"])
-# Temporariamente desabilitado para debug
 # main_router.include_router(knowledge.router)
 # main_router.include_router(conversations.router)
 
