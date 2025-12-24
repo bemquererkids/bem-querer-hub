@@ -47,6 +47,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ currentView, setCurrentView, i
         { id: 'clinic-config' as ViewType, icon: BuildingOfficeIcon, label: 'Clínica' },
         { id: 'modules-settings' as ViewType, icon: CubeIcon, label: 'Módulos' },
         { id: 'invite-management' as ViewType, icon: UserPlusIcon, label: 'Gerenciar Acessos' },
+        { id: 'settings' as ViewType, icon: Cog6ToothIcon, label: 'Configurações' },
     ];
 
     const handleNavClick = (id: ViewType) => {

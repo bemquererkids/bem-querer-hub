@@ -10,6 +10,7 @@ import { DashboardHome } from './components/dashboard/DashboardHome';
 import { FollowUpPage } from './components/crm/FollowUpPage';
 import { LoginPage } from './components/auth/LoginPage';
 import { SignUpPage } from './components/auth/SignUpPage';
+import { SettingsPage } from './pages/SettingsPage';
 import { fadeIn } from './utils/animations';
 import { Sidebar, ViewType } from './components/layout/Sidebar';
 import { Navbar } from './components/layout/Navbar';
@@ -63,6 +64,7 @@ function AppContent() {
                             {currentView === 'clinic-config' && <IntegrationsSettings />}
                             {currentView === 'modules-settings' && <ModulesSettingsPage />}
                             {currentView === 'invite-management' && <InviteManagementPage />}
+                            {currentView === 'settings' && <SettingsPage />}
                         </motion.div>
                     </AnimatePresence>
                 </main>
