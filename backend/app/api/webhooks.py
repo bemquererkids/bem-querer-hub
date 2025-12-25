@@ -49,14 +49,21 @@ async def save_whatsapp_message(
     Creates or updates conversation and adds message.
     Multi-tenant: isolated by clinic_id.
     """
+    logger.info(f"=== SAVE_WHATSAPP_MESSAGE CALLED ===")
+    logger.info(f"clinic_id: {clinic_id}, phone: {phone}, content: {content[:50]}...")
+    
     try:
         supabase = get_supabase()
+        logger.info("Supabase client obtained")
         
         # 1. Get or create conversation (filtered by clinic_id)
+        logger.info(f"Querying conversation for phone={phone}, clinic_id={clinic_id}")
         conversation_res = supabase.table('whatsapp_conversations').select('*').eq('phone_number', phone).eq('clinic_id', clinic_id).execute()
+        logger.info(f"Conversation query result: {len(conversation_res.data) if conversation_res.data else 0} rows")
         
         if not conversation_res.data:
             # Create new conversation
+            logger.info("Creating new conversation")
             new_conversation = {
                 "clinic_id": clinic_id,
                 "phone_number": phone,
@@ -66,12 +73,15 @@ async def save_whatsapp_message(
                 "unread_count": 0 if is_from_me else 1,
                 "tags": []
             }
+            logger.info(f"Inserting conversation: {new_conversation}")
             conv_res = supabase.table('whatsapp_conversations').insert(new_conversation).execute()
             conversation_id = conv_res.data[0]['id']
+            logger.info(f"Conversation created with ID: {conversation_id}")
         else:
             # Update existing conversation
             conversation_id = conversation_res.data[0]['id']
             current_unread = conversation_res.data[0].get('unread_count', 0)
+            logger.info(f"Updating existing conversation ID: {conversation_id}")
             
             supabase.table('whatsapp_conversations').update({
                 "last_message": content,
@@ -79,8 +89,10 @@ async def save_whatsapp_message(
                 "unread_count": current_unread + (0 if is_from_me else 1),
                 "updated_at": datetime.now().isoformat()
             }).eq('id', conversation_id).execute()
+            logger.info("Conversation updated")
         
         # 2. Save message
+        logger.info(f"Saving message to conversation {conversation_id}")
         new_message = {
             "clinic_id": clinic_id,
             "conversation_id": conversation_id,
@@ -95,11 +107,15 @@ async def save_whatsapp_message(
             "is_from_me": is_from_me
         }
         
+        logger.info(f"Inserting message: {new_message}")
         supabase.table('whatsapp_messages').insert(new_message).execute()
-        logger.info(f"WhatsApp message saved: {message_id} from {phone} (clinic: {clinic_id})")
+        logger.info(f"✅ WhatsApp message saved: {message_id} from {phone} (clinic: {clinic_id})")
         
     except Exception as e:
-        logger.error(f"Error saving WhatsApp message: {e}")
+        logger.error(f"❌ Error saving WhatsApp message: {e}")
+        logger.error(f"Exception type: {type(e).__name__}")
+        import traceback
+        logger.error(f"Traceback: {traceback.format_exc()}")
         # Don't raise - we don't want to break the webhook if this fails
 
 class UazApiMessage(BaseModel):
