@@ -8,7 +8,7 @@ import logging
 
 logger = logging.getLogger(__name__)
 
-router = APIRouter(prefix="/webhooks", tags=["webhooks"])
+router = APIRouter(prefix="/api/webhooks", tags=["webhooks"])
 
 async def get_clinic_id_from_instance(instance_name: str) -> str:
     """
