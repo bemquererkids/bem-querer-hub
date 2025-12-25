@@ -4,8 +4,103 @@ from app.services.source_detector import LeadSourceDetector
 from pydantic import BaseModel
 from datetime import datetime
 import uuid
+import logging
+
+logger = logging.getLogger(__name__)
 
 router = APIRouter(prefix="/webhooks", tags=["webhooks"])
+
+async def get_clinic_id_from_instance(instance_name: str) -> str:
+    """
+    Maps UazAPI instance name to clinic_id.
+    Returns clinic_id or raises HTTPException if not found.
+    """
+    try:
+        supabase = get_supabase()
+        result = supabase.table('whatsapp_instances').select('clinic_id').eq('instance_name', instance_name).execute()
+        
+        if not result.data or len(result.data) == 0:
+            logger.error(f"Instance not found: {instance_name}")
+            raise HTTPException(status_code=404, detail=f"Instance '{instance_name}' not found")
+        
+        clinic_id = result.data[0]['clinic_id']
+        logger.info(f"Mapped instance '{instance_name}' to clinic_id: {clinic_id}")
+        return clinic_id
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Error mapping instance to clinic: {e}")
+        raise HTTPException(status_code=500, detail=f"Failed to identify clinic: {str(e)}")
+
+async def save_whatsapp_message(
+    clinic_id: str,
+    phone: str,
+    contact_name: str,
+    message_id: str,
+    content: str,
+    message_type: str = "text",
+    media_url: str = None,
+    timestamp: str = None,
+    is_from_me: bool = False
+):
+    """
+    Saves WhatsApp message to database for chat integration.
+    Creates or updates conversation and adds message.
+    Multi-tenant: isolated by clinic_id.
+    """
+    try:
+        supabase = get_supabase()
+        
+        # 1. Get or create conversation (filtered by clinic_id)
+        conversation_res = supabase.table('whatsapp_conversations').select('*').eq('phone_number', phone).eq('clinic_id', clinic_id).execute()
+        
+        if not conversation_res.data:
+            # Create new conversation
+            new_conversation = {
+                "clinic_id": clinic_id,
+                "phone_number": phone,
+                "contact_name": contact_name,
+                "last_message": content,
+                "last_message_at": timestamp or datetime.now().isoformat(),
+                "unread_count": 0 if is_from_me else 1,
+                "tags": []
+            }
+            conv_res = supabase.table('whatsapp_conversations').insert(new_conversation).execute()
+            conversation_id = conv_res.data[0]['id']
+        else:
+            # Update existing conversation
+            conversation_id = conversation_res.data[0]['id']
+            current_unread = conversation_res.data[0].get('unread_count', 0)
+            
+            supabase.table('whatsapp_conversations').update({
+                "last_message": content,
+                "last_message_at": timestamp or datetime.now().isoformat(),
+                "unread_count": current_unread + (0 if is_from_me else 1),
+                "updated_at": datetime.now().isoformat()
+            }).eq('id', conversation_id).execute()
+        
+        # 2. Save message
+        new_message = {
+            "clinic_id": clinic_id,
+            "conversation_id": conversation_id,
+            "message_id": message_id,
+            "from_number": phone if not is_from_me else "system",
+            "to_number": "system" if not is_from_me else phone,
+            "message_type": message_type,
+            "content": content,
+            "media_url": media_url,
+            "timestamp": timestamp or datetime.now().isoformat(),
+            "status": "delivered" if is_from_me else "received",
+            "is_from_me": is_from_me
+        }
+        
+        supabase.table('whatsapp_messages').insert(new_message).execute()
+        logger.info(f"WhatsApp message saved: {message_id} from {phone} (clinic: {clinic_id})")
+        
+    except Exception as e:
+        logger.error(f"Error saving WhatsApp message: {e}")
+        # Don't raise - we don't want to break the webhook if this fails
 
 class UazApiMessage(BaseModel):
     # Modelo simplificado da UazAPI/Baileys
@@ -18,19 +113,27 @@ class UazApiMessage(BaseModel):
 async def receive_whatsapp_message(payload: dict, background_tasks: BackgroundTasks):
     """
     Receives notification from UazAPI (messages, history, connection, etc).
+    Multi-tenant: Maps instance to clinic_id for data isolation.
     """
     try:
         event = payload.get('event', 'messages.upsert')
         instance_id = payload.get('instance', 'main')
         data = payload.get('data', {})
+        
+        # Get clinic_id from instance (multi-tenant mapping)
+        try:
+            clinic_id = await get_clinic_id_from_instance(instance_id)
+        except HTTPException as e:
+            logger.warning(f"Unknown instance '{instance_id}': {e.detail}")
+            return {"status": "error", "message": f"Instance '{instance_id}' not registered"}
 
         # 1. Handle Historical Sync (MASSIVE HISTORY)
         if event == 'messaging-history.set':
             messages = data.get('messages', [])
-            print(f"📦 Recebendo histórico: {len(messages)} mensagens.")
+            print(f"📦 Recebendo histórico: {len(messages)} mensagens (clinic: {clinic_id}).")
             for msg in messages:
-                background_tasks.add_task(process_single_message_data, msg, instance_id)
-            return {"status": "sync_started", "count": len(messages)}
+                background_tasks.add_task(process_single_message_data, msg, instance_id, clinic_id)
+            return {"status": "sync_started", "count": len(messages), "clinic_id": clinic_id}
 
         # 2. Handle Real-time Messages
         if event == 'messages.upsert':
@@ -41,9 +144,9 @@ async def receive_whatsapp_message(payload: dict, background_tasks: BackgroundTa
                 if message_data.get('key', {}).get('fromMe'):
                     continue
                 
-                background_tasks.add_task(process_single_message_data, message_data, instance_id)
+                background_tasks.add_task(process_single_message_data, message_data, instance_id, clinic_id)
             
-            return {"status": "upsert_processed"}
+            return {"status": "upsert_processed", "clinic_id": clinic_id}
 
         return {"status": "event_unhandled", "event": event}
 
@@ -51,9 +154,11 @@ async def receive_whatsapp_message(payload: dict, background_tasks: BackgroundTa
         logger.error(f"Erro no webhook: {e}")
         return {"status": "error", "detail": str(e)}
 
-async def process_single_message_data(data: dict, instance_id: str):
+async def process_single_message_data(data: dict, instance_id: str, clinic_id: str):
     """
     Helper to extract details and queue the lead processor.
+    Also saves message to WhatsApp tables for chat integration.
+    Multi-tenant: uses clinic_id for data isolation.
     """
     try:
         remote_jid = data.get('key', {}).get('remoteJid')
@@ -62,22 +167,47 @@ async def process_single_message_data(data: dict, instance_id: str):
 
         push_name = data.get('pushName', 'Desconhecido')
         message_info = data.get('message', {})
+        message_id = data.get('key', {}).get('id', str(uuid.uuid4()))
+        timestamp = data.get('messageTimestamp')
+        is_from_me = data.get('key', {}).get('fromMe', False)
         
         # Tentar extrair texto
         text_content = ""
+        message_type = "text"
+        media_url = None
+        
         if 'conversation' in message_info:
             text_content = message_info['conversation']
         elif 'extendedTextMessage' in message_info:
             text_content = message_info['extendedTextMessage'].get('text', '')
         elif 'imageMessage' in message_info:
             text_content = message_info['imageMessage'].get('caption', '[Imagem]')
+            message_type = "image"
+            media_url = message_info['imageMessage'].get('url')
         elif 'videoMessage' in message_info:
             text_content = message_info['videoMessage'].get('caption', '[Vídeo]')
+            message_type = "video"
+            media_url = message_info['videoMessage'].get('url')
             
         if not text_content:
             return
 
-        await process_new_lead(remote_jid, push_name, text_content, instance_id)
+        # Save to WhatsApp tables for chat integration
+        await save_whatsapp_message(
+            clinic_id=clinic_id,
+            phone=remote_jid.split('@')[0],
+            contact_name=push_name,
+            message_id=message_id,
+            content=text_content,
+            message_type=message_type,
+            media_url=media_url,
+            timestamp=datetime.fromtimestamp(int(timestamp)).isoformat() if timestamp else None,
+            is_from_me=is_from_me
+        )
+
+        # Process lead (existing functionality)
+        if not is_from_me:
+            await process_new_lead(remote_jid, push_name, text_content, instance_id)
     except Exception as e:
         logger.error(f"Error processing single message: {e}")
 
