@@ -25,9 +25,10 @@ class Settings(BaseSettings):
     # OpenAI (Main Brain)
     OPENAI_API_KEY: Optional[str] = "sk-placeholder"
     
-    # UazAPI
-    UAZAPI_BASE_URL: Optional[str] = "https://free.uazapi.com"
-    UAZAPI_TOKEN: Optional[str] = "placeholder_token"
+    # UazAPI - WhatsApp Gateway
+    # Updated with working credentials (2025-12-25)
+    UAZAPI_BASE_URL: Optional[str] = "https://bemquerer.uazapi.com"
+    UAZAPI_TOKEN: Optional[str] = "093b971c-f10f-4af1-b0aa-a13c6ad15909"
     UAZAPI_ADMIN_TOKEN: Optional[str] = None
     UAZAPI_INSTANCE: Optional[str] = "bemquerer"
     
