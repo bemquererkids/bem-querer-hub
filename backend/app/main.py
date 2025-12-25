@@ -105,6 +105,10 @@ app.include_router(main_router)
 from app.api.webhooks import router as webhooks_router
 app.include_router(webhooks_router)
 
+# Import and include integrations router
+from app.api.integration import router as integration_router
+app.include_router(integration_router)
+
 @app.get("/")
 async def root():
     return {"status": "ok", "message": "Bem-Querer Hub API", "version": "1.0.0"}
