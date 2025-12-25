@@ -9,7 +9,7 @@ import logging
 
 logger = logging.getLogger(__name__)
 
-router = APIRouter(prefix="/integrations", tags=["integrations"])
+router = APIRouter(prefix="/api/integrations", tags=["integrations"])
 
 # --- Schemas ---
 class AvailabilityRequest(BaseModel):
