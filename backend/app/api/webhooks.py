@@ -155,13 +155,20 @@ async def receive_whatsapp_message(payload: dict, background_tasks: BackgroundTa
         if event == 'messages.upsert':
             # Upsert sends a single message or array
             messages = data.get('messages', []) if isinstance(data.get('messages'), list) else [data]
+            logger.info(f"📨 Processing {len(messages)} messages for clinic {clinic_id}")
+            
             for message_data in messages:
+                logger.info(f"Message data: {message_data.get('key', {})}")
+                
                 # Ignorar mensagens enviadas por MIM (fromMe)
                 if message_data.get('key', {}).get('fromMe'):
+                    logger.info("Skipping message fromMe=True")
                     continue
                 
+                logger.info(f"Adding background task for message")
                 background_tasks.add_task(process_single_message_data, message_data, instance_id, clinic_id)
             
+            logger.info(f"✅ {len(messages)} messages queued for processing")
             return {"status": "upsert_processed", "clinic_id": clinic_id}
 
         return {"status": "event_unhandled", "event": event}
