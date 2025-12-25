@@ -236,7 +236,7 @@ export const IntegrationsSettings: React.FC = () => {
                         ) : whatsappStatus === 'qrcode' && qrCode ? (
                             <div className="flex flex-col items-center justify-center py-2">
                                 <img
-                                    src={qrCode.startsWith('data:') ? qrCode : `data:image/png;base64,${qrCode}`}
+                                    src={typeof qrCode === 'string' && qrCode.startsWith('data:') ? qrCode : `data:image/png;base64,${qrCode}`}
                                     alt="WhatsApp QR Code"
                                     className="w-28 h-28 mb-1.5 shadow-md rounded-lg border-2 border-green-200 dark:border-green-800"
                                 />
