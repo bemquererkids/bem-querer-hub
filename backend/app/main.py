@@ -109,6 +109,33 @@ app.include_router(webhooks_router)
 from app.api.integration import router as integration_router
 app.include_router(integration_router)
 
+# Chat endpoints (inline to avoid import issues in Vercel)
+from datetime import datetime
+from typing import List
+from pydantic import BaseModel
+
+class ChatModel(BaseModel):
+    id: str
+    name: str
+    lastMessage: str
+    lastMessageTime: str
+    unreadCount: int
+    tags: List[str]
+    status: str
+
+@main_router.get("/chat/list", response_model=List[ChatModel])
+async def list_chats():
+    return [{
+        "id": "chat_demo_001",
+        "name": "Carol - Chat Demo",
+        "lastMessage": "Olá! Sou a Carol, assistente da Bem-Querer. Como posso ajudar?",
+        "lastMessageTime": datetime.now().isoformat(),
+        "unreadCount": 0,
+        "tags": ["demo"],
+        "status": "online"
+    }]
+
 @app.get("/")
 async def root():
     return {"status": "ok", "message": "Bem-Querer Hub API", "version": "1.0.0"}
+
