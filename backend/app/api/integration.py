@@ -6,6 +6,7 @@ from app.services.uazapi_service import get_uazapi_service, UazAPIService
 from app.services.clinicorp_service import ClinicorpClient
 from app.core.config import settings
 import logging
+import os
 
 logger = logging.getLogger(__name__)
 
@@ -107,8 +108,9 @@ def get_clinicorp_client():
 
 @router.post("/clinicorp/connect")
 async def connect_clinicorp(config_in: ClinicorpConfig):
-    # Changed from configure_clinicorp to standard naming
     try:
+        logger.info(f"Attempting to connect Clinicorp with client_id: {config_in.client_id}")
+        
         # 1. Verify credentials by initing client
         client = ClinicorpClient(
             clinic_id="demo_clinic",
@@ -121,22 +123,31 @@ async def connect_clinicorp(config_in: ClinicorpConfig):
         if config_in.client_id != "mock":
              try:
                  await client.get_professionals()
+                 logger.info("Clinicorp authentication successful")
              except Exception as e:
+                 logger.error(f"Clinicorp auth failed: {str(e)}")
                  raise HTTPException(status_code=400, detail=f"Falha de autenticação: {str(e)}")
 
         # 2. Save to DB
-        db_save_config("clinicorp", {
-            "client_id": config_in.client_id,
-            "client_secret": config_in.client_secret
-        })
+        try:
+            db_save_config("clinicorp", {
+                "client_id": config_in.client_id,
+                "client_secret": config_in.client_secret
+            })
+            logger.info("Clinicorp config saved to DB")
+        except Exception as e:
+            logger.error(f"Failed to save to DB: {str(e)}")
+            # Continue even if DB save fails
         
         return {
             "status": "connected",
             "message": "Conectado com sucesso!"
         }
-    except HTTPException: raise
+    except HTTPException: 
+        raise
     except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+        logger.error(f"Unexpected error in connect_clinicorp: {str(e)}", exc_info=True)
+        raise HTTPException(status_code=500, detail=f"Erro interno: {str(e)}")
 
 @router.get("/clinicorp/status")
 async def clinicorp_status():
@@ -279,7 +290,6 @@ async def get_whatsapp_status(
     """
     Checks if WhatsApp is connected and triggers sync if newly connected.
     """
-    try:
     try:
         # Try to get instance from DB first, then Env
         db_config = db_load_config("whatsapp")
