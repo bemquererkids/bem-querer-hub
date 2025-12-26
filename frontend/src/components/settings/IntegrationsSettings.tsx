@@ -45,6 +45,30 @@ export const IntegrationsSettings: React.FC = () => {
                 if (status.config) {
                     setCurrentConfig(status.config);
                 }
+
+                // Check Clinicorp Status
+                try {
+                    const clStatus = await integrationService.getClinicorpStatus();
+                    if (clStatus && clStatus.connected) {
+                        setClinicorpStatus('connected');
+                    }
+                } catch (e) { console.error("Clinicorp status failed", e); }
+
+                // Check OpenAI Status
+                try {
+                    const aiStatus = await integrationService.getOpenAIStatus();
+                    if (aiStatus?.connected) {
+                        setOpenaiStatus('connected');
+                    }
+                } catch (e) { console.error("OpenAI status failed", e); }
+
+                // Check Gemini Status
+                try {
+                    const geminiStatus = await integrationService.getGeminiStatus();
+                    if (geminiStatus?.connected) {
+                        setGeminiStatus('connected');
+                    }
+                } catch (e) { console.error("Gemini status failed", e); }
             } catch (error) {
                 console.error("Failed to check initial status:", error);
                 setWhatsappStatus('disconnected');
@@ -137,14 +161,22 @@ export const IntegrationsSettings: React.FC = () => {
         }
     };
 
-    const handleConnectGemini = () => {
+    const handleConnectGemini = async () => {
         if (!geminiApiKey.trim()) {
             alert("Por favor, insira uma API Key válida.");
             return;
         }
-        // Here you would normally save to backend
-        setGeminiStatus('connected');
-        alert("Gemini conectado com sucesso!");
+        setLoading(true);
+        try {
+            await integrationService.connectGemini(geminiApiKey);
+            setGeminiStatus('connected');
+            alert("Gemini conectado com sucesso!");
+        } catch (e) {
+            console.error(e);
+            alert("Erro ao conectar Gemini.");
+        } finally {
+            setLoading(false);
+        }
     };
 
     const handleDisconnectGemini = () => {
@@ -154,14 +186,22 @@ export const IntegrationsSettings: React.FC = () => {
         }
     };
 
-    const handleConnectChatGPT = () => {
+    const handleConnectChatGPT = async () => {
         if (!openaiApiKey.trim()) {
             alert("Por favor, insira uma API Key válida.");
             return;
         }
-        // Here you would normally save to backend
-        setOpenaiStatus('connected');
-        alert("ChatGPT conectado com sucesso!");
+        setLoading(true);
+        try {
+            await integrationService.connectOpenAI(openaiApiKey);
+            setOpenaiStatus('connected');
+            alert("ChatGPT conectado com sucesso! Agora você pode usar o Chat com a IA.");
+        } catch (e) {
+            console.error(e);
+            alert("Erro ao salvar chave OpenAI.");
+        } finally {
+            setLoading(false);
+        }
     };
 
     const handleDisconnectChatGPT = () => {

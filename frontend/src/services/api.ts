@@ -74,5 +74,13 @@ export const integrationService = {
   getOpenAIStatus: async () => {
     const response = await api.get('/integrations/openai/status');
     return response.data;
+  },
+  connectGemini: async (apiKey: string) => {
+    const response = await api.post('/integrations/gemini/connect', { api_key: apiKey });
+    return response.data;
+  },
+  getGeminiStatus: async () => {
+    const response = await api.get('/integrations/gemini/status');
+    return response.data;
   }
 };

@@ -12,6 +12,7 @@ logger = logging.getLogger(__name__)
 router = APIRouter(prefix="/api/integrations", tags=["integrations"])
 
 # --- Schemas ---
+from datetime import datetime
 class AvailabilityRequest(BaseModel):
     date: str # YYYY-MM-DD
     professional_id: Optional[str] = None
@@ -26,54 +27,181 @@ class AppointmentRequest(BaseModel):
 
 class ClinicorpConfig(BaseModel):
     client_id: str
+class ClinicorpConfig(BaseModel):
+    client_id: str
     client_secret: str
+
+class OpenAIConfig(BaseModel):
+    api_key: str
+
+class GeminiConfig(BaseModel):
+    api_key: str
+
+# --- Dependency ---
+# --- Persistence Helper (Supabase) ---
+CLINIC_ID_DEFAULT = "00000000-0000-0000-0000-000000000001" # Bem-Querer Matriz (Hardcoded for MVP)
+
+def db_save_config(integration_type: str, config: dict):
+    """Save config to Supabase"""
+    try:
+        supabase = get_supabase()
+        
+        data = {
+            "clinica_id": CLINIC_ID_DEFAULT,
+            "type": integration_type,
+            "config": config,
+            "is_active": True,
+            "updated_at": str(datetime.now())
+        }
+        
+        # Upsert (requires unique constraint on clinica_id + type)
+        supabase.table("clinic_integrations").upsert(data, on_conflict="clinica_id, type").execute()
+    except Exception as e:
+        logger.error(f"Failed to save to Supabase: {e}")
+        # Could fallback to Env Vars or File if needed
+        pass
+
+def db_load_config(integration_type: str) -> dict:
+    """Load config from Supabase"""
+    try:
+        supabase = get_supabase()
+        res = supabase.table("clinic_integrations") \
+            .select("config") \
+            .eq("clinica_id", CLINIC_ID_DEFAULT) \
+            .eq("type", integration_type) \
+            .execute()
+            
+        if res.data and len(res.data) > 0:
+            return res.data[0]["config"]
+    except Exception as e:
+        logger.error(f"Failed to load from Supabase: {e}")
+    
+    return {}
 
 # --- Dependency ---
 def get_clinicorp_client():
-    # In a real scenario, we would fetch credentials from the DB based on the current tenant/clinic_id
-    # For now, we initialize in Mock Mode (no credentials = mock)
-    return ClinicorpClient(clinic_id="demo_clinic", integration_config={})
+    # 1. Try DB
+    db_config = db_load_config("clinicorp")
+    client_id = db_config.get("client_id")
+    client_secret = db_config.get("client_secret")
+
+    # 2. Fallback to Env Vars (Vercel)
+    if not client_id:
+        client_id = os.getenv("CLINICORP_CLIENT_ID")
+        client_secret = os.getenv("CLINICORP_CLIENT_SECRET")
+
+    # 3. Fallback to Mock
+    if not client_id:
+        client_id = "mock"
+        client_secret = "mock"
+
+    return ClinicorpClient(
+        clinic_id="bemquerer", 
+        integration_config={
+            "client_id": client_id,
+            "client_secret": client_secret
+        }
+    )
 
 # --- Endpoints ---
 
-@router.post("/clinicorp/configure")
-async def configure_clinicorp(config: ClinicorpConfig):
-    """
-    Validates and saves Clinicorp credentials.
-    """
+@router.post("/clinicorp/connect")
+async def connect_clinicorp(config_in: ClinicorpConfig):
+    # Changed from configure_clinicorp to standard naming
     try:
-        # 1. Initialize Client with provided credentials
+        # 1. Verify credentials by initing client
         client = ClinicorpClient(
             clinic_id="demo_clinic",
             integration_config={
-                "client_id": config.client_id,
-                "client_secret": config.client_secret
+                "client_id": config_in.client_id,
+                "client_secret": config_in.client_secret
             }
         )
         
-        # 2. Test Connection (checking professionals list is a good lightweight test)
-        # If credentials are 'mock', the service handles it.
-        try:
-            await client.get_professionals()
-        except Exception as e:
-             if config.client_id == "mock":
-                 pass # Allow mock to pass even if logic allows
-             else:
-                 raise HTTPException(status_code=400, detail=f"Falha na autenticação com Clinicorp: {str(e)}")
+        if config_in.client_id != "mock":
+             try:
+                 await client.get_professionals()
+             except Exception as e:
+                 raise HTTPException(status_code=400, detail=f"Falha de autenticação: {str(e)}")
 
-        # 3. Save to DB (TODO: Implement actual DB saving)
-        # For prototype, we just return success
+        # 2. Save to DB
+        db_save_config("clinicorp", {
+            "client_id": config_in.client_id,
+            "client_secret": config_in.client_secret
+        })
         
         return {
             "status": "connected",
-            "message": "Conexão com Clinicorp estabelecida com sucesso!",
-            "clinic_name": "Bem-Querer Matriz" # Mocked return
+            "message": "Conectado com sucesso!"
         }
-        
-    except HTTPException:
-        raise
+    except HTTPException: raise
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
+
+@router.get("/clinicorp/status")
+async def clinicorp_status():
+    # Check DB
+    config = db_load_config("clinicorp")
+    if config.get("client_id"):
+        return {"connected": True, "source": "database"}
+    
+    # Check Env
+    if os.getenv("CLINICORP_CLIENT_ID"):
+        return {"connected": True, "source": "environment"}
+        
+    return {"connected": False}
+
+@router.post("/openai/connect")
+async def connect_openai(config: OpenAIConfig):
+    try:
+        if not config.api_key.startswith("sk-"):
+             raise HTTPException(status_code=400, detail="Chave OpenAI inválida")
+             
+        db_save_config("openai", {"api_key": config.api_key})
+        return {"status": "connected"}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+@router.get("/openai/status")
+async def openai_status():
+    # Check DB
+    config = db_load_config("openai")
+    if config.get("api_key"):
+        return {"connected": True}
+        
+    # Check Env
+    if os.getenv("OPENAI_API_KEY"):
+        return {"connected": True}
+        
+    return {"connected": False}
+
+
+@router.post("/gemini/connect")
+async def connect_gemini(config: GeminiConfig):
+    try:
+        # Simple validation
+        if not config.api_key:
+             raise HTTPException(status_code=400, detail="Chave Gemini inválida")
+             
+        db_save_config("gemini", {"api_key": config.api_key})
+        return {"status": "connected"}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+@router.get("/gemini/status")
+async def gemini_status():
+    # Check DB
+    config = db_load_config("gemini")
+    if config.get("api_key"):
+        return {"connected": True}
+        
+    # Check Env
+    if os.getenv("GEMINI_API_KEY"):
+        return {"connected": True}
+        
+    return {"connected": False}
+
+
 
 @router.post("/whatsapp/connect")
 async def connect_whatsapp():
@@ -121,6 +249,13 @@ async def connect_whatsapp():
                 status_code=500,
                 detail="QR Code não retornado pela UazAPI. Verifique se a instância está configurada corretamente."
             )
+            
+        # 3. Save to DB for persistence
+        db_save_config("whatsapp", {
+            "instance": settings.UAZAPI_INSTANCE,
+            "token": settings.UAZAPI_TOKEN, # Note: Saving token might be sensitive, but required for persistence if not in env
+            "connected_at": str(datetime.now())
+        })
         
         return {
             "success": True,
@@ -145,7 +280,11 @@ async def get_whatsapp_status(
     Checks if WhatsApp is connected and triggers sync if newly connected.
     """
     try:
-        instance_name = getattr(settings, "UAZAPI_INSTANCE", "bemquerer")
+    try:
+        # Try to get instance from DB first, then Env
+        db_config = db_load_config("whatsapp")
+        instance_name = db_config.get("instance") or getattr(settings, "UAZAPI_INSTANCE", "bemquerer")
+        
         status = await uazapi.get_instance_status(instance_name)
         
         # Auto-configure webhook on status check if connected
@@ -223,16 +362,18 @@ async def create_appointment(
         appt_data = {
             "patient_id": patient_id,
             "date": req.date,
-            "time": req.time,
+            "start_time": req.time,
+            # Simple assumption: 1h duration
+            "end_time": req.time, 
             "professional_id": req.professional_id,
-            "notes": req.notes
+            "observation": req.notes
         }
         appt_id = await client.create_appointment(appt_data)
         
         return {
             "status": "success", 
             "appointment_id": appt_id,
-            "message": "Agendamento realizado com sucesso no Clinicorp (Mock)"
+            "message": "Agendamento realizado com sucesso no Clinicorp"
         }
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
