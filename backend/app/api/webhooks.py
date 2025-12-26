@@ -36,10 +36,10 @@ async def verify_meta_webhook(request: Request):
         token = request.query_params.get("hub.verify_token")
         challenge = request.query_params.get("hub.challenge")
         
-        logger.info(f"📞 Meta webhook verification request: mode={mode}, token={token[:10]}...")
+        logger.info(f"📞 Meta webhook verification request: mode={mode}, token={token[:10] if token else 'None'}...")
         
         if not mode or not token or not challenge:
-            logger.warning("❌ Missing verification parameters")
+            logger.warning(f"❌ Missing verification parameters: mode={mode}, token={bool(token)}, challenge={bool(challenge)}")
             raise HTTPException(status_code=400, detail="Missing parameters")
         
         if mode != "subscribe":
@@ -47,23 +47,39 @@ async def verify_meta_webhook(request: Request):
             raise HTTPException(status_code=403, detail="Invalid mode")
         
         # Validate token against database
-        supabase = get_supabase()
-        result = supabase.table('clinic_integrations') \
-            .select('verify_token, clinica_id') \
-            .eq('type', 'whatsapp') \
-            .eq('verify_token', token) \
-            .eq('is_active', True) \
-            .execute()
-        
-        if not result.data or len(result.data) == 0:
-            logger.warning(f"❌ Invalid verify_token: {token}")
-            raise HTTPException(status_code=403, detail="Verification token mismatch")
-        
-        clinic_id = result.data[0]['clinica_id']
-        logger.info(f"✅ Webhook verified for clinic: {clinic_id}")
-        
-        # Return challenge as plain text (Meta requirement)
-        return PlainTextResponse(content=challenge, status_code=200)
+        try:
+            supabase = get_supabase()
+            logger.info(f"🔍 Querying database for verify_token: {token}")
+            
+            result = supabase.table('clinic_integrations') \
+                .select('verify_token, clinica_id, is_active') \
+                .eq('type', 'whatsapp') \
+                .execute()
+            
+            logger.info(f"📊 Database query result: {len(result.data) if result.data else 0} records found")
+            
+            if result.data:
+                for record in result.data:
+                    logger.info(f"   Record: verify_token={record.get('verify_token')}, is_active={record.get('is_active')}")
+            
+            # Now filter by token and active status
+            matching_records = [r for r in (result.data or []) if r.get('verify_token') == token and r.get('is_active') == True]
+            
+            if not matching_records:
+                logger.warning(f"❌ No matching verify_token found. Received: {token}")
+                raise HTTPException(status_code=403, detail="Verification token mismatch")
+            
+            clinic_id = matching_records[0]['clinica_id']
+            logger.info(f"✅ Webhook verified for clinic: {clinic_id}")
+            
+            # Return challenge as plain text (Meta requirement)
+            return PlainTextResponse(content=challenge, status_code=200)
+            
+        except HTTPException:
+            raise
+        except Exception as db_error:
+            logger.error(f"❌ Database error: {db_error}")
+            raise HTTPException(status_code=500, detail=f"Database error: {str(db_error)}")
         
     except HTTPException:
         raise
