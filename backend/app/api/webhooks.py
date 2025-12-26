@@ -1,4 +1,5 @@
-from fastapi import APIRouter, HTTPException, Request, BackgroundTasks
+from fastapi import APIRouter, HTTPException, Request, BackgroundTasks, Response
+from fastapi.responses import PlainTextResponse
 from app.core.database import get_supabase
 from app.services.source_detector import LeadSourceDetector
 from pydantic import BaseModel
@@ -10,28 +11,287 @@ logger = logging.getLogger(__name__)
 
 router = APIRouter(prefix="/api/webhooks", tags=["webhooks"])
 
-async def get_clinic_id_from_instance(instance_name: str) -> str:
+
+# =====================================================
+# META CLOUD API WEBHOOK
+# =====================================================
+
+@router.get("/whatsapp")
+async def verify_meta_webhook(request: Request):
     """
-    Maps UazAPI instance name to clinic_id.
-    Returns clinic_id or raises HTTPException if not found.
+    Meta WhatsApp Cloud API - Webhook Verification (GET)
+    
+    Meta sends a GET request to verify the webhook URL.
+    We must validate the verify_token and return the challenge.
+    
+    Query Parameters:
+        hub.mode: Should be "subscribe"
+        hub.verify_token: Token configured in Meta Developer Console
+        hub.challenge: Random string to echo back
+    
+    Documentation: https://developers.facebook.com/docs/graph-api/webhooks/getting-started
     """
     try:
+        mode = request.query_params.get("hub.mode")
+        token = request.query_params.get("hub.verify_token")
+        challenge = request.query_params.get("hub.challenge")
+        
+        logger.info(f"📞 Meta webhook verification request: mode={mode}, token={token[:10]}...")
+        
+        if not mode or not token or not challenge:
+            logger.warning("❌ Missing verification parameters")
+            raise HTTPException(status_code=400, detail="Missing parameters")
+        
+        if mode != "subscribe":
+            logger.warning(f"❌ Invalid mode: {mode}")
+            raise HTTPException(status_code=403, detail="Invalid mode")
+        
+        # Validate token against database
         supabase = get_supabase()
-        result = supabase.table('whatsapp_instances').select('clinic_id').eq('instance_name', instance_name).execute()
+        result = supabase.table('clinic_integrations') \
+            .select('verify_token, clinica_id') \
+            .eq('type', 'whatsapp') \
+            .eq('verify_token', token) \
+            .eq('is_active', True) \
+            .execute()
         
         if not result.data or len(result.data) == 0:
-            logger.error(f"Instance not found: {instance_name}")
-            raise HTTPException(status_code=404, detail=f"Instance '{instance_name}' not found")
+            logger.warning(f"❌ Invalid verify_token: {token}")
+            raise HTTPException(status_code=403, detail="Verification token mismatch")
         
-        clinic_id = result.data[0]['clinic_id']
-        logger.info(f"Mapped instance '{instance_name}' to clinic_id: {clinic_id}")
-        return clinic_id
+        clinic_id = result.data[0]['clinica_id']
+        logger.info(f"✅ Webhook verified for clinic: {clinic_id}")
+        
+        # Return challenge as plain text (Meta requirement)
+        return PlainTextResponse(content=challenge, status_code=200)
         
     except HTTPException:
         raise
     except Exception as e:
-        logger.error(f"Error mapping instance to clinic: {e}")
-        raise HTTPException(status_code=500, detail=f"Failed to identify clinic: {str(e)}")
+        logger.error(f"❌ Webhook verification error: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.post("/whatsapp")
+async def receive_meta_webhook(request: Request, background_tasks: BackgroundTasks):
+    """
+    Meta WhatsApp Cloud API - Message Reception (POST)
+    
+    Receives incoming messages, status updates, and other events from Meta.
+    
+    Payload Structure:
+    {
+      "object": "whatsapp_business_account",
+      "entry": [{
+        "id": "WABA_ID",
+        "changes": [{
+          "value": {
+            "messaging_product": "whatsapp",
+            "metadata": {
+              "display_phone_number": "5511999999999",
+              "phone_number_id": "123456789"
+            },
+            "contacts": [{"profile": {"name": "John"}, "wa_id": "5511888888888"}],
+            "messages": [{
+              "from": "5511888888888",
+              "id": "wamid.XXX",
+              "timestamp": "1234567890",
+              "type": "text",
+              "text": {"body": "Hello"}
+            }],
+            "statuses": [...]  // Delivery/read receipts
+          },
+          "field": "messages"
+        }]
+      }]
+    }
+    """
+    try:
+        payload = await request.json()
+        logger.info(f"📨 Meta webhook received: {payload.get('object')}")
+        
+        # Validate webhook object type
+        if payload.get("object") != "whatsapp_business_account":
+            logger.warning(f"⚠️ Unexpected object type: {payload.get('object')}")
+            return {"status": "ignored", "reason": "not_whatsapp_business_account"}
+        
+        # Process each entry
+        entries = payload.get("entry", [])
+        for entry in entries:
+            waba_id = entry.get("id")
+            changes = entry.get("changes", [])
+            
+            for change in changes:
+                field = change.get("field")
+                value = change.get("value", {})
+                
+                # Only process message events
+                if field != "messages":
+                    logger.info(f"⚠️ Skipping non-message field: {field}")
+                    continue
+                
+                # Extract metadata
+                metadata = value.get("metadata", {})
+                phone_number_id = metadata.get("phone_number_id")
+                
+                # Get clinic_id from phone_number_id
+                clinic_id = await get_clinic_id_from_phone_number(phone_number_id)
+                if not clinic_id:
+                    logger.warning(f"❌ Unknown phone_number_id: {phone_number_id}")
+                    continue
+                
+                # Process messages
+                messages = value.get("messages", [])
+                for message in messages:
+                    logger.info(f"📩 Processing message: {message.get('id')}")
+                    background_tasks.add_task(
+                        process_meta_message,
+                        message=message,
+                        clinic_id=clinic_id,
+                        phone_number_id=phone_number_id
+                    )
+                
+                # Process statuses (optional - for delivery/read receipts)
+                statuses = value.get("statuses", [])
+                for status in statuses:
+                    logger.info(f"📊 Status update: {status.get('id')} -> {status.get('status')}")
+                    # TODO: Update message status in database if needed
+        
+        return {"status": "ok"}
+        
+    except Exception as e:
+        logger.error(f"❌ Webhook processing error: {e}", exc_info=True)
+        # Return 200 even on error to prevent Meta from retrying
+        return {"status": "error", "message": str(e)}
+
+
+async def get_clinic_id_from_phone_number(phone_number_id: str) -> str:
+    """
+    Maps Meta phone_number_id to clinic_id
+    
+    Args:
+        phone_number_id: Meta WhatsApp Business Phone Number ID
+    
+    Returns:
+        clinic_id or None if not found
+    """
+    try:
+        supabase = get_supabase()
+        result = supabase.table('clinic_integrations') \
+            .select('clinica_id') \
+            .eq('phone_number_id', phone_number_id) \
+            .eq('type', 'whatsapp') \
+            .eq('is_active', True) \
+            .execute()
+        
+        if result.data and len(result.data) > 0:
+            clinic_id = result.data[0]['clinica_id']
+            logger.info(f"✅ Mapped phone_number_id {phone_number_id} to clinic {clinic_id}")
+            return clinic_id
+        
+        return None
+        
+    except Exception as e:
+        logger.error(f"❌ Error mapping phone_number_id: {e}")
+        return None
+
+
+async def process_meta_message(message: dict, clinic_id: str, phone_number_id: str):
+    """
+    Process a single message from Meta webhook
+    
+    Args:
+        message: Message object from Meta webhook
+        clinic_id: Clinic UUID
+        phone_number_id: Meta phone number ID
+    """
+    try:
+        # Extract message details
+        from_number = message.get("from")  # Sender's WhatsApp number
+        message_id = message.get("id")  # WhatsApp message ID (wamid.XXX)
+        timestamp = message.get("timestamp")  # Unix timestamp
+        message_type = message.get("type")  # text, image, video, document, audio, etc.
+        
+        logger.info(f"📝 Processing {message_type} message from {from_number}")
+        
+        # Extract contact name (if available)
+        contact_name = "Desconhecido"
+        # Note: Contact info is in the parent 'value' object, not in individual message
+        # We'll need to pass it from the webhook handler or fetch from database
+        
+        # Extract message content based on type
+        text_content = ""
+        media_url = None
+        
+        if message_type == "text":
+            text_content = message.get("text", {}).get("body", "")
+        
+        elif message_type == "image":
+            image_data = message.get("image", {})
+            media_url = image_data.get("id")  # Media ID to download later
+            text_content = image_data.get("caption", "[Imagem]")
+        
+        elif message_type == "video":
+            video_data = message.get("video", {})
+            media_url = video_data.get("id")
+            text_content = video_data.get("caption", "[Vídeo]")
+        
+        elif message_type == "document":
+            doc_data = message.get("document", {})
+            media_url = doc_data.get("id")
+            text_content = f"[Documento: {doc_data.get('filename', 'arquivo')}]"
+        
+        elif message_type == "audio":
+            audio_data = message.get("audio", {})
+            media_url = audio_data.get("id")
+            text_content = "[Áudio]"
+        
+        elif message_type == "button":
+            # Button reply
+            button_data = message.get("button", {})
+            text_content = button_data.get("text", "")
+        
+        elif message_type == "interactive":
+            # Interactive message reply (list, button)
+            interactive_data = message.get("interactive", {})
+            if interactive_data.get("type") == "button_reply":
+                text_content = interactive_data.get("button_reply", {}).get("title", "")
+            elif interactive_data.get("type") == "list_reply":
+                text_content = interactive_data.get("list_reply", {}).get("title", "")
+        
+        else:
+            logger.warning(f"⚠️ Unsupported message type: {message_type}")
+            text_content = f"[Mensagem não suportada: {message_type}]"
+        
+        if not text_content:
+            logger.info("⚠️ Empty message content, skipping")
+            return
+        
+        # Save to WhatsApp tables
+        await save_whatsapp_message(
+            clinic_id=clinic_id,
+            phone=from_number,
+            contact_name=contact_name,
+            message_id=message_id,
+            content=text_content,
+            message_type=message_type,
+            media_url=media_url,
+            timestamp=datetime.fromtimestamp(int(timestamp)).isoformat() if timestamp else None,
+            is_from_me=False
+        )
+        
+        # Process as lead (trigger AI Carol)
+        await process_new_lead(
+            phone=from_number,
+            name=contact_name,
+            message=text_content,
+            clinic_id=clinic_id,
+            phone_number_id=phone_number_id
+        )
+        
+    except Exception as e:
+        logger.error(f"❌ Error processing Meta message: {e}", exc_info=True)
+
 
 async def save_whatsapp_message(
     clinic_id: str,
@@ -49,21 +309,20 @@ async def save_whatsapp_message(
     Creates or updates conversation and adds message.
     Multi-tenant: isolated by clinic_id.
     """
-    logger.info(f"=== SAVE_WHATSAPP_MESSAGE CALLED ===")
-    logger.info(f"clinic_id: {clinic_id}, phone: {phone}, content: {content[:50]}...")
+    logger.info(f"💾 Saving WhatsApp message: {content[:50]}...")
     
     try:
         supabase = get_supabase()
-        logger.info("Supabase client obtained")
         
-        # 1. Get or create conversation (filtered by clinic_id)
-        logger.info(f"Querying conversation for phone={phone}, clinic_id={clinic_id}")
-        conversation_res = supabase.table('whatsapp_conversations').select('*').eq('phone_number', phone).eq('clinic_id', clinic_id).execute()
-        logger.info(f"Conversation query result: {len(conversation_res.data) if conversation_res.data else 0} rows")
+        # 1. Get or create conversation
+        conversation_res = supabase.table('whatsapp_conversations') \
+            .select('*') \
+            .eq('phone_number', phone) \
+            .eq('clinic_id', clinic_id) \
+            .execute()
         
         if not conversation_res.data:
             # Create new conversation
-            logger.info("Creating new conversation")
             new_conversation = {
                 "clinic_id": clinic_id,
                 "phone_number": phone,
@@ -73,15 +332,13 @@ async def save_whatsapp_message(
                 "unread_count": 0 if is_from_me else 1,
                 "tags": []
             }
-            logger.info(f"Inserting conversation: {new_conversation}")
             conv_res = supabase.table('whatsapp_conversations').insert(new_conversation).execute()
             conversation_id = conv_res.data[0]['id']
-            logger.info(f"Conversation created with ID: {conversation_id}")
+            logger.info(f"✅ New conversation created: {conversation_id}")
         else:
             # Update existing conversation
             conversation_id = conversation_res.data[0]['id']
             current_unread = conversation_res.data[0].get('unread_count', 0)
-            logger.info(f"Updating existing conversation ID: {conversation_id}")
             
             supabase.table('whatsapp_conversations').update({
                 "last_message": content,
@@ -89,10 +346,9 @@ async def save_whatsapp_message(
                 "unread_count": current_unread + (0 if is_from_me else 1),
                 "updated_at": datetime.now().isoformat()
             }).eq('id', conversation_id).execute()
-            logger.info("Conversation updated")
+            logger.info(f"✅ Conversation updated: {conversation_id}")
         
         # 2. Save message
-        logger.info(f"Saving message to conversation {conversation_id}")
         new_message = {
             "clinic_id": clinic_id,
             "conversation_id": conversation_id,
@@ -107,163 +363,54 @@ async def save_whatsapp_message(
             "is_from_me": is_from_me
         }
         
-        logger.info(f"Inserting message: {new_message}")
         supabase.table('whatsapp_messages').insert(new_message).execute()
-        logger.info(f"✅ WhatsApp message saved: {message_id} from {phone} (clinic: {clinic_id})")
+        logger.info(f"✅ Message saved: {message_id}")
         
     except Exception as e:
-        logger.error(f"❌ Error saving WhatsApp message: {e}")
-        logger.error(f"Exception type: {type(e).__name__}")
-        import traceback
-        logger.error(f"Traceback: {traceback.format_exc()}")
-        # Don't raise - we don't want to break the webhook if this fails
+        logger.error(f"❌ Error saving WhatsApp message: {e}", exc_info=True)
 
-class UazApiMessage(BaseModel):
-    # Modelo simplificado da UazAPI/Baileys
-    remoteJid: str # Número do cliente (5511999999999@s.whatsapp.net)
-    pushName: str # Nome no WhatsApp
-    message: dict # Conteúdo (text, image, etc)
-    instanceId: str
 
-@router.post("/whatsapp")
-async def receive_whatsapp_message(payload: dict, background_tasks: BackgroundTasks):
+async def process_new_lead(
+    phone: str,
+    name: str,
+    message: str,
+    clinic_id: str,
+    phone_number_id: str
+):
     """
-    Receives notification from UazAPI (messages, history, connection, etc).
-    Multi-tenant: Maps instance to clinic_id for data isolation.
-    """
-    try:
-        event = payload.get('event', 'messages.upsert')
-        instance_id = payload.get('instance', 'main')
-        data = payload.get('data', {})
-        
-        # Get clinic_id from instance (multi-tenant mapping)
-        try:
-            clinic_id = await get_clinic_id_from_instance(instance_id)
-        except HTTPException as e:
-            logger.warning(f"Unknown instance '{instance_id}': {e.detail}")
-            return {"status": "error", "message": f"Instance '{instance_id}' not registered"}
-
-        # 1. Handle Historical Sync (MASSIVE HISTORY)
-        if event == 'messaging-history.set':
-            messages = data.get('messages', [])
-            print(f"📦 Recebendo histórico: {len(messages)} mensagens (clinic: {clinic_id}).")
-            for msg in messages:
-                background_tasks.add_task(process_single_message_data, msg, instance_id, clinic_id)
-            return {"status": "sync_started", "count": len(messages), "clinic_id": clinic_id}
-
-        # 2. Handle Real-time Messages
-        if event == 'messages.upsert':
-            # Upsert sends a single message or array
-            messages = data.get('messages', []) if isinstance(data.get('messages'), list) else [data]
-            logger.info(f"📨 Processing {len(messages)} messages for clinic {clinic_id}")
-            
-            for message_data in messages:
-                logger.info(f"Message data: {message_data.get('key', {})}")
-                
-                # Ignorar mensagens enviadas por MIM (fromMe)
-                if message_data.get('key', {}).get('fromMe'):
-                    logger.info("Skipping message fromMe=True")
-                    continue
-                
-                logger.info(f"Adding background task for message")
-                background_tasks.add_task(process_single_message_data, message_data, instance_id, clinic_id)
-            
-            logger.info(f"✅ {len(messages)} messages queued for processing")
-            return {"status": "upsert_processed", "clinic_id": clinic_id}
-
-        return {"status": "event_unhandled", "event": event}
-
-    except Exception as e:
-        logger.error(f"Erro no webhook: {e}")
-        return {"status": "error", "detail": str(e)}
-
-async def process_single_message_data(data: dict, instance_id: str, clinic_id: str):
-    """
-    Helper to extract details and queue the lead processor.
-    Also saves message to WhatsApp tables for chat integration.
-    Multi-tenant: uses clinic_id for data isolation.
-    """
-    try:
-        remote_jid = data.get('key', {}).get('remoteJid')
-        if not remote_jid or '@s.whatsapp.net' not in remote_jid:
-            return
-
-        push_name = data.get('pushName', 'Desconhecido')
-        message_info = data.get('message', {})
-        message_id = data.get('key', {}).get('id', str(uuid.uuid4()))
-        timestamp = data.get('messageTimestamp')
-        is_from_me = data.get('key', {}).get('fromMe', False)
-        
-        # Tentar extrair texto
-        text_content = ""
-        message_type = "text"
-        media_url = None
-        
-        if 'conversation' in message_info:
-            text_content = message_info['conversation']
-        elif 'extendedTextMessage' in message_info:
-            text_content = message_info['extendedTextMessage'].get('text', '')
-        elif 'imageMessage' in message_info:
-            text_content = message_info['imageMessage'].get('caption', '[Imagem]')
-            message_type = "image"
-            media_url = message_info['imageMessage'].get('url')
-        elif 'videoMessage' in message_info:
-            text_content = message_info['videoMessage'].get('caption', '[Vídeo]')
-            message_type = "video"
-            media_url = message_info['videoMessage'].get('url')
-            
-        if not text_content:
-            return
-
-        # Save to WhatsApp tables for chat integration
-        await save_whatsapp_message(
-            clinic_id=clinic_id,
-            phone=remote_jid.split('@')[0],
-            contact_name=push_name,
-            message_id=message_id,
-            content=text_content,
-            message_type=message_type,
-            media_url=media_url,
-            timestamp=datetime.fromtimestamp(int(timestamp)).isoformat() if timestamp else None,
-            is_from_me=is_from_me
-        )
-
-        # Process lead (existing functionality)
-        if not is_from_me:
-            await process_new_lead(remote_jid, push_name, text_content, instance_id)
-    except Exception as e:
-        logger.error(f"Error processing single message: {e}")
-
-async def process_new_lead(phone: str, name: str, message: str, instance_id: str = "main"):
-    """
-    Lógica Principal:
-    1. Verifica se paciente existe. Se não, cria.
-    2. Detecta origem (Google/Insta).
-    3. Salva mensagem do usuário.
-    4. Cria Chat se não existir.
-    5. Dispara IA carol para responder.
-    6. Envia resposta via UazAPI.
+    Process new lead and trigger AI Carol response
+    
+    Flow:
+    1. Check if patient exists, if not create
+    2. Detect source (Google/Instagram)
+    3. Save user message
+    4. Create/update chat
+    5. Trigger AI Carol
+    6. Send response via Meta API
     """
     from app.services.gpt_service import get_gpt_service
-    from app.services.uazapi_service import get_uazapi_service
-    from app.services.message_processor import get_message_processor
+    from app.services.meta_service import get_meta_service_for_clinic
     
     supabase = get_supabase()
-    uazapi = get_uazapi_service()
     gpt_service = get_gpt_service()
+    
+    # Clean phone number (remove @s.whatsapp.net if present)
     clean_phone = phone.split('@')[0]
     
-    # 1. Busca Paciente
-    patient_res = supabase.table('patients').select('*').eq('phone', clean_phone).execute()
+    logger.info(f"🔍 Processing lead: {name} ({clean_phone})")
     
-    patient_id = None
-    clinic_id = "00000000-0000-0000-0000-000000000001" # Hardcoded demo clinic
+    # 1. Get or create patient
+    patient_res = supabase.table('patients') \
+        .select('*') \
+        .eq('phone', clean_phone) \
+        .eq('clinic_id', clinic_id) \
+        .execute()
     
     if not patient_res.data:
-        # Detectar Origem
+        # Detect source
         source = LeadSourceDetector.detect(message)
         
-        # Criar Novo Paciente
+        # Create new patient
         new_patient = {
             "clinic_id": clinic_id,
             "full_name": name,
@@ -272,16 +419,17 @@ async def process_new_lead(phone: str, name: str, message: str, instance_id: str
             "created_at": datetime.now().isoformat()
         }
         res = supabase.table('patients').insert(new_patient).execute()
-        if res.data:
-            patient_id = res.data[0]['id']
-            print(f"Novo Lead Criado: {name} via {source}")
+        patient_id = res.data[0]['id']
+        logger.info(f"✅ New patient created: {name} via {source}")
     else:
         patient_id = patient_res.data[0]['id']
-        print(f"Lead Recorrente: {name}")
-
-    # 2. Busca ou Cria Chat
-    chat_res = supabase.table('chats').select('*').eq('patient_id', patient_id).execute()
-    chat_id = None
+        logger.info(f"✅ Existing patient: {name}")
+    
+    # 2. Get or create chat
+    chat_res = supabase.table('chats') \
+        .select('*') \
+        .eq('patient_id', patient_id) \
+        .execute()
     
     if not chat_res.data:
         new_chat = {
@@ -297,10 +445,11 @@ async def process_new_lead(phone: str, name: str, message: str, instance_id: str
         chat_id = c_res.data[0]['id']
     else:
         chat_id = chat_res.data[0]['id']
-        # Atualiza timestamp
-        supabase.table('chats').update({"last_message_at": datetime.now().isoformat()}).eq('id', chat_id).execute()
-
-    # 3. Salva Mensagem do Usuário
+        supabase.table('chats').update({
+            "last_message_at": datetime.now().isoformat()
+        }).eq('id', chat_id).execute()
+    
+    # 3. Save user message
     new_msg = {
         "clinic_id": clinic_id,
         "chat_id": chat_id,
@@ -310,21 +459,27 @@ async def process_new_lead(phone: str, name: str, message: str, instance_id: str
         "created_at": datetime.now().isoformat()
     }
     supabase.table('messages').insert(new_msg).execute()
-
-    # 4. Obter histórico simplificado para a IA
-    # Em um cenário real, pegaríamos as últimas X mensagens do Supabase
-    history = [] # TODO: Implementar busca de histórico real se necessário
     
-    # 5. Chamar GPT (OpenAI) para Gerar Resposta
-    print(f"🤖 Gerando resposta da Carol para {name}...")
+    # 4. Get chat history
+    history_res = supabase.table('messages') \
+        .select('*') \
+        .eq('chat_id', chat_id) \
+        .order('created_at', desc=False) \
+        .limit(10) \
+        .execute()
+    
+    history = history_res.data if history_res.data else []
+    
+    # 5. Generate AI response
+    logger.info(f"🤖 Generating AI response for {name}...")
     ai_response = await gpt_service.process_message(
         message=message,
         chat_history=history,
         context={"patient_name": name, "clinic_id": clinic_id}
     )
     ai_response_text = ai_response.get("response", "Desculpe, não entendi.")
-
-    # 6. Salvar Mensagem da IA no Banco
+    
+    # 6. Save AI message
     ai_msg = {
         "clinic_id": clinic_id,
         "chat_id": chat_id,
@@ -334,16 +489,16 @@ async def process_new_lead(phone: str, name: str, message: str, instance_id: str
         "created_at": datetime.now().isoformat()
     }
     supabase.table('messages').insert(ai_msg).execute()
-
-    # 7. Enviar via WhatsApp (UazAPI)
-    print(f"✉️ Enviando resposta via UazAPI para {clean_phone}...")
+    
+    # 7. Send via Meta API
+    logger.info(f"📤 Sending response via Meta API to {clean_phone}...")
     try:
-        await uazapi.send_message(
-            instance=instance_id,
-            phone=clean_phone,
-            message=ai_response_text
+        meta_service = await get_meta_service_for_clinic(clinic_id)
+        await meta_service.send_message(
+            to=clean_phone,
+            text=ai_response_text
         )
-        print(f"✅ Resposta enviada com sucesso!")
+        logger.info(f"✅ Response sent successfully!")
     except Exception as e:
-        print(f"❌ Erro ao enviar WhatsApp: {e}")
-        # Em produção, poderíamos retentar ou alertar um atendente humano
+        logger.error(f"❌ Failed to send WhatsApp message: {e}")
+        # Don't raise - we don't want to break the webhook

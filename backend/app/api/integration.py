@@ -2,11 +2,12 @@ from typing import List, Optional
 from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel
 from app.core.database import get_supabase
-from app.services.uazapi_service import get_uazapi_service, UazAPIService
+from app.services.meta_service import get_meta_service_for_clinic, MetaWhatsAppService
 from app.services.clinicorp_service import ClinicorpClient
 from app.core.config import settings
 import logging
 import os
+import uuid
 
 logger = logging.getLogger(__name__)
 
@@ -214,126 +215,135 @@ async def gemini_status():
 
 
 
+class MetaWhatsAppConfig(BaseModel):
+    phone_number_id: str
+    waba_id: str
+    access_token: str
+
+
 @router.post("/whatsapp/connect")
-async def connect_whatsapp():
+async def connect_whatsapp(config: MetaWhatsAppConfig):
     """
-    Triggers QR code generation for the WhatsApp instance.
+    Configure Meta WhatsApp Business Cloud API credentials
+    
+    Body:
+        phone_number_id: Meta Phone Number ID
+        waba_id: WhatsApp Business Account ID
+        access_token: Permanent access token from System User
+    
+    Returns:
+        webhook_url: URL to configure in Meta Developer Console
+        verify_token: Token to use for webhook verification
     """
     try:
-        logger.info("Attempting to connect WhatsApp...")
-        logger.info(f"UAZAPI_BASE_URL: {settings.UAZAPI_BASE_URL}")
-        logger.info(f"UAZAPI_INSTANCE: {settings.UAZAPI_INSTANCE}")
+        logger.info(f"Configuring Meta WhatsApp for phone_number_id: {config.phone_number_id}")
         
-        # Validar configurações
-        if not settings.UAZAPI_TOKEN or settings.UAZAPI_TOKEN == "placeholder_token":
-            logger.error("UAZAPI_TOKEN not configured")
+        # Validate credentials format
+        if not config.phone_number_id or not config.phone_number_id.isdigit():
             raise HTTPException(
-                status_code=500,
-                detail="UAZAPI_TOKEN não configurado. Configure nas variáveis de ambiente da Vercel."
+                status_code=400,
+                detail="Phone Number ID inválido. Deve ser numérico."
             )
         
-        if not settings.UAZAPI_BASE_URL or settings.UAZAPI_BASE_URL == "https://free.uazapi.com":
-            logger.error("UAZAPI_BASE_URL not configured properly")
+        if not config.waba_id or not config.waba_id.isdigit():
             raise HTTPException(
-                status_code=500,
-                detail="UAZAPI_BASE_URL não configurado. Use: https://bemquerer.uazapi.com"
+                status_code=400,
+                detail="WABA ID inválido. Deve ser numérico."
             )
         
-        # Tentar conectar
-        uazapi = get_uazapi_service()
-        result = await uazapi.connect_instance(settings.UAZAPI_INSTANCE)
-        
-        logger.info(f"UazAPI connect response: {result}")
-        
-        # Extrair QR Code
-        qrcode = None
-        if isinstance(result, dict):
-            qrcode = (
-                result.get("qrcode") or 
-                result.get("instance", {}).get("qrcode") or
-                result.get("data", {}).get("qrcode")
-            )
-        
-        if not qrcode:
-            logger.error(f"QR Code not found in response: {result}")
+        if not config.access_token or not config.access_token.startswith("EAA"):
             raise HTTPException(
-                status_code=500,
-                detail="QR Code não retornado pela UazAPI. Verifique se a instância está configurada corretamente."
+                status_code=400,
+                detail="Access Token inválido. Deve começar com 'EAA'."
             )
-            
-        # 3. Save to DB for persistence
-        db_save_config("whatsapp", {
-            "instance": settings.UAZAPI_INSTANCE,
-            "token": settings.UAZAPI_TOKEN, # Note: Saving token might be sensitive, but required for persistence if not in env
-            "connected_at": str(datetime.now())
-        })
+        
+        # Generate verify token
+        verify_token = str(uuid.uuid4())
+        
+        # Save to database
+        supabase = get_supabase()
+        
+        data = {
+            "clinica_id": CLINIC_ID_DEFAULT,
+            "type": "whatsapp",
+            "phone_number_id": config.phone_number_id,
+            "waba_id": config.waba_id,
+            "access_token": config.access_token,
+            "verify_token": verify_token,
+            "is_active": True,
+            "updated_at": str(datetime.now())
+        }
+        
+        # Upsert (update if exists, insert if not)
+        supabase.table("clinic_integrations").upsert(
+            data,
+            on_conflict="clinica_id,type"
+        ).execute()
+        
+        logger.info("✅ Meta WhatsApp credentials saved successfully")
+        
+        # Generate webhook URL
+        public_url = os.getenv("PUBLIC_URL", "https://seu-dominio.vercel.app")
+        webhook_url = f"{public_url}/api/webhooks/whatsapp"
         
         return {
             "success": True,
-            "qrcode": qrcode,
-            "instance": settings.UAZAPI_INSTANCE
+            "webhook_url": webhook_url,
+            "verify_token": verify_token,
+            "message": "Configuração salva! Configure o webhook no Meta Developer Console."
         }
         
     except HTTPException:
         raise
     except Exception as e:
-        logger.error(f"Failed to connect WhatsApp: {str(e)}", exc_info=True)
+        logger.error(f"Failed to save Meta WhatsApp config: {str(e)}", exc_info=True)
         raise HTTPException(
             status_code=500,
-            detail=f"Erro ao conectar WhatsApp: {str(e)}"
+            detail=f"Erro ao salvar configuração: {str(e)}"
         )
 
 @router.get("/whatsapp/status")
-async def get_whatsapp_status(
-    uazapi: UazAPIService = Depends(get_uazapi_service)
-):
+async def get_whatsapp_status():
     """
-    Checks if WhatsApp is connected and triggers sync if newly connected.
+    Check if Meta WhatsApp is configured
+    
+    Returns:
+        connected: Boolean indicating if credentials are configured
+        phone_number_id: Configured phone number ID (if exists)
+        webhook_url: Webhook URL to use in Meta console
     """
     try:
-        # Try to get instance from DB first, then Env
-        db_config = db_load_config("whatsapp")
-        instance_name = db_config.get("instance") or getattr(settings, "UAZAPI_INSTANCE", "bemquerer")
+        # Check database for configuration
+        supabase = get_supabase()
+        result = supabase.table('clinic_integrations') \
+            .select('phone_number_id, waba_id, verify_token') \
+            .eq('clinica_id', CLINIC_ID_DEFAULT) \
+            .eq('type', 'whatsapp') \
+            .eq('is_active', True) \
+            .execute()
         
-        status = await uazapi.get_instance_status(instance_name)
-        
-        # Auto-configure webhook on status check if connected
-        is_connected = False
-        if isinstance(status, dict):
-            # Check various response structures
-            is_connected = status.get("status", {}).get("connected") or status.get("connected")
+        if result.data and len(result.data) > 0:
+            config = result.data[0]
+            public_url = os.getenv("PUBLIC_URL", "https://seu-dominio.vercel.app")
             
-            if is_connected:
-                try:
-                    public_url = getattr(settings, "PUBLIC_URL", "http://seu-dominio.com")
-                    webhook_url = f"{public_url}/api/webhooks/whatsapp"
-                    await uazapi.configure_webhook_sync(instance_name, webhook_url)
-                    logger.info("Webhook sync triggered automatically")
-                except:
-                    pass
-                
-        return {
-            **status,
-            "config": {
-                "token": getattr(settings, "UAZAPI_TOKEN", "Não configurado"),
-                "instance": instance_name
+            return {
+                "connected": True,
+                "phone_number_id": config.get('phone_number_id'),
+                "waba_id": config.get('waba_id'),
+                "webhook_url": f"{public_url}/api/webhooks/whatsapp",
+                "verify_token": config.get('verify_token')
             }
-        }
-    except Exception as e:
-        status_code = getattr(e, "response", None).status_code if hasattr(e, "response") and hasattr(e.response, "status_code") else 500
-        error_msg = str(e)
-        if status_code == 401:
-            error_msg = "Token inválido ou expirado na UazAPI (401). Verifique seu arquivo .env ou o painel UazAPI."
         
-        logger.error(f"Status check failed: {error_msg}")
         return {
-            "connected": False, 
-            "error": error_msg,
-            "status_code": status_code,
-            "config": {
-                "token": getattr(settings, "UAZAPI_TOKEN", "Não configurado"),
-                "instance": getattr(settings, "UAZAPI_INSTANCE", "bemquerer")
-            }
+            "connected": False,
+            "message": "WhatsApp não configurado. Configure as credenciais da Meta."
+        }
+        
+    except Exception as e:
+        logger.error(f"Status check failed: {str(e)}")
+        return {
+            "connected": False,
+            "error": str(e)
         }
 
 @router.post("/clinicorp/availability")

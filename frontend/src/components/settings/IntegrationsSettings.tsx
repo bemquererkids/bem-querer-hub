@@ -8,15 +8,19 @@ import { QrCode, CheckCircle2, AlertCircle, RefreshCw, MessageSquare, Link as Li
 import { integrationService } from '../../services/api';
 
 export const IntegrationsSettings: React.FC = () => {
-    const [whatsappStatus, setWhatsappStatus] = useState<'connected' | 'disconnected' | 'connecting' | 'qrcode'>('disconnected');
-    const [qrCode, setQrCode] = useState<string | null>(null);
+    const [whatsappStatus, setWhatsappStatus] = useState<'connected' | 'disconnected' | 'connecting'>('disconnected');
     const [clinicorpStatus, setClinicorpStatus] = useState<'connected' | 'disconnected'>('disconnected');
     const [loading, setLoading] = useState(false);
     const [initialLoading, setInitialLoading] = useState(true);
-    const [pollingInterval, setPollingInterval] = useState<NodeJS.Timeout | null>(null);
-    const [sessionInfo, setSessionInfo] = useState<{ name: string, number: string } | null>(null);
     const [statusError, setStatusError] = useState<string | null>(null);
-    const [currentConfig, setCurrentConfig] = useState<{ token: string, instance: string } | null>(null);
+    
+    // Meta WhatsApp Credentials
+    const [phoneNumberId, setPhoneNumberId] = useState('');
+    const [wabaId, setWabaId] = useState('');
+    const [accessToken, setAccessToken] = useState('');
+    const [webhookUrl, setWebhookUrl] = useState('');
+    const [verifyToken, setVerifyToken] = useState('');
+    
     const [clinicorpClientId, setClinicorpClientId] = useState('');
     const [clinicorpSecret, setClinicorpSecret] = useState('');
 
@@ -26,24 +30,20 @@ export const IntegrationsSettings: React.FC = () => {
     const [openaiApiKey, setOpenaiApiKey] = useState('');
     const [openaiStatus, setOpenaiStatus] = useState<'connected' | 'disconnected'>('disconnected');
 
-    // Initial Status Check with timeout
+    // Initial Status Check
     React.useEffect(() => {
         const checkStatus = async () => {
             try {
+                // Check WhatsApp Status
                 const status = await integrationService.getWhatsAppStatus();
-                if (status.status?.connected) {
+                if (status.connected) {
                     setWhatsappStatus('connected');
-                    setSessionInfo({
-                        name: status.instance?.profileName || status.instance?.name || "Instância conectada",
-                        number: status.instance?.owner || status.status?.jid?.split(':')[0] || "Desconhecido"
-                    });
-                    setStatusError(null);
+                    setPhoneNumberId(status.phone_number_id || '');
+                    setWabaId(status.waba_id || '');
+                    setWebhookUrl(status.webhook_url || '');
+                    setVerifyToken(status.verify_token || '');
                 } else {
                     setWhatsappStatus('disconnected');
-                    if (status.error) setStatusError(status.error);
-                }
-                if (status.config) {
-                    setCurrentConfig(status.config);
                 }
 
                 // Check Clinicorp Status
@@ -77,16 +77,7 @@ export const IntegrationsSettings: React.FC = () => {
             }
         };
 
-        const timeout = setTimeout(() => {
-            setInitialLoading(false);
-        }, 3000);
-
         checkStatus();
-
-        return () => {
-            clearTimeout(timeout);
-            if (pollingInterval) clearInterval(pollingInterval);
-        };
     }, []);
 
     const handleConnectClinicorp = async () => {
@@ -104,58 +95,42 @@ export const IntegrationsSettings: React.FC = () => {
     };
 
     const handleDisconnectWhatsapp = () => {
-        if (confirm("Tem certeza? Isso irá parar o atendimento automático.")) {
-            if (pollingInterval) clearInterval(pollingInterval);
+        if (confirm("Tem certeza? Isso irá desconectar o WhatsApp.")) {
             setWhatsappStatus('disconnected');
-            setQrCode(null);
+            setPhoneNumberId('');
+            setWabaId('');
+            setAccessToken('');
+            setWebhookUrl('');
+            setVerifyToken('');
         }
     };
 
-    const startPollingStatus = () => {
-        const interval = setInterval(async () => {
-            try {
-                const status = await integrationService.getWhatsAppStatus();
-                if (status.status?.connected) {
-                    setWhatsappStatus('connected');
-                    setSessionInfo({
-                        name: status.instance?.profileName || status.instance?.name || "Instância conectada",
-                        number: status.instance?.owner || status.status?.jid?.split(':')[0] || "Desconhecido"
-                    });
-                    setStatusError(null);
-                    if (interval) clearInterval(interval);
-                } else if (status.status_code === 401) {
-                    setWhatsappStatus('disconnected');
-                    setStatusError(status.error);
-                    if (interval) clearInterval(interval);
-                }
-            } catch (error) {
-                console.error("Polling error:", error);
-            }
-        }, 5000);
-        setPollingInterval(interval);
-    };
-
     const handleConnectWhatsapp = async () => {
+        // Validate inputs
+        if (!phoneNumberId.trim() || !wabaId.trim() || !accessToken.trim()) {
+            alert("Por favor, preencha todos os campos obrigatórios.");
+            return;
+        }
+
         setLoading(true);
         setWhatsappStatus('connecting');
         try {
-            const result = await integrationService.connectWhatsApp();
-            if (result.qrcode) {
-                setQrCode(result.qrcode);
-                setWhatsappStatus('qrcode');
-                startPollingStatus();
-            } else if (result.status?.connected) {
+            const result = await integrationService.connectWhatsApp({
+                phone_number_id: phoneNumberId,
+                waba_id: wabaId,
+                access_token: accessToken
+            });
+            
+            if (result.success) {
                 setWhatsappStatus('connected');
+                setWebhookUrl(result.webhook_url);
+                setVerifyToken(result.verify_token);
+                alert("WhatsApp conectado com sucesso! Configure o webhook no Meta Developer Console.");
             }
         } catch (error: any) {
             console.error("Connection error:", error);
             setWhatsappStatus('disconnected');
-            const is503 = error.response?.status === 503;
-            if (is503) {
-                alert("Servidor UazAPI temporariamente offline ou instável (Erro 503). Por favor, tente novamente em alguns instantes.");
-            } else {
-                alert("Erro ao conectar WhatsApp. Verifique sua rede ou tente novamente.");
-            }
+            alert(error.response?.data?.detail || "Erro ao conectar WhatsApp. Verifique suas credenciais.");
         } finally {
             setLoading(false);
         }
@@ -266,44 +241,62 @@ export const IntegrationsSettings: React.FC = () => {
                             <div className="space-y-1.5">
                                 <div className="p-2.5 bg-green-50 dark:bg-green-900/20 rounded-lg border border-green-100 dark:border-green-800">
                                     <div className="flex items-center justify-between mb-1">
-                                        <span className="text-[11px] text-green-700 dark:text-green-300 font-medium">Sessão Ativa</span>
+                                        <span className="text-[11px] text-green-700 dark:text-green-300 font-medium">Conectado</span>
                                         <CheckCircle2 className="w-3.5 h-3.5 text-green-600 dark:text-green-400" />
                                     </div>
-                                    <p className="text-xs font-semibold text-green-900 dark:text-green-100">{sessionInfo?.name || "Bem-Querer Matriz"}</p>
-                                    <p className="text-[11px] text-green-600 dark:text-green-400 mt-0.5">{sessionInfo?.number ? `+${sessionInfo.number}` : "+55 11 99999-9999"}</p>
+                                    <p className="text-xs font-semibold text-green-900 dark:text-green-100">Phone ID: {phoneNumberId}</p>
+                                    <p className="text-[11px] text-green-600 dark:text-green-400 mt-0.5">WABA: {wabaId}</p>
                                 </div>
-                            </div>
-                        ) : whatsappStatus === 'qrcode' && qrCode ? (
-                            <div className="flex flex-col items-center justify-center py-2">
-                                <img
-                                    src={typeof qrCode === 'string' && qrCode.startsWith('data:') ? qrCode : `data:image/png;base64,${qrCode}`}
-                                    alt="WhatsApp QR Code"
-                                    className="w-28 h-28 mb-1.5 shadow-md rounded-lg border-2 border-green-200 dark:border-green-800"
-                                />
-                                <div className="flex items-center gap-1.5 text-green-600 dark:text-green-400 animate-pulse text-[11px] font-medium">
-                                    <RefreshCw className="w-3 h-3 animate-spin" />
-                                    Aguardando leitura do QR Code...
-                                </div>
+                                {webhookUrl && (
+                                    <div className="p-2 bg-blue-50 dark:bg-blue-900/20 rounded border border-blue-100 dark:border-blue-800">
+                                        <p className="text-[10px] text-blue-700 dark:text-blue-300 font-medium mb-1">Webhook URL:</p>
+                                        <code className="text-[9px] text-blue-900 dark:text-blue-100 break-all">{webhookUrl}</code>
+                                        <p className="text-[10px] text-blue-700 dark:text-blue-300 font-medium mt-1.5 mb-0.5">Verify Token:</p>
+                                        <code className="text-[9px] text-blue-900 dark:text-blue-100 break-all">{verifyToken}</code>
+                                    </div>
+                                )}
                             </div>
                         ) : whatsappStatus === 'connecting' ? (
                             <div className="flex flex-col items-center justify-center py-4">
                                 <RefreshCw className="w-6 h-6 text-green-500 dark:text-green-400 animate-spin mb-1.5" />
-                                <p className="text-[11px] text-zinc-500 dark:text-zinc-400 font-medium">Iniciando conexão...</p>
+                                <p className="text-[11px] text-zinc-500 dark:text-zinc-400 font-medium">Salvando configuração...</p>
                             </div>
                         ) : (
-                            <div className="flex flex-col items-center justify-center py-3">
-                                {statusError?.includes("401") ? (
-                                    <>
-                                        <AlertCircle className="w-8 h-8 text-amber-500 dark:text-amber-400 mb-1.5" />
-                                        <p className="text-[11px] font-semibold text-amber-700 dark:text-amber-300 text-center">Token Expirado ou Inválido</p>
-                                        <p className="text-[10px] text-zinc-500 dark:text-zinc-400 text-center mt-1 max-w-[200px]">Verifique suas credenciais no painel UazAPI.</p>
-                                    </>
-                                ) : (
-                                    <>
-                                        <QrCode className="w-10 h-10 text-zinc-300 dark:text-zinc-600 mb-1.5" />
-                                        <p className="text-[11px] text-zinc-500 dark:text-zinc-400 text-center max-w-[160px]">Clique no botão abaixo para gerar o QR Code.</p>
-                                    </>
-                                )}
+                            <div className="space-y-2">
+                                <div className="space-y-1.5">
+                                    <Label htmlFor="phone_number_id" className="text-xs text-zinc-700 dark:text-zinc-200 font-medium">Phone Number ID *</Label>
+                                    <Input
+                                        id="phone_number_id"
+                                        placeholder="123456789012345"
+                                        value={phoneNumberId}
+                                        onChange={(e) => setPhoneNumberId(e.target.value)}
+                                        className="h-9 text-sm bg-zinc-50 dark:bg-zinc-900 border-zinc-200 dark:border-border focus:ring-green-500/20 dark:focus:ring-green-400/20 focus:border-green-600 dark:focus:border-green-400"
+                                    />
+                                </div>
+                                <div className="space-y-1.5">
+                                    <Label htmlFor="waba_id" className="text-xs text-zinc-700 dark:text-zinc-200 font-medium">WABA ID *</Label>
+                                    <Input
+                                        id="waba_id"
+                                        placeholder="123456789012345"
+                                        value={wabaId}
+                                        onChange={(e) => setWabaId(e.target.value)}
+                                        className="h-9 text-sm bg-zinc-50 dark:bg-zinc-900 border-zinc-200 dark:border-border focus:ring-green-500/20 dark:focus:ring-green-400/20 focus:border-green-600 dark:focus:border-green-400"
+                                    />
+                                </div>
+                                <div className="space-y-1.5">
+                                    <Label htmlFor="access_token" className="text-xs text-zinc-700 dark:text-zinc-200 font-medium">Access Token *</Label>
+                                    <Input
+                                        id="access_token"
+                                        type="password"
+                                        placeholder="EAAxxxxxxxxxx"
+                                        value={accessToken}
+                                        onChange={(e) => setAccessToken(e.target.value)}
+                                        className="h-9 text-sm bg-zinc-50 dark:bg-zinc-900 border-zinc-200 dark:border-border focus:ring-green-500/20 dark:focus:ring-green-400/20 focus:border-green-600 dark:focus:border-green-400"
+                                    />
+                                </div>
+                                <div className="p-2 bg-green-50 dark:bg-green-900/20 text-green-700 dark:text-green-300 text-[10px] rounded border border-green-100 dark:border-green-800">
+                                    ℹ️ Obtenha as credenciais no <a href="https://developers.facebook.com" target="_blank" rel="noopener noreferrer" className="underline font-semibold">Meta Developer Console</a>
+                                </div>
                             </div>
                         )}
                     </CardContent>
@@ -321,18 +314,18 @@ export const IntegrationsSettings: React.FC = () => {
                             <Button
                                 size="sm"
                                 onClick={handleConnectWhatsapp}
-                                disabled={loading || whatsappStatus === 'connecting'}
+                                disabled={loading || whatsappStatus === 'connecting' || !phoneNumberId || !wabaId || !accessToken}
                                 className="w-full h-7 gap-1.5 bg-gradient-to-r from-green-500 to-emerald-500 hover:from-green-600 hover:to-emerald-600 text-white shadow-sm text-xs"
                             >
                                 {loading || whatsappStatus === 'connecting' ? (
                                     <>
                                         <RefreshCw className="w-3 h-3 animate-spin" />
-                                        Conectando...
+                                        Salvando...
                                     </>
                                 ) : (
                                     <>
-                                        <QrCode className="w-3 h-3" />
-                                        {whatsappStatus === 'qrcode' ? 'Gerar Novo QR' : 'Conectar WhatsApp'}
+                                        <MessageSquare className="w-3 h-3" />
+                                        Conectar WhatsApp
                                     </>
                                 )}
                             </Button>

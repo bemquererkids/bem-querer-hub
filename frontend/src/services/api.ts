@@ -55,8 +55,8 @@ export const integrationService = {
     });
     return response.data;
   },
-  connectWhatsApp: async () => {
-    const response = await api.post('/integrations/whatsapp/connect');
+  connectWhatsApp: async (credentials: { phone_number_id: string; waba_id: string; access_token: string }) => {
+    const response = await api.post('/integrations/whatsapp/connect', credentials);
     return response.data;
   },
   getWhatsAppStatus: async () => {
