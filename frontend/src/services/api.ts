@@ -49,7 +49,7 @@ export const chatService = {
 
 export const integrationService = {
   connectClinicorp: async (clientId: string, clientSecret: string) => {
-    const response = await api.post('/integrations/clinicorp/configure', {
+    const response = await api.post('/integrations/clinicorp/connect', {
       client_id: clientId,
       client_secret: clientSecret
     });
@@ -61,6 +61,18 @@ export const integrationService = {
   },
   getWhatsAppStatus: async () => {
     const response = await api.get('/integrations/whatsapp/status');
+    return response.data;
+  },
+  getClinicorpStatus: async () => {
+    const response = await api.get('/integrations/clinicorp/status');
+    return response.data;
+  },
+  connectOpenAI: async (apiKey: string) => {
+    const response = await api.post('/integrations/openai/connect', { api_key: apiKey });
+    return response.data;
+  },
+  getOpenAIStatus: async () => {
+    const response = await api.get('/integrations/openai/status');
     return response.data;
   }
 };
