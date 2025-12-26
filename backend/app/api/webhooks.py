@@ -51,9 +51,11 @@ async def verify_meta_webhook(request: Request):
             supabase = get_supabase()
             logger.info(f"🔍 Querying database for verify_token: {token}")
             
+            # Query without is_active filter to avoid True/true boolean mismatch
             result = supabase.table('clinic_integrations') \
                 .select('verify_token, clinica_id, is_active') \
                 .eq('type', 'whatsapp') \
+                .eq('verify_token', token) \
                 .execute()
             
             logger.info(f"📊 Database query result: {len(result.data) if result.data else 0} records found")
@@ -62,11 +64,11 @@ async def verify_meta_webhook(request: Request):
                 for record in result.data:
                     logger.info(f"   Record: verify_token={record.get('verify_token')}, is_active={record.get('is_active')}")
             
-            # Now filter by token and active status
-            matching_records = [r for r in (result.data or []) if r.get('verify_token') == token and r.get('is_active') == True]
+            # Filter by active status in Python (to avoid True/true mismatch)
+            matching_records = [r for r in (result.data or []) if r.get('is_active') == True]
             
             if not matching_records:
-                logger.warning(f"❌ No matching verify_token found. Received: {token}")
+                logger.warning(f"❌ No active matching verify_token found. Received: {token}")
                 raise HTTPException(status_code=403, detail="Verification token mismatch")
             
             clinic_id = matching_records[0]['clinica_id']
