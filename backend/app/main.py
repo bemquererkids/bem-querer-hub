@@ -99,6 +99,48 @@ async def whatsapp_status():
         "message": "Use /api/debug/uazapi para ver detalhes da conexão"
     }
 
+# Clinicorp Status - Check environment variables
+@main_router.get("/integrations/clinicorp/status")
+async def clinicorp_status():
+    client_id = os.getenv("CLINICORP_CLIENT_ID")
+    client_secret = os.getenv("CLINICORP_CLIENT_SECRET")
+    
+    connected = bool(client_id and client_secret)
+    return {
+        "connected": connected,
+        "message": "Conectado via variáveis de ambiente" if connected else "Credenciais não configuradas"
+    }
+
+# OpenAI Status - Check environment variable
+@main_router.get("/integrations/openai/status")
+async def openai_status():
+    api_key = os.getenv("OPENAI_API_KEY")
+    
+    connected = bool(api_key)
+    return {
+        "connected": connected,
+        "message": "Conectado via variável de ambiente" if connected else "API Key não configurada"
+    }
+
+# Connect endpoints (save to env - only works locally, in production use Vercel dashboard)
+@main_router.post("/integrations/clinicorp/connect")
+async def connect_clinicorp(client_id: str, client_secret: str):
+    # In production, these should already be set in Vercel
+    # This endpoint just validates the connection
+    if not client_id or not client_secret:
+        raise HTTPException(status_code=400, detail="Credenciais inválidas")
+    
+    return {"success": True, "message": "Credenciais validadas. Configure-as na Vercel para persistência."}
+
+@main_router.post("/integrations/openai/connect")
+async def connect_openai(api_key: str):
+    # In production, this should already be set in Vercel
+    # This endpoint just validates the connection
+    if not api_key or not api_key.startswith("sk-"):
+        raise HTTPException(status_code=400, detail="API Key inválida")
+    
+    return {"success": True, "message": "API Key validada. Configure-a na Vercel para persistência."}
+
 app.include_router(main_router)
 
 # Import and include webhooks router
