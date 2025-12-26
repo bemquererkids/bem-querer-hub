@@ -51,21 +51,25 @@ async def verify_meta_webhook(request: Request):
             supabase = get_supabase()
             logger.info(f"🔍 Querying database for verify_token: {token}")
             
-            # Query without is_active filter to avoid True/true boolean mismatch
+            # Get ALL whatsapp records and filter in Python to avoid query issues
             result = supabase.table('clinic_integrations') \
-                .select('verify_token, clinica_id, is_active') \
+                .select('*') \
                 .eq('type', 'whatsapp') \
-                .eq('verify_token', token) \
                 .execute()
             
-            logger.info(f"📊 Database query result: {len(result.data) if result.data else 0} records found")
+            logger.info(f"📊 Database query result: {len(result.data) if result.data else 0} total whatsapp records")
             
             if result.data:
                 for record in result.data:
-                    logger.info(f"   Record: verify_token={record.get('verify_token')}, is_active={record.get('is_active')}")
+                    logger.info(f"   Record: verify_token={record.get('verify_token')}, is_active={record.get('is_active')}, match={record.get('verify_token') == token}")
             
-            # Filter by active status in Python (to avoid True/true mismatch)
-            matching_records = [r for r in (result.data or []) if r.get('is_active') == True]
+            # Filter by token AND active status in Python
+            matching_records = [
+                r for r in (result.data or []) 
+                if r.get('verify_token') == token and r.get('is_active') == True
+            ]
+            
+            logger.info(f"🎯 Matching records after filter: {len(matching_records)}")
             
             if not matching_records:
                 logger.warning(f"❌ No active matching verify_token found. Received: {token}")
