@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { supabase } from '../lib/supabase';
+import { supabase } from '../services/supabase';
 import { ChatContact } from '../types/chat';
 
 export const useWhatsAppChats = () => {

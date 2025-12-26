@@ -1,0 +1,25 @@
+✅ WEBHOOK - CREDENCIAIS FINAIS
+================================
+
+Callback URL:
+https://backend-alpha-nine-52.vercel.app/api/webhooks/whatsapp
+
+Verify Token:
+0addb8a5-a6cd-473d-af75-b8777f510fd9
+
+================================
+
+CONFIGURAR NO META AGORA:
+1. Webhooks → Configurar
+2. Cole Callback URL
+3. Cole Verify Token  
+4. Verificar e salvar
+5. Marcar: ✅ messages ✅ message_status
+
+================================
+
+NOTA: Backend deployado com sucesso!
+Frontend tem erro de build (arquivo supabase.ts)
+mas não afeta o webhook.
+
+================================
