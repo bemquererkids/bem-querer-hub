@@ -148,8 +148,38 @@ async def list_chats_direct():
         "status": "online"
     }]
 
+class ChatMessageModel(BaseModel):
+    id: str
+    content: str
+    sender: str
+    timestamp: str
+
+@app.get("/api/chat/{chat_id}/messages", response_model=List[ChatMessageModel])
+async def get_messages(chat_id: str):
+    return [{
+        "id": "msg_001",
+        "content": "Olá! Sou a Carol, assistente da Bem-Querer. Como posso ajudar você hoje?",
+        "sender": "agent",
+        "timestamp": datetime.now().isoformat()
+    }]
+
+class SendMessageRequest(BaseModel):
+    chat_id: str
+    message: str
+
+@app.post("/api/chat/message")
+async def send_message(request: SendMessageRequest):
+    # Simple echo response for demo
+    return {
+        "id": f"msg_{datetime.now().timestamp()}",
+        "content": f"Você disse: {request.message}. Esta é uma resposta demo. Configure o GPT para respostas reais.",
+        "sender": "agent",
+        "timestamp": datetime.now().isoformat()
+    }
+
 @app.get("/")
 async def root():
     return {"status": "ok", "message": "Bem-Querer Hub API", "version": "1.0.0"}
+
 
 
