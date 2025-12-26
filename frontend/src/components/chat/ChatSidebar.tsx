@@ -127,8 +127,8 @@ export const ChatSidebar: React.FC<ChatSidebarProps> = ({ chats, activeChatId, o
                                     <div className="relative">
                                         <div className="w-9 h-9 rounded-full bg-zinc-200 dark:bg-zinc-700 overflow-hidden flex-shrink-0">
                                             <img
-                                                src={`https://ui-avatars.com/api/?name=${chat.name.replace(' ', '+')}&background=random&size=128`}
-                                                alt={chat.name}
+                                                src={`https://ui-avatars.com/api/?name=${(chat.name || 'Desconhecido').replace(' ', '+')}&background=random&size=128`}
+                                                alt={chat.name || 'Contato'}
                                                 className="w-full h-full object-cover"
                                             />
                                         </div>
@@ -161,7 +161,7 @@ export const ChatSidebar: React.FC<ChatSidebarProps> = ({ chats, activeChatId, o
                                                 <User className="w-2.5 h-2.5" /> Lead
                                             </Badge>
 
-                                            {chat.tags.includes('financial') && (
+                                            {chat.tags && chat.tags.includes('financial') && (
                                                 <Badge variant="outline" className="text-[9px] px-1.5 py-0 h-4 font-normal border-amber-200 dark:border-amber-800 bg-amber-50 dark:bg-amber-900/30 text-amber-700 dark:text-amber-300 gap-0.5">
                                                     <DollarSign className="w-2.5 h-2.5" /> Venda
                                                 </Badge>

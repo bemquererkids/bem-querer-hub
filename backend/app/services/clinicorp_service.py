@@ -13,8 +13,9 @@ class ClinicorpClient:
     Scoping: This should be instantiated per clinic/tenant.
     """
     
-    BASE_URL = "https://api.clinicorp.com/v1"  # Confirm base URL with docs
-    AUTH_URL = "https://auth.clinicorp.com/oauth/token"
+    BASE_URL = "https://api.clinicorp.com/rest/v1"
+    # Old OAuth URL (kept for reference or legacy support if needed)
+    # AUTH_URL = "https://auth.clinicorp.com/oauth/token"
     
     def __init__(self, clinic_id: str, integration_config: Dict[str, Any]):
         self.clinic_id = clinic_id
@@ -33,45 +34,24 @@ class ClinicorpClient:
             "Accept": "application/json"
         }
 
+    def _get_basic_auth_header(self) -> Dict[str, str]:
+        """Generates Basic Auth Header"""
+        import base64
+        # Username is client_id (e.g. 'bemquerer'), Password is client_secret (Token)
+        auth_str = f"{self.client_id}:{self.client_secret}"
+        auth_bytes = auth_str.encode('ascii')
+        base64_bytes = base64.b64encode(auth_bytes)
+        base64_auth = base64_bytes.decode('ascii')
+        return {"Authorization": f"Basic {base64_auth}"}
+
     async def _get_valid_token(self) -> str:
-        """Checks if token is valid, refreshes if necessary"""
-        # DIRECT TOKEN MODE: If we have a static API token, use it directly.
+        """
+        Legacy OAuth Token getter.
+        For Basic Auth, we don't need this, but we keep the structure compatible.
+        """
         if self.api_token:
             return self.api_token
-
-        if time.time() < self.token_expires_at - 60: # 60s buffer
-            return self.access_token
-            
-        return await self._refresh_token()
-
-    async def _refresh_token(self) -> str:
-        """Performs OAuth2 Refresh Token Grant"""
-        # ... existing OAuth logic ...
-        async with httpx.AsyncClient() as client:
-            try:
-                payload = {
-                    "grant_type": "refresh_token",
-                    "refresh_token": self.refresh_token,
-                    "client_id": self.client_id,
-                    "client_secret": self.client_secret
-                }
-                
-                response = await client.post(self.AUTH_URL, json=payload)
-                response.raise_for_status()
-                
-                data = response.json()
-                self.access_token = data["access_token"]
-                self.refresh_token = data["refresh_token"] # Updates refresh token (rotation)
-                self.token_expires_at = time.time() + data["expires_in"]
-                
-                return self.access_token
-                
-            except Exception as e:
-                print(f"[Clinicorp] Error refreshing token: {e}")
-                # Fallback: If refresh fails, maybe the secret IS the token?
-                if self.client_secret:
-                     return self.client_secret
-                raise
+        return "" # Basic Auth doesn't use Bearer token flow normally
 
     async def _request(self, method: str, endpoint: str, data: Dict = None) -> Any:
         """Authenticated Request Wrapper"""
@@ -80,8 +60,8 @@ class ClinicorpClient:
             return self._mock_response(method, endpoint, data)
         # -----------------
 
-        token = await self._get_valid_token()
-        headers = {**self.headers, "Authorization": f"Bearer {token}"}
+        # Use Basic Auth Header
+        headers = {**self.headers, **self._get_basic_auth_header()}
         
         # Try both base URLs if necessary or specific one for API Key
         url = f"{self.BASE_URL}{endpoint}"
@@ -89,12 +69,8 @@ class ClinicorpClient:
         async with httpx.AsyncClient() as client:
             response = await client.request(method, url, json=data, headers=headers)
             
-            if response.status_code == 401:
-                # If unauthorized, and we are using OAuth, try refresh.
-                if not self.api_token:
-                    token = await self._refresh_token()
-                    headers["Authorization"] = f"Bearer {token}"
-                    response = await client.request(method, url, json=data, headers=headers)
+            # Logic for OAuth refresh removed/suspended for Basic Auth focus
+            # if response.status_code == 401: ...
             
             # Handle 404 gracefully for some endpoints
             if response.status_code == 404:
@@ -111,12 +87,12 @@ class ClinicorpClient:
     async def get_appointments(self, date: str) -> List[Dict]:
         """
         Lista agendamentos de uma data.
-        Endpoint: /appointment/get_appointment
-        Params: subscriber_id, code_link
+        Endpoint: /patient/list_appointments
+        Params: start, end
         """
-        base_params = "subscriber_id=bemquerer&code_link=90984"
         try:
-            return await self._request("GET", f"/appointment/get_appointment?date={date}&{base_params}")
+            # Using same date for start and end to get daily view
+            return await self._request("GET", f"/patient/list_appointments?start={date}&end={date}")
         except Exception as e:
             print(f"[Clinicorp] Error fetching appointments: {e}")
             return []
@@ -131,7 +107,22 @@ class ClinicorpClient:
             endpoint += f"&professionalId={professional_id}"
             
         try:
-            return await self._request("GET", endpoint)
+            results = await self._request("GET", endpoint)
+            
+            # --- CLIENT SIDE FILTERING ---
+            # API seems to ignore professionalId param or returns mixed results sometimes.
+            # We enforce filtering here to be safe.
+            if professional_id:
+                filtered = []
+                target_id = str(professional_id)
+                for slot in results:
+                    # Slot keys might be PascalCase 'ProfessionalId'
+                    slot_prof_id = str(slot.get("ProfessionalId", slot.get("professionalId", "")))
+                    if slot_prof_id == target_id:
+                        filtered.append(slot)
+                return filtered
+                
+            return results
         except Exception as e:
             print(f"[Clinicorp] Error checking availability: {e}")
             return []
@@ -139,26 +130,53 @@ class ClinicorpClient:
     async def create_patient(self, patient_data: Dict) -> str:
         """
         Cria paciente e retorna o ID do Clinicorp.
-        POST /patients
+        POST /patient/create
         """
+        # API requires PascalCase for Name and subscriber_id in body
         payload = {
-            "name": patient_data["full_name"],
-            "cpf": patient_data.get("cpf"),
-            "phone": patient_data.get("phone"),
-            "email": patient_data.get("email"),
-            "birthdate": patient_data.get("birth_date")
+            "Name": patient_data["full_name"],
+            "Cpf": patient_data.get("cpf"),
+            "Phone": patient_data.get("phone"),
+            "Email": patient_data.get("email"),
+            "BirthDate": patient_data.get("birth_date"),
+            "subscriber_id": "bemquerer" # Required in body
         }
-        res = await self._request("POST", "/patients", payload)
-        return res["id"]
+        # Removing None values to avoid potential "null" string issues
+        payload = {k: v for k, v in payload.items() if v is not None}
+        
+        # Endpoint is /patient/create
+        res = await self._request("POST", "/patient/create", payload)
+        return str(res["id"])
 
     async def create_appointment(self, appointment_data: Dict) -> str:
         """
-        Agenda consulta.
-        POST /appointments
+        Agenda consulta via API.
+        Endpoint: /appointment/create_appointment_by_api
+        
+        ATENCAO: Atualmente este endpoint retorna erro "Necessário ID da Clínica".
+        A implementação abaixo está PREPARADA mas aguardando correcao do parametro ClinicId.
         """
-        res = await self._request("POST", "/appointments", appointment_data)
-        return res["id"]
+        url = "/appointment/create_appointment_by_api"
+        payload = {
+            "PatientId": appointment_data.get("patient_id"), # ID numérico (ex: 5589...)
+            "Date": appointment_data.get("date"),            # YYYY-MM-DD
+            "BeginTime": appointment_data.get("start_time"), # HH:MM
+            "EndTime": appointment_data.get("end_time"),     # HH:MM
+            "Observation": appointment_data.get("observation", "Agendamento via BemQuerer"),
+            "subscriber_id": "bemquerer",
+            # TODO: Descobrir o nome correto deste campo
+            # "ClinicId": 90984, 
+        }
+        
+        # Por enquanto, loga e retorna erro para não quebrar silenciosamente
+        print(f"[Clinicorp] Warning: Tentatina de agendamento. Endpoint incompleto. Payload: {payload}")
+        
+        try:
+             res = await self._request("POST", url, payload)
+             return str(res.get("id", ""))
+        except Exception as e:
+             raise NotImplementedError(f"Falha na criação de agendamento (Parâmetro de Clínica pendente). Detalhes: {e}")
 
     async def get_professionals(self) -> List[Dict]:
         """Lista dentistas disponíveis"""
-        return await self._request("GET", "/professionals")
+        return await self._request("GET", "/professional/list_all_professionals")

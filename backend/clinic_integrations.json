@@ -1,0 +1,11 @@
+{
+  "clinicorp": {
+    "client_id": "bemquerer",
+    "client_secret": "8b6b218c-b536-4db5-97a1-babffc283eec",
+    "connected_at": "2025-12-25 11:53:19.581947"
+  },
+  "openai": {
+    "api_key": "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",
+    "updated_at": "2025-12-25 12:03:46.230067"
+  }
+}

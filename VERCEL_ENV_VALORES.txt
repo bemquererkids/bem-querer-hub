@@ -1,0 +1,30 @@
+# COPIAR E COLAR NA VERCEL
+
+## Environment Variables - bem-querer-hub
+
+### 1. UAZAPI_BASE_URL
+```
+https://bemquerer.uazapi.com
+```
+Environments: ✅ Production ✅ Preview ✅ Development
+
+---
+
+### 2. UAZAPI_TOKEN
+```
+093b971c-f10f-4af1-b0aa-a13c6ad15909
+```
+Environments: ✅ Production ✅ Preview ✅ Development
+
+---
+
+### 3. UAZAPI_INSTANCE
+```
+bemquerer
+```
+Environments: ✅ Production ✅ Preview ✅ Development
+
+---
+
+## ⚠️ IMPORTANTE
+Após adicionar/atualizar, fazer REDEPLOY!

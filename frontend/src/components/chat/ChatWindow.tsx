@@ -53,10 +53,10 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({ chat, messages: initialM
 
             // 3. Add AI Response
             const aiMsg: ChatMessage = {
-                id: (Date.now() + 1).toString(),
-                content: response.response,
-                sender: 'user', // Represents the 'other side' (AI acting as the contact)
-                timestamp: new Date().toISOString(),
+                id: response.ai_message.id,
+                content: response.ai_message.content,
+                sender: 'user',
+                timestamp: response.ai_message.timestamp,
                 type: 'text',
                 status: 'read'
             };
@@ -86,8 +86,8 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({ chat, messages: initialM
             <div className="h-16 bg-white border-b border-border flex items-center justify-between px-4 shadow-sm z-10">
                 <div className="flex items-center gap-3">
                     <Avatar className="h-10 w-10 border border-slate-100 cursor-pointer">
-                        <AvatarImage src={`https://ui-avatars.com/api/?name=${chat.name.replace(' ', '+')}&background=random`} />
-                        <AvatarFallback>{chat.name.substring(0, 2).toUpperCase()}</AvatarFallback>
+                        <AvatarImage src={`https://ui-avatars.com/api/?name=${(chat.name || 'Desconhecido').replace(' ', '+')}&background=random`} />
+                        <AvatarFallback>{(chat.name || 'U').substring(0, 2).toUpperCase()}</AvatarFallback>
                     </Avatar>
                     <div>
                         <h3 className="font-bold text-slate-800 text-sm">{chat.name}</h3>
@@ -109,8 +109,8 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({ chat, messages: initialM
                         <div key={msg.id} className={`flex ${isMe ? 'justify-end' : 'justify-start'}`}>
                             <div
                                 className={`max-w-[70%] px-4 py-2 shadow-sm relative text-sm ${isMe
-                                        ? 'bg-gradient-to-r from-cyan-500 to-teal-500 text-white rounded-2xl rounded-tr-sm'
-                                        : 'bg-white border border-slate-100 text-slate-700 rounded-2xl rounded-tl-sm'
+                                    ? 'bg-gradient-to-r from-cyan-500 to-teal-500 text-white rounded-2xl rounded-tr-sm'
+                                    : 'bg-white border border-slate-100 text-slate-700 rounded-2xl rounded-tl-sm'
                                     }`}
                             >
                                 <p className="leading-relaxed whitespace-pre-wrap">{msg.content}</p>

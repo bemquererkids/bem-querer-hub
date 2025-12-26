@@ -1,0 +1,9 @@
+=== TESTE WEBHOOK ===
+
+Resultado: {
+  "status": "upsert_processed",
+  "clinic_id": "00000000-0000-0000-0000-000000000001"
+}
+
+✅ SUCESSO! Webhook processado.
+Clinic ID: 00000000-0000-0000-0000-000000000001

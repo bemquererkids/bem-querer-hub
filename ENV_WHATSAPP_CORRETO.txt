@@ -1,0 +1,10 @@
+# Copie estas linhas e adicione ao arquivo backend/.env
+
+# UazAPI WhatsApp Gateway - CREDENCIAIS CORRETAS
+UAZAPI_BASE_URL=https://bemquerer.uazapi.com
+UAZAPI_TOKEN=093b971c-f10f-4af1-b0aa-a13c6ad15909
+UAZAPI_INSTANCE=bemquerer
+
+# Nota: Estas são as credenciais testadas e funcionando
+# Status: WhatsApp conectado no número 5511991026844
+# Última verificação: 2025-12-25

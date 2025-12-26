@@ -1,0 +1,32 @@
+﻿
+================================================================================
+.\backend\venv\Scripts\python.exe : Traceback (most recent call last):
+No linha:1 caractere:1
++ .\backend\venv\Scripts\python.exe test_webhook_debug.py 2>&1 | Out-Fi ...
++ ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: (Traceback (most recent call 
+last)::String) [],     RemoteException
+    + FullyQualifiedErrorId : NativeCommandError
+ 
+  File "C:\projetos\sistemabemquerer\test_webhook_debug.py", line 81, in <module>
+    asyncio.run(test())
+  File "C:\Users\luiz.bezerra_santodi\AppData\Local\Programs\Python\Python311\Lib\as
+yncio\runners.py", line 190, in run
+    return runner.run(main)
+           ^^^^^^^^^^^^^^^^
+  File "C:\Users\luiz.bezerra_santodi\AppData\Local\Programs\Python\Python311\Lib\as
+yncio\runners.py", line 118, in run
+    return self._loop.run_until_complete(task)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\luiz.bezerra_santodi\AppData\Local\Programs\Python\Python311\Lib\as
+yncio\base_events.py", line 654, in run_until_complete
+    return future.result()
+           ^^^^^^^^^^^^^^^
+  File "C:\projetos\sistemabemquerer\test_webhook_debug.py", line 59, in test
+    print("\U0001f9ea TESTE WEBHOOK COM LOGGING DETALHADO")
+  File "C:\Users\luiz.bezerra_santodi\AppData\Local\Programs\Python\Python311\Lib\en
+codings\cp1252.py", line 19, in encode
+    return codecs.charmap_encode(input,self.errors,encoding_table)[0]
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+UnicodeEncodeError: 'charmap' codec can't encode character '\U0001f9ea' in position 
+0: character maps to <undefined>

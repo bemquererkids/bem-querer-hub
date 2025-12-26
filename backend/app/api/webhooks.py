@@ -244,12 +244,13 @@ async def process_new_lead(phone: str, name: str, message: str, instance_id: str
     5. Dispara IA carol para responder.
     6. Envia resposta via UazAPI.
     """
-    from app.services.gpt_service import gpt_service
+    from app.services.gpt_service import get_gpt_service
     from app.services.uazapi_service import get_uazapi_service
     from app.services.message_processor import get_message_processor
     
     supabase = get_supabase()
     uazapi = get_uazapi_service()
+    gpt_service = get_gpt_service()
     clean_phone = phone.split('@')[0]
     
     # 1. Busca Paciente
@@ -314,13 +315,14 @@ async def process_new_lead(phone: str, name: str, message: str, instance_id: str
     # Em um cenário real, pegaríamos as últimas X mensagens do Supabase
     history = [] # TODO: Implementar busca de histórico real se necessário
     
-    # 5. Chamar GPT para Gerar Resposta
+    # 5. Chamar GPT (OpenAI) para Gerar Resposta
     print(f"🤖 Gerando resposta da Carol para {name}...")
-    ai_response_text = await gpt_service.generate_response(
+    ai_response = await gpt_service.process_message(
         message=message,
-        history=history,
-        persona_name="Carol"
+        chat_history=history,
+        context={"patient_name": name, "clinic_id": clinic_id}
     )
+    ai_response_text = ai_response.get("response", "Desculpe, não entendi.")
 
     # 6. Salvar Mensagem da IA no Banco
     ai_msg = {
