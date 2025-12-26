@@ -23,10 +23,11 @@ class ChatMessage(BaseModel):
 
 class Chat(BaseModel):
     id: str
-    patientName: str
+    name: str
     lastMessage: str
-    timestamp: str
+    lastMessageTime: str
     unreadCount: int
+    tags: List[str]
     status: str
 
 # --- Mock DB for Demo (since Supabase might be empty/hard to seed quickly) ---
@@ -34,12 +35,12 @@ class Chat(BaseModel):
 MOCK_CHATS = [
     {
         "id": "chat_demo_001",
-        "patientName": "Paciente Teste (Demo)",
-        "lastMessage": "Olá, gostaria de ver os horários.",
-        "timestamp": datetime.now().isoformat(),
+        "name": "Carol - Chat Demo",
+        "lastMessage": "Olá! Sou a Carol, assistente da Bem-Querer. Como posso ajudar?",
+        "lastMessageTime": datetime.now().isoformat(),
         "unreadCount": 0,
-        "status": "active",
-        "messages": []
+        "tags": ["demo"],
+        "status": "online"
     }
 ]
 
