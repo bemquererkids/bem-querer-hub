@@ -7,6 +7,14 @@ from typing import Dict, Any, Optional, List
 from app.core.config import settings
 import logging
 
+import logging
+from datetime import datetime
+try:
+    from app.services.clinicorp_service import ClinicorpClient
+    HAS_CLINICORP = True
+except ImportError:
+    HAS_CLINICORP = False
+
 logger = logging.getLogger(__name__)
 
 
@@ -90,9 +98,63 @@ Sempre retorne um JSON com:
             })
             
             # Add context if available
+            # Add context if available
             context_str = ""
             if context:
-                context_str = f"\n\nContexto adicional: {context}"
+                # --- CLINICORP TOOL USE ---
+                # Simple keyword detection to fetch availability
+                msg_lower = message.lower()
+                # Expanded keywords to catch time/date intent
+                if HAS_CLINICORP and any(kw in msg_lower for kw in ["horári", "agenda", "vaga", "marcar", "disponí", "hoje", "amanhã", "dia"]):
+                    try:
+                        # Load credential from file for tool usage
+                        import os
+                        import dateparser
+                        creds = {}
+                        try:
+                            # Try to find credentials file in project root
+                            root_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "..", "..")) 
+                            path = os.path.join(root_dir, "CLINICORP_CREDENTIALS.txt")
+                            if os.path.exists(path):
+                                with open(path, "r", encoding="utf-8") as f:
+                                    for line in f:
+                                        if "=" in line and not line.startswith("#"):
+                                            k, v = line.split("=", 1)
+                                            creds[k.strip()] = v.strip()
+                        except: pass
+                        
+                        client_id = creds.get("CLIENT_ID", "mock")
+                        client_secret = creds.get("CLIENT_SECRET", "mock")
+
+                        # Init Client
+                        cl_client = ClinicorpClient(clinic_id="tool_use", integration_config={"client_id": client_id, "client_secret": client_secret})
+                        
+                        # --- INTELLIGENT DATE PARSING ---
+                        target_date = datetime.now()
+                        date_extraction = dateparser.parse(message, languages=['pt'], settings={'PREFER_DATES_FROM': 'future', 'DATE_ORDER': 'DMY'})
+                        
+                        if date_extraction:
+                            target_date = date_extraction
+                            date_source = "extraída da mensagem"
+                        else:
+                            date_source = "hoje (padrão)"
+
+                        date_str = target_date.strftime("%Y-%m-%d")
+                        date_display = target_date.strftime("%d/%m/%Y")
+                        
+                        # Check availability
+                        slots = await cl_client.check_availability(date_str)
+                        
+                        if slots:
+                            context['clinic_slots'] = slots
+                            context['clinic_date'] = date_str
+                            context_str += f"\n\n[SISTEMA] Horários disponíveis para {date_display} ({date_source}): {slots}"
+                        else:
+                            context_str += f"\n\n[SISTEMA] Não há horários livres para {date_display} ({date_source})."
+                    except Exception as tool_err:
+                        logger.error(f"Failed to fetch clinic slots: {tool_err}")
+
+                context_str += f"\n\nContexto adicional: {context}"
             
             # Generate response
             chat = self.model.start_chat(history=conversation[:-1])
