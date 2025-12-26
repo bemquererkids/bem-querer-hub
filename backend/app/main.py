@@ -124,7 +124,20 @@ class ChatModel(BaseModel):
     status: str
 
 @main_router.get("/chat/list", response_model=List[ChatModel])
-async def list_chats():
+async def list_chats_router():
+    return [{
+        "id": "chat_demo_001",
+        "name": "Carol - Chat Demo",
+        "lastMessage": "Olá! Sou a Carol, assistente da Bem-Querer. Como posso ajudar?",
+        "lastMessageTime": datetime.now().isoformat(),
+        "unreadCount": 0,
+        "tags": ["demo"],
+        "status": "online"
+    }]
+
+# Also add directly to app as fallback
+@app.get("/api/chat/list", response_model=List[ChatModel])
+async def list_chats_direct():
     return [{
         "id": "chat_demo_001",
         "name": "Carol - Chat Demo",
@@ -138,4 +151,5 @@ async def list_chats():
 @app.get("/")
 async def root():
     return {"status": "ok", "message": "Bem-Querer Hub API", "version": "1.0.0"}
+
 
