@@ -151,6 +151,10 @@ app.include_router(webhooks_router)
 from app.api.integration import router as integration_router
 app.include_router(integration_router)
 
+# Import and include test router
+from app.api.test_webhook import router as test_router
+app.include_router(test_router)
+
 # Chat endpoints (inline to avoid import issues in Vercel)
 from datetime import datetime
 from typing import List
