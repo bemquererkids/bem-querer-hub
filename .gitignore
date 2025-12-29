@@ -51,4 +51,14 @@ logs/
 
 # Database
 *.db
-*.sqlite3
+
+# Temporary Maintenance Scripts
+check_*.py
+inspect_*.py
+verify_*.py
+simulate_*.py
+setup_webhook.py
+fix_env.py
+write_env.py
+test_*.py
+debug_*.py
