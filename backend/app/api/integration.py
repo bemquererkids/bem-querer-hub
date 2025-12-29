@@ -239,46 +239,73 @@ async def connect_whatsapp():
                 detail="UAZAPI_BASE_URL não configurado. Use: https://bemquerer.uazapi.com"
             )
         
-        # Tentar conectar
+        # Get UazAPI service
         uazapi = get_uazapi_service()
         
+        # First, check if already connected
+        try:
+            status = await uazapi.get_instance_status(settings.UAZAPI_INSTANCE)
+            logger.info(f"Current status: {status}")
+            
+            # Check if already connected
+            is_connected = False
+            if isinstance(status, dict):
+                is_connected = (
+                    status.get("status", {}).get("connected") or 
+                    status.get("connected") or
+                    status.get("state") == "open"
+                )
+            
+            if is_connected:
+                logger.info("WhatsApp already connected")
+                # Save to DB
+                db_save_config("whatsapp", {
+                    "instance": settings.UAZAPI_INSTANCE,
+                    "token": settings.UAZAPI_TOKEN,
+                    "connected_at": str(datetime.now())
+                })
+                
+                return {
+                    "success": True,
+                    "already_connected": True,
+                    "message": "WhatsApp já está conectado!",
+                    "instance": settings.UAZAPI_INSTANCE,
+                    "phone": status.get("instance", {}).get("phone") or status.get("phone")
+                }
+        except Exception as status_error:
+            logger.warning(f"Failed to check status: {status_error}")
+            # Continue to try connect anyway
+        
+        # Try to connect/get QR code
         try:
             result = await uazapi.connect_instance(settings.UAZAPI_INSTANCE)
             logger.info(f"UazAPI connect response: {result}")
         except Exception as api_error:
             logger.error(f"UazAPI API call failed: {str(api_error)}", exc_info=True)
-            # Return a more helpful error
             raise HTTPException(
                 status_code=500,
                 detail=f"Falha ao chamar UazAPI: {str(api_error)}. Verifique se o token e URL estão corretos."
             )
         
-        # Extrair QR Code
+        # Extract QR Code
         qrcode = None
         if isinstance(result, dict):
             qrcode = (
                 result.get("qrcode") or 
                 result.get("instance", {}).get("qrcode") or
-                result.get("data", {}).get("qrcode")
+                result.get("data", {}).get("qrcode") or
+                result.get("qr") or
+                result.get("code")
             )
         
         if not qrcode:
             logger.error(f"QR Code not found in response: {result}")
-            # If already connected, return success without QR
-            if isinstance(result, dict) and result.get("connected"):
-                return {
-                    "success": True,
-                    "already_connected": True,
-                    "message": "WhatsApp já está conectado!",
-                    "instance": settings.UAZAPI_INSTANCE
-                }
-            
             raise HTTPException(
                 status_code=500,
                 detail=f"QR Code não retornado pela UazAPI. Resposta: {result}"
             )
             
-        # 3. Save to DB for persistence
+        # Save to DB for persistence
         db_save_config("whatsapp", {
             "instance": settings.UAZAPI_INSTANCE,
             "token": settings.UAZAPI_TOKEN,
