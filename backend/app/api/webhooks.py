@@ -135,38 +135,6 @@ class UazApiMessage(BaseModel):
     message: dict # Conteúdo (text, image, etc)
     instanceId: str
 
-@router.get("/whatsapp")
-async def webhook_get_test(request: Request):
-    """Test endpoint to verify UazAPI can reach us"""
-    try:
-        from app.core.database import SupabaseClient
-        sb_admin = SupabaseClient.get_admin_client()
-        
-        # Log the GET request
-        debug_msg = {
-            "clinic_id": "00000000-0000-0000-0000-000000000001",
-            "conversation_id": "00000000-0000-0000-0000-000000000000",
-            "message_id": f"GET-{uuid.uuid4()}",
-            "from_number": "debug_logger",
-            "to_number": "system",
-            "message_type": "debug_log",
-            "content": f"GET REQUEST: {str(request.query_params)}",
-            "is_from_me": True
-        }
-        sb_admin.table('whatsapp_messages').insert(debug_msg).execute()
-        
-        return {"status": "ok", "method": "GET", "message": "Webhook endpoint is reachable"}
-    except Exception as e:
-        return {"status": "error", "error": str(e)}
-
-# Alternative shorter endpoint for UazAPI
-@router.post("/uaz")
-@router.get("/uaz")
-async def uaz_webhook(request: Request, background_tasks: BackgroundTasks):
-    """Alternative shorter webhook endpoint"""
-    # Just forward to main webhook handler
-    return await receive_whatsapp_message(request, background_tasks)
-
 @router.post("/whatsapp")
 async def receive_whatsapp_message(request: Request, background_tasks: BackgroundTasks):
     """
@@ -174,33 +142,14 @@ async def receive_whatsapp_message(request: Request, background_tasks: Backgroun
     Multi-tenant: Maps instance to clinic_id for data isolation.
     """
     try:
-        # Read raw body
-        body_bytes = await request.body()
+        # Parse payload
         try:
             payload = await request.json()
         except Exception:
-            payload = {"error": "Invalid JSON", "raw": body_bytes.decode('utf-8', errors='ignore')}
+            logger.error("Failed to parse JSON payload")
+            return {"status": "error", "message": "Invalid JSON"}
 
-        # DEBUG: Black Box Logging - Save RAW payload to verify successful hit
-        try:
-            from app.core.database import SupabaseClient
-            import json
-            sb_admin = SupabaseClient.get_admin_client()
-            debug_msg = {
-                "clinic_id": "00000000-0000-0000-0000-000000000001",
-                "conversation_id": "00000000-0000-0000-0000-000000000000", # Dummy UUID
-                "message_id": f"LOG-{uuid.uuid4()}",
-                "from_number": "debug_logger",
-                "to_number": "system",
-                "message_type": "debug_log",
-                "content": f"PAYLOAD: {str(payload)[:500]}", # Truncate to avoid huge logs
-                "is_from_me": True
-            }
-            sb_admin.table('whatsapp_messages').insert(debug_msg).execute()
-        except Exception as log_err:
-            print(f"Failed to log raw payload: {log_err}")
-
-        # Parse UazAPI format (discovered via webhook.cool)
+        # Parse UazAPI format
         event_type = payload.get('EventType', payload.get('event', 'messages'))
         instance_id = payload.get('owner', payload.get('instance', 'main'))
         
@@ -255,9 +204,7 @@ async def receive_whatsapp_message(request: Request, background_tasks: Backgroun
                     continue
                 
                 logger.info(f"Adding background task for message")
-                # DEBUG MODE: Run synchronously to catch errors in response
-                await process_single_message_data(message_data, instance_id, clinic_id)
-                # background_tasks.add_task(process_single_message_data, message_data, instance_id, clinic_id)
+                background_tasks.add_task(process_single_message_data, message_data, instance_id, clinic_id)
             
             logger.info(f"✅ {len(messages)} messages processed")
             return {"status": "upsert_processed", "clinic_id": clinic_id}
@@ -273,34 +220,7 @@ async def receive_whatsapp_message(request: Request, background_tasks: Backgroun
             "traceback": traceback.format_exc()
         }
 
-@router.get("/whatsapp/debug")
-async def debug_config():
-    """Temporary endpoint to verify Vercel Env Vars"""
-    from app.core.config import settings
-    
-    # Test DB Connection
-    db_status = "unchecked"
-    db_error = None
-    try:
-        from app.core.database import SupabaseClient
-        supabase = SupabaseClient.get_admin_client()
-        # Try simple query
-        res = supabase.table('pacientes').select("count", count="exact").limit(1).execute()
-        db_status = "connected"
-        db_count = res.count
-    except Exception as e:
-        db_status = "error"
-        db_error = str(e)
 
-    return {
-        "app_name": settings.APP_NAME,
-        "supabase_url": settings.SUPABASE_URL,
-        "has_service_key": bool(settings.SUPABASE_SERVICE_KEY),
-        "service_key_preview": settings.SUPABASE_SERVICE_KEY[:10] + "..." if settings.SUPABASE_SERVICE_KEY else None,
-        "openai_key_present": bool(settings.OPENAI_API_KEY),
-        "db_connection": db_status,
-        "db_error": db_error
-    }
 
 async def process_single_message_data(data: dict, instance_id: str, clinic_id: str):
     """
