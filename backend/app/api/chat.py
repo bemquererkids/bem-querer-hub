@@ -1,103 +1,180 @@
-
-from fastapi import APIRouter, HTTPException, Depends
+from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel
 from typing import List, Optional
 from datetime import datetime
+from app.core.database import SupabaseClient
+from app.services.uazapi_service import get_uazapi_service
+import logging
 import uuid
 
-# Services
-from app.services.gpt_service import get_gpt_service, GPTService
+logger = logging.getLogger(__name__)
 
 router = APIRouter(prefix="/api/chat", tags=["chat"])
 
 # --- Models ---
-class ChatMessageRequest(BaseModel):
-    chat_id: str
+class SendMessageRequest(BaseModel):
+    conversation_id: str
     message: str
 
 class ChatMessage(BaseModel):
     id: str
     content: str
-    sender: str # "user" | "ai"
-    timestamp: str
+    is_from_me: bool
+    created_at: str
+    message_type: Optional[str] = None
 
-class Chat(BaseModel):
+class Conversation(BaseModel):
     id: str
-    name: str
-    lastMessage: str
-    lastMessageTime: str
-    unreadCount: int
-    tags: List[str]
-    status: str
+    contact_name: str
+    phone_number: str
+    last_message: Optional[str] = None
+    last_message_at: Optional[str] = None
+    unread_count: int = 0
 
-# --- Mock DB for Demo (since Supabase might be empty/hard to seed quickly) ---
-# In production, this reads/writes to 'chats' and 'messages' tables.
-MOCK_CHATS = [
-    {
-        "id": "chat_demo_001",
-        "name": "Carol - Chat Demo",
-        "lastMessage": "Olá! Sou a Carol, assistente da Bem-Querer. Como posso ajudar?",
-        "lastMessageTime": datetime.now().isoformat(),
-        "unreadCount": 0,
-        "tags": ["demo"],
-        "status": "online"
-    }
-]
+# --- Endpoints ---
 
-@router.get("/list", response_model=List[Chat])
-async def list_chats():
-    return MOCK_CHATS
+@router.get("/conversations", response_model=List[Conversation])
+async def get_conversations():
+    """
+    List all WhatsApp conversations, ordered by most recent
+    """
+    try:
+        supabase = SupabaseClient.get_admin_client()
+        
+        response = supabase.table("whatsapp_conversations") \
+            .select("*") \
+            .order("last_message_at", desc=True) \
+            .limit(50) \
+            .execute()
+        
+        if not response.data:
+            return []
+        
+        return [
+            Conversation(
+                id=conv["id"],
+                contact_name=conv.get("contact_name") or conv.get("phone_number", "Desconhecido"),
+                phone_number=conv.get("phone_number", ""),
+                last_message=conv.get("last_message"),
+                last_message_at=conv.get("last_message_at"),
+                unread_count=conv.get("unread_count", 0)
+            )
+            for conv in response.data
+        ]
+        
+    except Exception as e:
+        logger.error(f"Error fetching conversations: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
 
-@router.get("/{chat_id}/messages", response_model=List[ChatMessage])
-async def get_messages(chat_id: str):
-    # Find chat
-    chat = next((c for c in MOCK_CHATS if c["id"] == chat_id), None)
-    if not chat:
-        return []
-    return chat["messages"]
 
-@router.post("/message")
-async def send_message(
-    req: ChatMessageRequest,
-    gpt_service: GPTService = Depends(get_gpt_service)
-):
-    # 1. Find Chat
-    chat = next((c for c in MOCK_CHATS if c["id"] == req.chat_id), None)
-    if not chat:
-        raise HTTPException(status_code=404, detail="Chat not found")
-    
-    # 2. Add User Message
-    user_msg = {
-        "id": str(uuid.uuid4()),
-        "content": req.message,
-        "sender": "user",
-        "timestamp": datetime.now().isoformat()
-    }
-    chat["messages"].append(user_msg)
-    chat["lastMessage"] = req.message
-    chat["timestamp"] = user_msg["timestamp"]
-    
-    # 3. Call AI (Carol) with Clinicorp Tools
-    # Context: User wants to schedule
-    ai_response = await gpt_service.process_message(
-        message=req.message,
-        chat_history=[{"content": m["content"], "sender_type": m["sender"]} for m in chat["messages"][:-1]],
-        context={"patient_name": chat["patientName"], "clinic_id": "bemquerer"}
-    )
-    
-    ai_text = ai_response.get("response", "Desculpe, não entendi.")
-    
-    # 4. Add AI Message
-    ai_msg = {
-        "id": str(uuid.uuid4()),
-        "content": ai_text,
-        "sender": "ai",
-        "timestamp": datetime.now().isoformat()
-    }
-    chat["messages"].append(ai_msg)
-    chat["lastMessage"] = ai_text
-    
-    return {
-        "user_message": user_msg,
-        "ai_message": ai_msg
-    }
+@router.get("/messages/{conversation_id}", response_model=List[ChatMessage])
+async def get_messages(conversation_id: str):
+    """
+    Get all messages for a specific conversation
+    """
+    try:
+        supabase = SupabaseClient.get_admin_client()
+        
+        response = supabase.table("whatsapp_messages") \
+            .select("*") \
+            .eq("conversation_id", conversation_id) \
+            .order("created_at", desc=False) \
+            .limit(100) \
+            .execute()
+        
+        if not response.data:
+            return []
+        
+        return [
+            ChatMessage(
+                id=msg["message_id"],
+                content=msg.get("content", ""),
+                is_from_me=msg.get("is_from_me", False),
+                created_at=msg.get("created_at", ""),
+                message_type=msg.get("message_type")
+            )
+            for msg in response.data
+            # Filter out debug logs
+            if msg.get("message_type") != "debug_log"
+        ]
+        
+    except Exception as e:
+        logger.error(f"Error fetching messages: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.post("/send")
+async def send_message(request: SendMessageRequest):
+    """
+    Send a WhatsApp message to a conversation
+    """
+    try:
+        supabase = SupabaseClient.get_admin_client()
+        
+        # 1. Get conversation details
+        conv_response = supabase.table("whatsapp_conversations") \
+            .select("*") \
+            .eq("id", request.conversation_id) \
+            .single() \
+            .execute()
+        
+        if not conv_response.data:
+            raise HTTPException(status_code=404, detail="Conversation not found")
+        
+        conversation = conv_response.data
+        phone_number = conversation.get("phone_number")
+        
+        if not phone_number:
+            raise HTTPException(status_code=400, detail="Phone number not found in conversation")
+        
+        # 2. Send message via UazAPI
+        uazapi = get_uazapi_service()
+        
+        try:
+            await uazapi.send_message(
+                instance="main",  # Not used in v2.0
+                phone=phone_number,
+                message=request.message
+            )
+        except Exception as send_error:
+            logger.error(f"Failed to send message via UazAPI: {send_error}")
+            raise HTTPException(status_code=500, detail=f"Falha ao enviar mensagem: {str(send_error)}")
+        
+        # 3. Save message to database
+        message_id = str(uuid.uuid4())
+        clinic_id = conversation.get("clinic_id", "00000000-0000-0000-0000-000000000001")
+        
+        message_data = {
+            "message_id": message_id,
+            "conversation_id": request.conversation_id,
+            "clinic_id": clinic_id,
+            "from_number": "system",  # Sent by system
+            "to_number": phone_number,
+            "content": request.message,
+            "is_from_me": True,  # Sent by us
+            "message_type": "text",
+            "created_at": datetime.now().isoformat()
+        }
+        
+        supabase.table("whatsapp_messages").insert(message_data).execute()
+        
+        # 4. Update conversation last_message
+        supabase.table("whatsapp_conversations") \
+            .update({
+                "last_message": request.message,
+                "last_message_at": datetime.now().isoformat()
+            }) \
+            .eq("id", request.conversation_id) \
+            .execute()
+        
+        return {
+            "success": True,
+            "message_id": message_id,
+            "message": "Mensagem enviada com sucesso"
+        }
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Error sending message: {e}", exc_info=True)
+        raise HTTPException(status_code=500, detail=str(e))
