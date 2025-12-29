@@ -187,7 +187,12 @@ async def receive_whatsapp_message(payload: dict, background_tasks: BackgroundTa
 
     except Exception as e:
         logger.error(f"Erro no webhook: {e}")
-        return {"status": "error", "detail": str(e)}
+        import traceback
+        return {
+            "status": "error", 
+            "detail": str(e),
+            "traceback": traceback.format_exc()
+        }
 
 @router.get("/whatsapp/debug")
 async def debug_config():
