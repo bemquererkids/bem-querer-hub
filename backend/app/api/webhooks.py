@@ -136,12 +136,19 @@ class UazApiMessage(BaseModel):
     instanceId: str
 
 @router.post("/whatsapp")
-async def receive_whatsapp_message(payload: dict, background_tasks: BackgroundTasks):
+async def receive_whatsapp_message(request: Request, background_tasks: BackgroundTasks):
     """
     Receives notification from UazAPI (messages, history, connection, etc).
     Multi-tenant: Maps instance to clinic_id for data isolation.
     """
     try:
+        # Read raw body
+        body_bytes = await request.body()
+        try:
+            payload = await request.json()
+        except Exception:
+            payload = {"error": "Invalid JSON", "raw": body_bytes.decode('utf-8', errors='ignore')}
+
         # DEBUG: Black Box Logging - Save RAW payload to verify successful hit
         try:
             from app.core.database import SupabaseClient
