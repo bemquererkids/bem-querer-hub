@@ -200,9 +200,30 @@ async def receive_whatsapp_message(request: Request, background_tasks: Backgroun
         except Exception as log_err:
             print(f"Failed to log raw payload: {log_err}")
 
-        event = payload.get('event', 'messages.upsert')
-        instance_id = payload.get('instance', 'main')
-        data = payload.get('data', {})
+        # Parse UazAPI format (discovered via webhook.cool)
+        event_type = payload.get('EventType', payload.get('event', 'messages'))
+        instance_id = payload.get('owner', payload.get('instance', 'main'))
+        
+        # UazAPI sends message directly, not nested in 'data'
+        if 'message' in payload:
+            # New UazAPI format
+            message_data = payload.get('message', {})
+            data = {
+                'key': {
+                    'remoteJid': message_data.get('chatid', message_data.get('sender', '')),
+                    'fromMe': message_data.get('fromMe', False),
+                    'id': message_data.get('messageid', message_data.get('id', ''))
+                },
+                'pushName': message_data.get('senderName', ''),
+                'messageTimestamp': message_data.get('messageTimestamp', 0) // 1000,  # Convert to seconds
+                'message': {
+                    'conversation': message_data.get('content', message_data.get('text', ''))
+                },
+                'messageType': message_data.get('messageType', 'conversation')
+            }
+        else:
+            # Old format (if any)
+            data = payload.get('data', {})
         
         # Get clinic_id from instance (multi-tenant mapping)
         try:
@@ -212,15 +233,15 @@ async def receive_whatsapp_message(request: Request, background_tasks: Backgroun
             return {"status": "error", "message": f"Instance '{instance_id}' not registered"}
 
         # 1. Handle Historical Sync (MASSIVE HISTORY)
-        if event == 'messaging-history.set':
+        if event_type == 'messaging-history.set':
             messages = data.get('messages', [])
             print(f"📦 Recebendo histórico: {len(messages)} mensagens (clinic: {clinic_id}).")
             for msg in messages:
                 background_tasks.add_task(process_single_message_data, msg, instance_id, clinic_id)
             return {"status": "sync_started", "count": len(messages), "clinic_id": clinic_id}
 
-        # 2. Handle Real-time Messages
-        if event == 'messages.upsert':
+        # 2. Handle Real-time Messages (UazAPI uses 'messages' event type)
+        if event_type in ['messages.upsert', 'messages']:
             # Upsert sends a single message or array
             messages = data.get('messages', []) if isinstance(data.get('messages'), list) else [data]
             logger.info(f"📨 Processing {len(messages)} messages for clinic {clinic_id}")
