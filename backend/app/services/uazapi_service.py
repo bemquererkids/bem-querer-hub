@@ -130,15 +130,26 @@ class UazAPIService:
         """
         try:
             url = f"{self.base_url}/instance/connect"
-            async with httpx.AsyncClient() as client:
+            logger.info(f"Calling UazAPI connect: {url}")
+            
+            async with httpx.AsyncClient(timeout=30.0) as client:
                 response = await client.post(
                     url,
                     headers=self.headers,
                     json={},  # Body can be empty for QR
-                    timeout=20.0
                 )
+                
+                logger.info(f"UazAPI response status: {response.status_code}")
+                logger.info(f"UazAPI response body: {response.text[:500]}")
+                
                 response.raise_for_status()
                 return response.json()
+        except httpx.TimeoutException as e:
+            logger.error(f"Timeout connecting to UazAPI: {str(e)}")
+            raise Exception("Timeout ao conectar com UazAPI. Tente novamente.")
+        except httpx.HTTPStatusError as e:
+            logger.error(f"HTTP error from UazAPI: {e.response.status_code} - {e.response.text}")
+            raise Exception(f"Erro da UazAPI: {e.response.status_code}")
         except Exception as e:
             logger.error(f"Error connecting instance: {str(e)}")
             raise
