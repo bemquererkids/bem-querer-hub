@@ -13,10 +13,11 @@ FROM nginx:alpine
 # Copy built assets
 COPY --from=build /app/dist /usr/share/nginx/html
 
-# Copy nginx config template
+# Copy nginx config template to the templates directory
+# Nginx 1.19+ entrypoint automatically performs envsubst on files in /etc/nginx/templates/
 COPY nginx.conf.template /etc/nginx/templates/default.conf.template
 
-# Configure environment variable substitution for PORT
+# Default port fallback
 ENV PORT=8080
 
-CMD ["/bin/sh", "-c", "envsubst '${PORT}' < /etc/nginx/templates/default.conf.template > /etc/nginx/conf.d/default.conf && nginx -g 'daemon off;'"]
+# Use default entrypoint and command from nginx:alpine
