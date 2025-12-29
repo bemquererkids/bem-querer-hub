@@ -3,7 +3,12 @@ import axios from 'axios';
 import { Deal } from '../types/crm';
 
 // Get API URL from Environment (Vite) or fallback to local/relative
-const API_URL = import.meta.env.VITE_API_URL || (import.meta.env.DEV ? 'http://localhost:8000/api' : '/api');
+// Get API URL from Environment (Vite) or fallback to local/relative
+let envApiUrl = import.meta.env.VITE_API_URL;
+if (envApiUrl && !envApiUrl.endsWith('/api')) {
+  envApiUrl += '/api';
+}
+const API_URL = envApiUrl || (import.meta.env.DEV ? 'http://localhost:8000/api' : '/api');
 
 export const api = axios.create({
   baseURL: API_URL,
