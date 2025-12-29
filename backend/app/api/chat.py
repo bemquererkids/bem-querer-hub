@@ -25,11 +25,12 @@ class ChatMessage(BaseModel):
 
 class Conversation(BaseModel):
     id: str
-    contact_name: str
-    phone_number: str
-    last_message: Optional[str] = None
-    last_message_at: Optional[str] = None
-    unread_count: int = 0
+    name: str  # Changed from contact_name to match frontend
+    lastMessage: Optional[str] = None  # Changed from last_message
+    lastMessageTime: Optional[str] = None  # Changed from last_message_at
+    unreadCount: int = 0  # Changed from unread_count
+    tags: List[str] = []  # Added for frontend
+    avatar: Optional[str] = None  # Added for frontend
 
 # --- Endpoints ---
 
@@ -53,11 +54,12 @@ async def get_conversations():
         return [
             Conversation(
                 id=conv["id"],
-                contact_name=conv.get("contact_name") or conv.get("phone_number", "Desconhecido"),
-                phone_number=conv.get("phone_number", ""),
-                last_message=conv.get("last_message"),
-                last_message_at=conv.get("last_message_at"),
-                unread_count=conv.get("unread_count", 0)
+                name=conv.get("contact_name") or conv.get("phone_number", "Desconhecido"),
+                lastMessage=conv.get("last_message") or "",
+                lastMessageTime=conv.get("last_message_at") or "",
+                unreadCount=conv.get("unread_count", 0),
+                tags=[],
+                avatar=f"https://ui-avatars.com/api/?name={conv.get('contact_name', 'U')}&background=random"
             )
             for conv in response.data
         ]
