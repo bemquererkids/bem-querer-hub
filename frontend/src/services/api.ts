@@ -34,15 +34,18 @@ export const crmService = {
 
 export const chatService = {
   getChats: async () => {
-    const response = await api.get('/chat/list'); // Assuming this endpoint exists or mock handles it
+    const response = await api.get('/chat/conversations');
     return response.data;
   },
   getMessages: async (chatId: string) => {
-    const response = await api.get(`/chat/${chatId}/messages`);
+    const response = await api.get(`/chat/messages/${chatId}`);
     return response.data;
   },
-  sendMessage: async (chatId: string, message: string) => {
-    const response = await api.post('/chat/message', { chat_id: chatId, message });
+  sendMessage: async (conversationId: string, message: string) => {
+    const response = await api.post('/chat/send', {
+      conversation_id: conversationId,
+      message
+    });
     return response.data;
   }
 };
