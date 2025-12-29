@@ -1,21 +1,22 @@
-FROM node:20-alpine
+# Build stage
+FROM node:20-alpine as build
 
 WORKDIR /app
-
-# Copy package files
 COPY package*.json ./
-
-# Install dependencies
 RUN npm ci
-
-# Copy source code
 COPY . .
-
-# Build the app
 RUN npm run build
 
-# Install serve to run the static files
-RUN npm install -g serve
+# Production stage
+FROM nginx:alpine
 
-# Serve the app
-CMD sh -c "serve -s dist -l $PORT"
+# Copy built assets
+COPY --from=build /app/dist /usr/share/nginx/html
+
+# Copy nginx config template
+COPY nginx.conf.template /etc/nginx/templates/default.conf.template
+
+# Configure environment variable substitution for PORT
+ENV PORT=8080
+
+CMD ["/bin/sh", "-c", "envsubst '${PORT}' < /etc/nginx/templates/default.conf.template > /etc/nginx/conf.d/default.conf && nginx -g 'daemon off;'"]
