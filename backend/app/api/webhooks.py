@@ -184,6 +184,18 @@ async def receive_whatsapp_message(payload: dict, background_tasks: BackgroundTa
         logger.error(f"Erro no webhook: {e}")
         return {"status": "error", "detail": str(e)}
 
+@router.get("/whatsapp/debug")
+async def debug_config():
+    """Temporary endpoint to verify Vercel Env Vars"""
+    from app.core.config import settings
+    return {
+        "app_name": settings.APP_NAME,
+        "supabase_url": settings.SUPABASE_URL,
+        "has_service_key": bool(settings.SUPABASE_SERVICE_KEY),
+        "service_key_preview": settings.SUPABASE_SERVICE_KEY[:10] + "..." if settings.SUPABASE_SERVICE_KEY else None,
+        "openai_key_present": bool(settings.OPENAI_API_KEY)
+    }
+
 async def process_single_message_data(data: dict, instance_id: str, clinic_id: str):
     """
     Helper to extract details and queue the lead processor.
