@@ -49,17 +49,34 @@ export const WhatsAppConnection: React.FC<WhatsAppConnectionProps> = ({ clinicaI
             const response = await fetch('/api/integrations/whatsapp/connect', {
                 method: 'POST',
             });
+
             const data = await response.json();
+
+            if (!response.ok) {
+                // Extract error message from backend
+                const errorMsg = data.detail || data.error || data.message || 'Erro desconhecido';
+                setStatus({ connected: false, error: errorMsg });
+                return;
+            }
+
+            if (data.already_connected) {
+                // Already connected, refresh status
+                await checkStatus();
+                return;
+            }
 
             if (data.qrcode) {
                 setQrCode(data.qrcode);
                 setPolling(true); // Iniciar polling para verificar conexão
-            } else if (data.error) {
-                setStatus({ connected: false, error: data.error });
+            } else {
+                setStatus({ connected: false, error: 'QR Code não foi retornado pelo servidor' });
             }
         } catch (error) {
             console.error('Erro ao gerar QR Code:', error);
-            setStatus({ connected: false, error: 'Erro ao gerar QR Code' });
+            setStatus({
+                connected: false,
+                error: `Erro de rede: ${error instanceof Error ? error.message : 'Verifique sua conexão'}`
+            });
         } finally {
             setLoading(false);
         }
