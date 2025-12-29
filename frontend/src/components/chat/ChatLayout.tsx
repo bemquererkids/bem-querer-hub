@@ -72,7 +72,19 @@ export const ChatLayout: React.FC = () => {
 
     // Show empty state if no chats available (WhatsApp not connected)
     if (chats.length === 0) {
-        return <WhatsAppEmptyState />;
+        return (
+            <div className="relative h-full">
+                <div className="absolute top-0 left-0 right-0 bg-yellow-100 text-xs p-2 z-50 border-b border-yellow-300 text-yellow-900 overflow-auto max-h-32">
+                    <strong>DEBUG INFO:</strong><br />
+                    VITE_API_URL: {import.meta.env.VITE_API_URL || '(Not Set - Using Default)'}<br />
+                    VITE_SUPABASE_URL: {import.meta.env.VITE_SUPABASE_URL || '(Not Set)'}<br />
+                    Loading: {loading ? 'True' : 'False'}<br />
+                    Chats: {chats.length}<br />
+                    Last Error: {typeof error === 'string' ? error : JSON.stringify(error)}
+                </div>
+                <WhatsAppEmptyState />
+            </div>
+        );
     }
 
     return (
