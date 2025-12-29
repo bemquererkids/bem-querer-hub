@@ -135,6 +135,30 @@ class UazApiMessage(BaseModel):
     message: dict # Conteúdo (text, image, etc)
     instanceId: str
 
+@router.get("/whatsapp")
+async def webhook_get_test(request: Request):
+    """Test endpoint to verify UazAPI can reach us"""
+    try:
+        from app.core.database import SupabaseClient
+        sb_admin = SupabaseClient.get_admin_client()
+        
+        # Log the GET request
+        debug_msg = {
+            "clinic_id": "00000000-0000-0000-0000-000000000001",
+            "conversation_id": "00000000-0000-0000-0000-000000000000",
+            "message_id": f"GET-{uuid.uuid4()}",
+            "from_number": "debug_logger",
+            "to_number": "system",
+            "message_type": "debug_log",
+            "content": f"GET REQUEST: {str(request.query_params)}",
+            "is_from_me": True
+        }
+        sb_admin.table('whatsapp_messages').insert(debug_msg).execute()
+        
+        return {"status": "ok", "method": "GET", "message": "Webhook endpoint is reachable"}
+    except Exception as e:
+        return {"status": "error", "error": str(e)}
+
 @router.post("/whatsapp")
 async def receive_whatsapp_message(request: Request, background_tasks: BackgroundTasks):
     """
