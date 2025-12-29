@@ -405,3 +405,25 @@ async def process_new_lead(phone: str, name: str, message: str, instance_id: str
         print(f"❌ Erro ao enviar WhatsApp: {e}")
         raise e # DEBUG: Re-raise
         # Em produção, poderíamos retentar ou alertar um atendente humano
+
+@router.post("/debug_force")
+async def debug_force_reply(phone: str, message: str):
+    """
+    Forces the AI processing loop synchronously to capture errors.
+    """
+    try:
+        await process_new_lead(
+            phone=phone,
+            name="Debug User",
+            message=message,
+            instance_id="debug_instance"
+        )
+        return {"status": "success", "message": "AI Flow completed without error"}
+    except Exception as e:
+        import traceback
+        return {
+            "status": "error",
+            "error_type": type(e).__name__,
+            "message": str(e),
+            "traceback": traceback.format_exc()
+        }
