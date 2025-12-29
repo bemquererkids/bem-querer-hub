@@ -159,6 +159,14 @@ async def webhook_get_test(request: Request):
     except Exception as e:
         return {"status": "error", "error": str(e)}
 
+# Alternative shorter endpoint for UazAPI
+@router.post("/uaz")
+@router.get("/uaz")
+async def uaz_webhook(request: Request, background_tasks: BackgroundTasks):
+    """Alternative shorter webhook endpoint"""
+    # Just forward to main webhook handler
+    return await receive_whatsapp_message(request, background_tasks)
+
 @router.post("/whatsapp")
 async def receive_whatsapp_message(request: Request, background_tasks: BackgroundTasks):
     """
