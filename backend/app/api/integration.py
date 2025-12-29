@@ -241,9 +241,17 @@ async def connect_whatsapp():
         
         # Tentar conectar
         uazapi = get_uazapi_service()
-        result = await uazapi.connect_instance(settings.UAZAPI_INSTANCE)
         
-        logger.info(f"UazAPI connect response: {result}")
+        try:
+            result = await uazapi.connect_instance(settings.UAZAPI_INSTANCE)
+            logger.info(f"UazAPI connect response: {result}")
+        except Exception as api_error:
+            logger.error(f"UazAPI API call failed: {str(api_error)}", exc_info=True)
+            # Return a more helpful error
+            raise HTTPException(
+                status_code=500,
+                detail=f"Falha ao chamar UazAPI: {str(api_error)}. Verifique se o token e URL estão corretos."
+            )
         
         # Extrair QR Code
         qrcode = None
@@ -256,15 +264,24 @@ async def connect_whatsapp():
         
         if not qrcode:
             logger.error(f"QR Code not found in response: {result}")
+            # If already connected, return success without QR
+            if isinstance(result, dict) and result.get("connected"):
+                return {
+                    "success": True,
+                    "already_connected": True,
+                    "message": "WhatsApp já está conectado!",
+                    "instance": settings.UAZAPI_INSTANCE
+                }
+            
             raise HTTPException(
                 status_code=500,
-                detail="QR Code não retornado pela UazAPI. Verifique se a instância está configurada corretamente."
+                detail=f"QR Code não retornado pela UazAPI. Resposta: {result}"
             )
             
         # 3. Save to DB for persistence
         db_save_config("whatsapp", {
             "instance": settings.UAZAPI_INSTANCE,
-            "token": settings.UAZAPI_TOKEN, # Note: Saving token might be sensitive, but required for persistence if not in env
+            "token": settings.UAZAPI_TOKEN,
             "connected_at": str(datetime.now())
         })
         
