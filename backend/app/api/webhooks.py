@@ -123,7 +123,10 @@ async def save_whatsapp_message(
         logger.error(f"Exception type: {type(e).__name__}")
         import traceback
         logger.error(f"Traceback: {traceback.format_exc()}")
+        import traceback
+        logger.error(f"Traceback: {traceback.format_exc()}")
         # Don't raise - we don't want to break the webhook if this fails
+        raise e # DEBUG: Re-raise to catch in probe
 
 class UazApiMessage(BaseModel):
     # Modelo simplificado da UazAPI/Baileys
@@ -311,12 +314,12 @@ async def process_new_lead(phone: str, name: str, message: str, instance_id: str
             "origem": source
         }
         
-        try:
-            res = supabase.table('pacientes').insert(new_patient).execute()
-            if res.data:
-                print(f"Novo Lead Criado: {name} via {source}")
-        except Exception as e:
-            print(f"Erro ao criar paciente: {e}. Continuando...")
+        # try: REMOVED FOR DEBUG
+        res = supabase.table('pacientes').insert(new_patient).execute()
+        if res.data:
+            print(f"Novo Lead Criado: {name} via {source}")
+        # except Exception as e:
+        #     print(f"Erro ao criar paciente: {e}. Continuando...")
     else:
         print(f"Lead Recorrente: {name}")
 
@@ -396,4 +399,5 @@ async def process_new_lead(phone: str, name: str, message: str, instance_id: str
         print(f"✅ Resposta enviada com sucesso!")
     except Exception as e:
         print(f"❌ Erro ao enviar WhatsApp: {e}")
+        raise e # DEBUG: Re-raise
         # Em produção, poderíamos retentar ou alertar um atendente humano
