@@ -173,9 +173,11 @@ async def receive_whatsapp_message(payload: dict, background_tasks: BackgroundTa
                     continue
                 
                 logger.info(f"Adding background task for message")
-                background_tasks.add_task(process_single_message_data, message_data, instance_id, clinic_id)
+                # DEBUG MODE: Run synchronously to catch errors in response
+                await process_single_message_data(message_data, instance_id, clinic_id)
+                # background_tasks.add_task(process_single_message_data, message_data, instance_id, clinic_id)
             
-            logger.info(f"✅ {len(messages)} messages queued for processing")
+            logger.info(f"✅ {len(messages)} messages processed")
             return {"status": "upsert_processed", "clinic_id": clinic_id}
 
         return {"status": "event_unhandled", "event": event}
@@ -202,56 +204,57 @@ async def process_single_message_data(data: dict, instance_id: str, clinic_id: s
     Also saves message to WhatsApp tables for chat integration.
     Multi-tenant: uses clinic_id for data isolation.
     """
-    try:
-        remote_jid = data.get('key', {}).get('remoteJid')
-        if not remote_jid or '@s.whatsapp.net' not in remote_jid:
-            return
+    # try: REMOVED FOR DEBUGGING
+    remote_jid = data.get('key', {}).get('remoteJid')
+    if not remote_jid or '@s.whatsapp.net' not in remote_jid:
+        return
 
-        push_name = data.get('pushName', 'Desconhecido')
-        message_info = data.get('message', {})
-        message_id = data.get('key', {}).get('id', str(uuid.uuid4()))
-        timestamp = data.get('messageTimestamp')
-        is_from_me = data.get('key', {}).get('fromMe', False)
+    push_name = data.get('pushName', 'Desconhecido')
+    message_info = data.get('message', {})
+    message_id = data.get('key', {}).get('id', str(uuid.uuid4()))
+    timestamp = data.get('messageTimestamp')
+    is_from_me = data.get('key', {}).get('fromMe', False)
+    
+    # Tentar extrair texto
+    text_content = ""
+    message_type = "text"
+    media_url = None
+    
+    if 'conversation' in message_info:
+        text_content = message_info['conversation']
+    elif 'extendedTextMessage' in message_info:
+        text_content = message_info['extendedTextMessage'].get('text', '')
+    elif 'imageMessage' in message_info:
+        text_content = message_info['imageMessage'].get('caption', '[Imagem]')
+        message_type = "image"
+        media_url = message_info['imageMessage'].get('url')
+    elif 'videoMessage' in message_info:
+        text_content = message_info['videoMessage'].get('caption', '[Vídeo]')
+        message_type = "video"
+        media_url = message_info['videoMessage'].get('url')
         
-        # Tentar extrair texto
-        text_content = ""
-        message_type = "text"
-        media_url = None
-        
-        if 'conversation' in message_info:
-            text_content = message_info['conversation']
-        elif 'extendedTextMessage' in message_info:
-            text_content = message_info['extendedTextMessage'].get('text', '')
-        elif 'imageMessage' in message_info:
-            text_content = message_info['imageMessage'].get('caption', '[Imagem]')
-            message_type = "image"
-            media_url = message_info['imageMessage'].get('url')
-        elif 'videoMessage' in message_info:
-            text_content = message_info['videoMessage'].get('caption', '[Vídeo]')
-            message_type = "video"
-            media_url = message_info['videoMessage'].get('url')
-            
-        if not text_content:
-            return
+    if not text_content:
+        return
 
-        # Save to WhatsApp tables for chat integration
-        await save_whatsapp_message(
-            clinic_id=clinic_id,
-            phone=remote_jid.split('@')[0],
-            contact_name=push_name,
-            message_id=message_id,
-            content=text_content,
-            message_type=message_type,
-            media_url=media_url,
-            timestamp=datetime.fromtimestamp(int(timestamp)).isoformat() if timestamp else None,
-            is_from_me=is_from_me
-        )
+    # Save to WhatsApp tables for chat integration
+    await save_whatsapp_message(
+        clinic_id=clinic_id,
+        phone=remote_jid.split('@')[0],
+        contact_name=push_name,
+        message_id=message_id,
+        content=text_content,
+        message_type=message_type,
+        media_url=media_url,
+        timestamp=datetime.fromtimestamp(int(timestamp)).isoformat() if timestamp else None,
+        is_from_me=is_from_me
+    )
 
-        # Process lead (existing functionality)
-        if not is_from_me:
-            await process_new_lead(remote_jid, push_name, text_content, instance_id)
-    except Exception as e:
-        logger.error(f"Error processing single message: {e}")
+    # Process lead (existing functionality)
+    if not is_from_me:
+        await process_new_lead(remote_jid, push_name, text_content, instance_id)
+    # except Exception as e:
+    #     logger.error(f"Error processing single message: {e}") 
+    #     raise e # Re-raise for debug
 
 async def process_new_lead(phone: str, name: str, message: str, instance_id: str = "main"):
     """
