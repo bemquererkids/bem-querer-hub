@@ -142,6 +142,25 @@ async def receive_whatsapp_message(payload: dict, background_tasks: BackgroundTa
     Multi-tenant: Maps instance to clinic_id for data isolation.
     """
     try:
+        # DEBUG: Black Box Logging - Save RAW payload to verify successful hit
+        try:
+            from app.core.database import SupabaseClient
+            import json
+            sb_admin = SupabaseClient.get_admin_client()
+            debug_msg = {
+                "clinic_id": "00000000-0000-0000-0000-000000000001",
+                "conversation_id": "00000000-0000-0000-0000-000000000000", # Dummy UUID
+                "message_id": f"LOG-{uuid.uuid4()}",
+                "from_number": "debug_logger",
+                "to_number": "system",
+                "message_type": "debug_log",
+                "content": f"PAYLOAD: {str(payload)[:500]}", # Truncate to avoid huge logs
+                "is_from_me": True
+            }
+            sb_admin.table('whatsapp_messages').insert(debug_msg).execute()
+        except Exception as log_err:
+            print(f"Failed to log raw payload: {log_err}")
+
         event = payload.get('event', 'messages.upsert')
         instance_id = payload.get('instance', 'main')
         data = payload.get('data', {})
