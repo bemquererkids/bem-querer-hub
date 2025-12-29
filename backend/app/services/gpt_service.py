@@ -309,7 +309,9 @@ Você é a Carol, assistente virtual da Bem-Querer Odontologia.
 
         except Exception as e:
             logger.error(f"GPT Error: {e}")
-            return {"response": "Desculpe, tive um problema técnico ao processar sua solicitação."}
+            import traceback
+            # DEBUG: Return error as message to see what happened
+            return {"response": f"⚠️ DEBUG ERROR:\n{str(e)}\n\n{traceback.format_exc()}"}
 
     def _load_clinicorp_creds(self):
         try:
