@@ -24,24 +24,22 @@ async def get_deals(
     
     try:
         # 1. Fetch Conversations (The active deals)
-        # Assuming clinic_id 'bemquerer' for now or the default one we use in webhooks
         target_clinic_id = clinic_id or "00000000-0000-0000-0000-000000000001"
         
-        # Use Admin Client usually for backend, but depends accepts normal client. 
-        # If RLS issues, might need admin.
         from app.core.database import SupabaseClient
         admin_supabase = SupabaseClient.get_admin_client()
         
         # Get conversations
         conv_res = admin_supabase.table("whatsapp_conversations").select("*").execute()
         conversations = conv_res.data if conv_res.data else []
+        print(f"CRM Debug: Found {len(conversations)} conversations.")
         
         # Get Patients (to look up source)
-        # Collect phones first
         phones = [c.get('phone_number') for c in conversations if c.get('phone_number')]
         
         patient_map = {}
         if phones:
+            # Only query if we have phones
             pat_res = admin_supabase.table("pacientes").select("*").in_("telefone", phones).execute()
             if pat_res.data:
                 for p in pat_res.data:
@@ -62,13 +60,7 @@ async def get_deals(
             elif 'crm:noshow' in tags: status = 'noshow'
             elif 'crm:qualifying' in tags: status = 'qualifying'
             
-            # Determine Source
-            source_raw = patient.get('origem') or 'manual'
-            source = 'google' # Default for UI icons
-            if 'insta' in source_raw.lower(): source = 'instagram'
-            elif 'facebook' in source_raw.lower(): source = 'facebook'
-            elif 'indica' in source_raw.lower(): source = 'indication'
-            
+            # Default Deal Object
             deal = {
                 "id": chat["id"],
                 "patientName": chat.get("contact_name") or patient.get("nome") or phone,
@@ -76,12 +68,21 @@ async def get_deals(
                 "value": 0,
                 "status": status,
                 "lastContact": chat.get("last_message_at") or chat.get("created_at"),
-                "source": source,
+                "source": 'google', # Default fallback
                 "campaignId": None,
                 "phone": chat.get("phone_number"),
                 "probability": "medium"
             }
+            
+            # Refine Source from Patient Data
+            source_raw = patient.get('origem') or 'manual'
+            if 'insta' in source_raw.lower(): deal['source'] = 'instagram'
+            elif 'facebook' in source_raw.lower(): deal['source'] = 'facebook'
+            elif 'indica' in source_raw.lower(): deal['source'] = 'indication'
+            
             deals.append(deal)
+            
+        print(f"CRM Debug: Returning {len(deals)} deals.")
             
     except Exception as e:
         print(f"CRM Fetch Error: {e}")

@@ -1,11 +1,18 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { ChatContact, ChatMessage } from '../../types/chat';
 import { supabase } from '../../services/supabase';
-import { Send, Paperclip, Mic, MoreVertical, Phone, Video, ChevronLeft } from 'lucide-react';
+import { Send, Paperclip, Mic, MoreVertical, Phone, Video, ChevronLeft, ChevronDown, CheckCircle2 } from 'lucide-react';
 import { Button } from '../ui/button';
 import { Input } from '../ui/input';
 import { Avatar, AvatarFallback, AvatarImage } from '../ui/avatar';
-import { chatService } from '../../services/api';
+import { chatService, crmService } from '../../services/api';
+import {
+    DropdownMenu,
+    DropdownMenuContent,
+    DropdownMenuItem,
+    DropdownMenuTrigger,
+} from "../ui/dropdown-menu";
+import { Badge } from '../ui/badge';
 
 interface ChatWindowProps {
     chat?: ChatContact;
