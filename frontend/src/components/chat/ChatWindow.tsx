@@ -264,14 +264,18 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({ chat, messages: initialM
         try {
             await crmService.updateDealStatus(chat.id, newStatus);
             if (onNavigateToDeal) {
-                onNavigateToDeal(chat.id);
+                // Ensure onNavigateToDeal is actually a function before calling
+                if (typeof onNavigateToDeal === 'function') {
+                    onNavigateToDeal(chat.id);
+                }
+            } else {
+                console.warn("onNavigateToDeal not provided to ChatWindow");
             }
         } catch (e) {
             console.error("Failed to update status", e);
+            alert("Erro ao atualizar status. Verifique sua conexão.");
         }
     };
-
-
 
     if (!chat) {
         return (
@@ -321,7 +325,7 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({ chat, messages: initialM
                                 Lead
                             </DropdownMenuItem>
                             <DropdownMenuItem onClick={() => handleStatusChange('Em Negociação')}>
-                                <div className="w-2 h-2 rounded-full bg-indigo-500 mr-2" />
+                                <div className="w-2 h-2 rounded-full bg-blue-500 mr-2" />
                                 Em Negociação
                             </DropdownMenuItem>
                             <DropdownMenuItem onClick={() => handleStatusChange('Agendado')}>
