@@ -157,7 +157,7 @@ app.include_router(chat_router)
 
 # Import and include crm router
 from app.api.crm import router as crm_router
-app.include_router(crm_router)
+app.include_router(crm_router, prefix="/api")
 
 @app.get("/")
 async def root():
