@@ -256,18 +256,17 @@ const DealCard = React.memo<DealCardProps>(({ deal, stage, onWhatsApp, onEditVal
                                 <Pencil className="w-2.5 h-2.5" />
                             </Button>
                         </div>
-                    </div>
 
-                    <Button
-                        onClick={onWhatsApp}
-                        className="w-full bg-[#25D366] hover:bg-[#20bd5a] text-white font-semibold h-7 gap-1 shadow-sm text-[11px]"
-                    >
-                        <MessageCircle className="w-3 h-3" /> WhatsApp
-                    </Button>
+                        <Button
+                            onClick={onWhatsApp}
+                            className="w-full bg-[#25D366] hover:bg-[#20bd5a] text-white font-semibold h-7 gap-1 shadow-sm text-[11px]"
+                        >
+                            <MessageCircle className="w-3 h-3" /> WhatsApp
+                        </Button>
+                    </div>
                 </div>
-            </div>
-        </CardContent>
-    </Card >
+            </CardContent>
+        </Card>
     );
 });
 
