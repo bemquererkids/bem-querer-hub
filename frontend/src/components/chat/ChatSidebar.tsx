@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { ChatContact } from '../../types/chat';
+import { supabase } from '../../services/supabase'; // Import Added
 import { Search, Filter, MoreVertical, MessageCircle, ChevronDown, Archive, BellOff, PinOff, Mail, Heart, Ban, Trash2 } from 'lucide-react';
 import { Input } from '../ui/input';
 import { Badge } from '../ui/badge';
@@ -44,11 +45,16 @@ export const ChatSidebar: React.FC<ChatSidebarProps> = ({ chats, activeChatId, o
         console.log(`Action: ${action} on chat ${chatId}`);
 
         try {
-            // Implement actions here
-            if (action === 'archive') {
-                // Call API to archive
+            if (action === 'mark_unread') {
+                const { error } = await supabase
+                    .from('whatsapp_conversations')
+                    .update({ unread_count: 1 })
+                    .eq('id', chatId);
+
+                if (error) throw error;
+                console.log("Marked as unread successfully");
             }
-            // For now just console log to avoid build errors if service method missing
+            // Add other actions here later (archive, delete, etc.)
         } catch (error) {
             console.error("Action failed", error);
         }

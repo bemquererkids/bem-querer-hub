@@ -338,7 +338,7 @@ export const KanbanBoard: React.FC = () => {
                 setDeals(data);
             } catch (error) {
                 console.error("Failed to fetch deals", error);
-                setDeals(MOCK_DEALS);
+                setDeals([]);
             } finally {
                 setLoading(false);
             }
