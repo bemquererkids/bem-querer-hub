@@ -81,6 +81,37 @@ const MetricCard = ({ title, value, subtext, icon: Icon, trend, color = 'zinc' }
 };
 
 export const DashboardHome: React.FC = () => {
+    const [metrics, setMetrics] = React.useState({
+        totalLeads: 0,
+        scheduled: 0,
+        attended: 0,
+        sales: 0,
+        revenue: 0,
+        ticket: 0,
+        funnelData: [
+            { name: 'Leads', value: 0, fill: '#4f46e5' },
+            { name: 'Agendados', value: 0, fill: '#6366f1' },
+            { name: 'Compareceram', value: 0, fill: '#818cf8' },
+            { name: 'Vendas', value: 0, fill: '#a5b4fc' },
+        ]
+    });
+
+    React.useEffect(() => {
+        const fetchMetrics = async () => {
+            try {
+                const res = await fetch(`${import.meta.env.VITE_API_URL}/api/crm/metrics`);
+                const data = await res.json();
+                if (data && data.funnelData) {
+                    setMetrics(data);
+                }
+            } catch (error) {
+                console.error("Failed to fetch dashboard metrics", error);
+            }
+        };
+
+        fetchMetrics();
+    }, []);
+
     return (
         <div className="p-8 space-y-8 min-h-full max-w-7xl mx-auto">
 
@@ -116,34 +147,34 @@ export const DashboardHome: React.FC = () => {
                 >
                     <MetricCard
                         title="Total de Leads"
-                        value="156"
+                        value={metrics.totalLeads}
                         icon={UserGroupIcon}
                         color="zinc"
                         trend="up"
                     />
                     <MetricCard
                         title="Agendamentos"
-                        value="76"
-                        subtext="48.7% de conversão"
+                        value={metrics.scheduled}
+                        subtext={`${metrics.totalLeads ? ((metrics.scheduled / metrics.totalLeads) * 100).toFixed(1) : 0}% de conversão`}
                         icon={CalendarIcon}
                         color="zinc"
                         trend="up"
                     />
                     <MetricCard
                         title="Comparecimentos"
-                        value="37"
-                        subtext="48.7% de presença"
+                        value={metrics.attended}
+                        subtext={`${metrics.scheduled ? ((metrics.attended / metrics.scheduled) * 100).toFixed(1) : 0}% de presença`}
                         icon={CheckCircleIcon}
                         color="zinc"
                         trend="up"
                     />
                     <MetricCard
                         title="Vendas Realizadas"
-                        value="6"
-                        subtext="Ticket Médio R$ 2.1k"
+                        value={metrics.sales}
+                        subtext={`Ticket Médio R$ ${metrics.ticket.toLocaleString()}`}
                         icon={ArrowTrendingUpIcon}
                         color="zinc"
-                        trend="down"
+                        trend="up"
                     />
                 </motion.div>
             </div>
@@ -166,7 +197,7 @@ export const DashboardHome: React.FC = () => {
 
                     <div className="h-[300px] w-full">
                         <ResponsiveContainer width="100%" height="100%">
-                            <BarChart data={funnelData} layout="vertical" margin={{ top: 0, right: 0, left: 40, bottom: 0 }}>
+                            <BarChart data={metrics.funnelData} layout="vertical" margin={{ top: 0, right: 0, left: 40, bottom: 0 }}>
                                 <CartesianGrid strokeDasharray="3 3" horizontal={false} stroke="#f4f4f5" className="dark:stroke-zinc-800" />
                                 <XAxis type="number" hide />
                                 <YAxis
@@ -190,7 +221,7 @@ export const DashboardHome: React.FC = () => {
                                     }}
                                 />
                                 <Bar dataKey="value" radius={[0, 4, 4, 0]} barSize={32}>
-                                    {funnelData.map((entry, index) => (
+                                    {metrics.funnelData.map((entry, index) => (
                                         <Cell key={`cell-${index}`} fill={entry.fill} className="dark:fill-primary" />
                                     ))}
                                 </Bar>
@@ -208,14 +239,14 @@ export const DashboardHome: React.FC = () => {
                 >
                     <MetricCard
                         title="Faturamento (Mês)"
-                        value="R$ 12.800"
+                        value={`R$ ${metrics.revenue.toLocaleString()}`}
                         icon={WalletIcon}
                         color="zinc"
                         trend="up"
                     />
                     <MetricCard
                         title="Ticket Médio"
-                        value="R$ 2.133"
+                        value={`R$ ${metrics.ticket.toLocaleString()}`}
                         icon={CreditCardIcon}
                         color="zinc"
                     />

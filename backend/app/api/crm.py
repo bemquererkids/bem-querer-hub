@@ -110,13 +110,75 @@ async def update_deal_status(
     if len(deal_id) == 36: # Simple UUID check
         try:
             if supabase:
-                # Try updating chat first
-                supabase.table("chats").update({"status": request.status}).eq("id", deal_id).execute()
-                # Or appointment if we had that table sync
+                # Update Tags based on Status
+                new_tag = f"crm:{request.status}" # e.g. crm:won
+                
+                # Fetch current tags first
+                res = supabase.table("whatsapp_conversations").select("tags").eq("id", deal_id).execute()
+                current_tags = res.data[0].get("tags") or [] if res.data else []
+                
+                # Remove old status tags
+                status_tags = ["crm:new", "crm:qualifying", "crm:scheduled", "crm:attended", "crm:noshow", "crm:won", "crm:lost"]
+                updated_tags = [t for t in current_tags if t not in status_tags]
+                updated_tags.append(new_tag)
+                
+                supabase.table("whatsapp_conversations").update({"tags": updated_tags}).eq("id", deal_id).execute()
         except Exception as e:
             print(f"Error updating Supabase: {e}")
 
-    # 2. If it's a Mock or Clinicorp ID, just return success
-    # (In a real scenario with full write access, we would call Clinicorp PUT endpoint here)
-    
     return {"status": "success", "new_status": request.status, "message": "Status atualizado com sucesso"}
+
+@router.get("/metrics")
+async def get_dashboard_metrics():
+    """
+    Returns aggregated metrics from real WhatsApp/CRM data.
+    """
+    try:
+        from app.core.database import SupabaseClient
+        admin_supabase = SupabaseClient.get_admin_client()
+        
+        # Fetch all conversations
+        # For a massive DB we should use .count() with filters, but for this scale fetching id,tags is fine
+        res = admin_supabase.table("whatsapp_conversations").select("id, tags").execute()
+        raw_chats = res.data or []
+        
+        total_leads = len(raw_chats)
+        scheduled = 0
+        attended = 0
+        sales = 0
+        won = 0
+        new_leads = 0
+        
+        for chat in raw_chats:
+            tags = chat.get('tags') or []
+            if 'crm:scheduled' in tags: scheduled += 1
+            if 'crm:attended' in tags: attended += 1
+            if 'crm:won' in tags: 
+                sales += 1
+                won += 1
+            if not tags or 'crm:new' in tags: new_leads += 1
+            
+        # Funnel (simplified)
+        funnel_data = [
+            { "name": "Leads", "value": total_leads, "fill": "#4f46e5" },
+            { "name": "Agendados", "value": scheduled, "fill": "#6366f1" },
+            { "name": "Compareceram", "value": attended, "fill": "#818cf8" },
+            { "name": "Vendas", "value": sales, "fill": "#a5b4fc" }
+        ]
+        
+        return {
+            "totalLeads": total_leads,
+            "scheduled": scheduled,
+            "attended": attended,
+            "sales": sales,
+            "revenue": sales * 2100, # Mock average ticket R$ 2.100
+            "ticket": 2100,
+            "funnelData": funnel_data
+        }
+        
+    except Exception as e:
+        print(f"Metrics Error: {e}")
+        return {
+            "totalLeads": 0, "scheduled": 0, "attended": 0, "sales": 0, "revenue": 0, "ticket": 0,
+            "funnelData": []
+        }
