@@ -16,7 +16,6 @@ import {
     Instagram,
     Search,
     Facebook,
-    Facebook,
     UserCheck,
     Hash,
     Pencil,
@@ -340,8 +339,6 @@ const DroppableColumn: React.FC<{
                                 key={deal.id}
                                 deal={deal}
                                 stage={stage}
-                                deal={deal}
-                                stage={stage}
                                 onWhatsApp={() => onWhatsApp(deal)}
                                 onEditValue={() => onEditValue(deal)}
                             />
@@ -571,7 +568,6 @@ export const KanbanBoard: React.FC<{ highlightDealId?: string | null }> = ({ hig
                                 key={stage.id}
                                 stage={stage}
                                 deals={stageDeals}
-                                deals={stageDeals}
                                 onWhatsApp={handleOpenWhatsApp}
                                 onEditValue={handleOpenEditValue}
                             />
@@ -584,7 +580,6 @@ export const KanbanBoard: React.FC<{ highlightDealId?: string | null }> = ({ hig
                     {activeDeal && activeStage ? (
                         <DealCard
                             deal={activeDeal}
-                            stage={activeStage}
                             stage={activeStage}
                             onWhatsApp={() => { }}
                             onEditValue={() => { }}
