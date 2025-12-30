@@ -126,9 +126,9 @@ export const Sidebar: React.FC<SidebarProps> = ({ currentView, setCurrentView, i
                 animate={{ width: isCollapsed ? 72 : 240 }}
                 transition={{ duration: 0.2, ease: 'easeInOut' }}
                 className={clsx(
-                    "h-screen bg-white dark:bg-background flex flex-col z-50 relative border-r border-zinc-200 dark:border-border shadow-sm transition-colors duration-300",
-                    // Mobile: fixed position, slide in from left
-                    "fixed lg:relative",
+                    "h-screen bg-white dark:bg-background flex flex-col z-50 border-r border-zinc-200 dark:border-border shadow-sm transition-colors duration-300",
+                    // Mobile: fixed position, slide in from left. Desktop: relative flow.
+                    "fixed inset-y-0 left-0 lg:relative",
                     isMobileMenuOpen ? "translate-x-0" : "-translate-x-full lg:translate-x-0",
                     "transition-transform duration-300 ease-in-out"
                 )}
