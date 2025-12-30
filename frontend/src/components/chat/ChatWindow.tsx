@@ -93,6 +93,75 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({ chat, messages: initialM
         }
     }, [messages, isTyping]);
 
+    const handleMicClick = async () => {
+        if (isRecording) {
+            // Stop Recording
+            mediaRecorderRef.current?.stop();
+            setIsRecording(false);
+        } else {
+            // Start Recording
+            try {
+                const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+                const mediaRecorder = new MediaRecorder(stream);
+                mediaRecorderRef.current = mediaRecorder;
+                audioChunksRef.current = [];
+
+                mediaRecorder.ondataavailable = (event) => {
+                    if (event.data.size > 0) {
+                        audioChunksRef.current.push(event.data);
+                    }
+                };
+
+                mediaRecorder.onstop = async () => {
+                    const audioBlob = new Blob(audioChunksRef.current, { type: 'audio/webm' });
+                    const audioFile = new File([audioBlob], `voice_${Date.now()}.webm`, { type: 'audio/webm' });
+
+                    // Upload
+                    setIsUploading(true);
+                    try {
+                        const fileName = `${chat?.id || 'temp'}/${Date.now()}_voice.webm`;
+                        const { error: uploadError } = await supabase.storage
+                            .from('chat-media')
+                            .upload(fileName, audioFile);
+
+                        if (uploadError) throw uploadError;
+
+                        const { data: { publicUrl } } = supabase.storage
+                            .from('chat-media')
+                            .getPublicUrl(fileName);
+
+                        // Send
+                        if (chat?.id) {
+                            await chatService.sendMedia(chat.id, publicUrl, 'audio');
+
+                            // Optimistic
+                            setMessages(prev => [...prev, {
+                                id: Date.now().toString(),
+                                content: publicUrl,
+                                sender: 'agent',
+                                timestamp: new Date().toISOString(),
+                                type: 'audio',
+                                status: 'sent'
+                            }]);
+                        }
+                    } catch (e) {
+                        console.error("Audio upload failed", e);
+                        alert("Erro ao enviar áudio");
+                    } finally {
+                        setIsUploading(false);
+                        stream.getTracks().forEach(track => track.stop());
+                    }
+                };
+
+                mediaRecorder.start();
+                setIsRecording(true);
+            } catch (err) {
+                console.error("Mic permission denied", err);
+                alert("Permissão de microfone negada.");
+            }
+        }
+    };
+
     const handleSend = async () => {
         if (!newMessage.trim()) return;
 
@@ -131,6 +200,55 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({ chat, messages: initialM
             // Error handling (optional: add error message bubble)
         } finally {
             setIsTyping(false);
+        }
+    };
+
+    const handleFileSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
+        if (!e.target.files || e.target.files.length === 0 || !chat) return;
+
+        const file = e.target.files[0];
+        setIsUploading(true);
+
+        try {
+            // 1. Upload to Supabase
+            const fileExt = file.name.split('.').pop();
+            const fileName = `${chat.id}/${Date.now()}.${fileExt}`;
+            const { error: uploadError, data } = await supabase.storage
+                .from('chat-media')
+                .upload(fileName, file);
+
+            if (uploadError) throw uploadError;
+
+            // 2. Get Public URL
+            const { data: { publicUrl } } = supabase.storage
+                .from('chat-media')
+                .getPublicUrl(fileName);
+
+            // 3. Determine Type
+            let mediaType: 'image' | 'audio' | 'document' = 'document';
+            if (file.type.startsWith('image/')) mediaType = 'image';
+            else if (file.type.startsWith('audio/')) mediaType = 'audio';
+
+            // 4. Send via Backend
+            await chatService.sendMedia(chat.id, publicUrl, mediaType, undefined, file.name);
+
+            // 5. Optimistic Update
+            const newMsg: ChatMessage = {
+                id: Date.now().toString(),
+                content: publicUrl, // For now, content is URL
+                sender: 'agent',
+                timestamp: new Date().toISOString(),
+                type: mediaType,
+                status: 'sent'
+            };
+            setMessages(prev => [...prev, newMsg]);
+
+        } catch (error) {
+            console.error("Upload failed", error);
+            alert("Falha no envio do arquivo.");
+        } finally {
+            setIsUploading(false);
+            if (fileInputRef.current) fileInputRef.current.value = '';
         }
     };
 
@@ -233,7 +351,19 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({ chat, messages: initialM
 
             {/* Input Area */}
             <div className="p-4 bg-white border-t border-slate-100 flex items-center gap-2">
-                <Button variant="ghost" size="icon" className="text-slate-400 hover:text-cyan-600 hover:bg-cyan-50 transition-colors">
+                <input
+                    type="file"
+                    ref={fileInputRef}
+                    className="hidden"
+                    onChange={handleFileSelect}
+                />
+                <Button
+                    variant="ghost"
+                    size="icon"
+                    className="text-slate-400 hover:text-cyan-600 hover:bg-cyan-50 transition-colors"
+                    onClick={() => fileInputRef.current?.click()}
+                    disabled={isUploading}
+                >
                     <Paperclip className="w-5 h-5" />
                 </Button>
                 <div className="flex-1 relative">
@@ -247,9 +377,12 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({ chat, messages: initialM
                     <Button
                         variant="ghost"
                         size="icon"
-                        className="absolute right-1 top-1 h-8 w-8 text-slate-400 hover:text-cyan-600"
+                        className={`absolute right-1 top-1 h-8 w-8 transition-colors ${isRecording ? 'text-red-500 hover:text-red-600 bg-red-50' : 'text-slate-400 hover:text-cyan-600'
+                            }`}
+                        onClick={handleMicClick}
+                        disabled={isUploading}
                     >
-                        <Mic className="w-4 h-4" />
+                        {isRecording ? <div className="w-3 h-3 rounded-sm bgCurrent" style={{ backgroundColor: 'currentColor' }} /> : <Mic className="w-4 h-4" />}
                     </Button>
                 </div>
                 <Button

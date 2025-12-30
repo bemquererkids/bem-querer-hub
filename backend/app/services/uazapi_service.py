@@ -103,6 +103,69 @@ class UazAPIService:
             logger.error(f"Error sending image: {str(e)}")
             raise
     
+    async def send_audio(
+        self,
+        instance: str,
+        phone: str,
+        audio_url: str
+    ) -> Dict[str, Any]:
+        """Send an audio message"""
+        try:
+            url = f"{self.base_url}/send/audio"
+            
+            payload = {
+                "number": phone,
+                "audio": audio_url
+            }
+            
+            async with httpx.AsyncClient() as client:
+                response = await client.post(
+                    url,
+                    json=payload,
+                    headers=self.headers,
+                    timeout=30.0
+                )
+                response.raise_for_status()
+                return response.json()
+        except Exception as e:
+            logger.error(f"Error sending audio: {str(e)}")
+            raise
+
+    async def send_document(
+        self,
+        instance: str,
+        phone: str,
+        document_url: str,
+        filename: Optional[str] = None,
+        caption: Optional[str] = None
+    ) -> Dict[str, Any]:
+        """Send a document/file message"""
+        try:
+            url = f"{self.base_url}/send/document"
+            
+            payload = {
+                "number": phone,
+                "document": document_url
+            }
+
+            if filename:
+                payload["fileName"] = filename
+            if caption:
+                payload["caption"] = caption
+            
+            async with httpx.AsyncClient() as client:
+                response = await client.post(
+                    url,
+                    json=payload,
+                    headers=self.headers,
+                    timeout=30.0
+                )
+                response.raise_for_status()
+                return response.json()
+        except Exception as e:
+            logger.error(f"Error sending document: {str(e)}")
+            raise
+    
     async def get_instance_status(self, instance: str) -> Dict[str, Any]:
         """
         Get WhatsApp instance connection status
