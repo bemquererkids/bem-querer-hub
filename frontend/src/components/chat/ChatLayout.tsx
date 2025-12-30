@@ -88,8 +88,15 @@ export const ChatLayout: React.FC = () => {
     }
 
     return (
-        <div className="h-full animate-in fade-in slide-in-from-bottom-4 duration-300">
-            <Card className="h-full flex overflow-hidden border-zinc-200 dark:border-border shadow-sm rounded-lg bg-white dark:bg-card">
+        <div className="h-full animate-in fade-in slide-in-from-bottom-4 duration-300 relative">
+            <div className="absolute top-0 left-0 right-0 bg-yellow-100 text-xs p-2 z-50 border-b border-yellow-300 text-yellow-900 overflow-auto max-h-32">
+                <strong>DEBUG BAR (V2):</strong><br />
+                VITE_API_URL: {import.meta.env.VITE_API_URL || '(Default)'}<br />
+                API_URL_FINAL: {chatService.toString()}<br />
+                Chats: {chats.length} | Loading: {String(loading)}
+            </div>
+
+            <Card className="h-full flex overflow-hidden border-zinc-200 dark:border-border shadow-sm rounded-lg bg-white dark:bg-card pt-12">
                 <ChatSidebar
                     chats={chats}
                     activeChatId={activeChatId}
