@@ -318,7 +318,7 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({ chat, messages: initialM
                         <DropdownMenuContent align="end">
                             <DropdownMenuItem onClick={() => handleStatusChange('Lead')}>
                                 <div className="w-2 h-2 rounded-full bg-indigo-500 mr-2" />
-                                <Lead />
+                                Lead
                             </DropdownMenuItem>
                             <DropdownMenuItem onClick={() => handleStatusChange('Em Negociação')}>
                                 <div className="w-2 h-2 rounded-full bg-indigo-500 mr-2" />
