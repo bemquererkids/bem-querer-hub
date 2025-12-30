@@ -60,6 +60,18 @@ export const ChatSidebar: React.FC<ChatSidebarProps> = ({ chats, activeChatId, o
         }
     };
 
+    const getChatColor = (tags: string[]) => {
+        const t = tags || [];
+        if (t.includes('crm:won')) return 'bg-amber-50 dark:bg-amber-900/10 hover:bg-amber-100 dark:hover:bg-amber-900/20';
+        if (t.includes('crm:attended')) return 'bg-emerald-50 dark:bg-emerald-900/10 hover:bg-emerald-100 dark:hover:bg-emerald-900/20';
+        if (t.includes('crm:scheduled')) return 'bg-purple-50 dark:bg-purple-900/10 hover:bg-purple-100 dark:hover:bg-purple-900/20';
+        if (t.includes('crm:qualifying')) return 'bg-blue-50 dark:bg-blue-900/10 hover:bg-blue-100 dark:hover:bg-blue-900/20';
+        if (t.includes('crm:noshow')) return 'bg-red-50 dark:bg-red-900/10 hover:bg-red-100 dark:hover:bg-red-900/20';
+
+        // Default Lead (Purple/Indigo as requested)
+        return 'bg-indigo-50 dark:bg-indigo-900/10 hover:bg-indigo-100 dark:hover:bg-indigo-900/20';
+    };
+
     return (
         <div className={clsx(
             "flex flex-col h-full bg-white dark:bg-[#111b21]",
@@ -133,8 +145,8 @@ export const ChatSidebar: React.FC<ChatSidebarProps> = ({ chats, activeChatId, o
                             key={chat.id}
                             onClick={() => onSelectChat(chat.id)}
                             className={clsx(
-                                "group px-3 py-3 cursor-pointer flex items-center gap-3 transition-colors hover:bg-[#f5f6f6] dark:hover:bg-[#202c33] relative",
-                                activeChatId === chat.id ? "bg-[#f0f2f5] dark:bg-[#2a3942]" : ""
+                                "group px-3 py-3 cursor-pointer flex items-center gap-3 transition-colors relative border-b border-[#e9edef] dark:border-zinc-800",
+                                activeChatId === chat.id ? "bg-zinc-200 dark:bg-[#2a3942]" : getChatColor(chat.tags)
                             )}
                         >
                             {/* Avatar */}
@@ -147,7 +159,7 @@ export const ChatSidebar: React.FC<ChatSidebarProps> = ({ chats, activeChatId, o
                             </div>
 
                             {/* Content */}
-                            <div className="flex-1 min-w-0 pr-1 pb-3 border-b border-[#e9edef] dark:border-zinc-800 group-last:border-0 h-full flex flex-col justify-center">
+                            <div className="flex-1 min-w-0 pr-1 h-full flex flex-col justify-center">
                                 <div className="flex justify-between items-center">
                                     <h3 className="text-[17px] text-[#111b21] dark:text-[#e9edef] font-bold truncate">
                                         {chat.name || 'Desconhecido'}
@@ -164,6 +176,7 @@ export const ChatSidebar: React.FC<ChatSidebarProps> = ({ chats, activeChatId, o
                                         <span className="text-indigo-500 dark:text-indigo-400 text-[10px]">✓✓</span>
                                         {chat.lastMessage}
                                     </p>
+
 
                                     {/* Action Trigger (Hover) */}
                                     <div className="absolute right-3 top-8 opacity-0 group-hover:opacity-100 transition-opacity duration-200" onClick={(e) => e.stopPropagation()}>

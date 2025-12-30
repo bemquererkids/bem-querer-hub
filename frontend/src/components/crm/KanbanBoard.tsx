@@ -178,8 +178,12 @@ const DealCard = React.memo<DealCardProps>(({ deal, stage, onWhatsApp, isDraggin
                     <div className="flex-1 min-w-0">
                         <div className="flex justify-between items-start mb-2">
                             <div className="flex items-center gap-1.5">
-                                <div className={`p-1 rounded-lg ${stage.bgLight} border ${stage.borderColor}`}>
-                                    <stage.icon className={`w-3.5 h-3.5 ${stage.iconColor}`} />
+                                <div className={`rounded-lg ${stage.bgLight} border ${stage.borderColor} overflow-hidden w-9 h-9 flex items-center justify-center`}>
+                                    {deal.patientAvatar ? (
+                                        <img src={deal.patientAvatar} alt="A" className="w-full h-full object-cover" />
+                                    ) : (
+                                        <stage.icon className={`w-5 h-5 ${stage.iconColor}`} />
+                                    )}
                                 </div>
                                 <div>
                                     <h3 className="font-bold text-zinc-900 dark:text-foreground text-sm leading-tight">{deal.patientName}</h3>
@@ -459,9 +463,17 @@ export const KanbanBoard: React.FC<{ highlightDealId?: string | null }> = ({ hig
         setShowWhatsAppModal(true);
     };
 
-    const handleSendWhatsApp = (message: string) => {
-        console.log("Sending WhatsApp message:", message);
-        setShowWhatsAppModal(false);
+    const handleSendWhatsApp = async (message: string) => {
+        if (!selectedDeal) return;
+        try {
+            console.log("Sending WhatsApp message to", selectedDeal.id);
+            await chatService.sendMessage(selectedDeal.id, message);
+            setShowWhatsAppModal(false);
+            // Optional: Show success toast
+        } catch (error) {
+            console.error("Failed to send message", error);
+            alert("Erro ao enviar mensagem. Verifique a conexão.");
+        }
     };
 
     if (loading) {
