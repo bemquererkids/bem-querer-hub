@@ -318,12 +318,14 @@ async def process_new_lead(phone: str, name: str, message: str, instance_id: str
             "origem": source
         }
         
-        # try: REMOVED FOR DEBUG
-        res = supabase.table('pacientes').insert(new_patient).execute()
-        if res.data:
-            print(f"Novo Lead Criado: {name} via {source}")
-        # except Exception as e:
-        #     print(f"Erro ao criar paciente: {e}. Continuando...")
+        try:
+            res = supabase.table('pacientes').insert(new_patient).execute()
+            if res.data:
+                print(f"✅ Novo Lead Criado: {name} via {source}")
+        except Exception as e:
+            print(f"⚠️ Erro no cadastro de paciente (ignorando para continuar chat): {e}")
+            # Non-blocking error: Allow chat to proceed even if CRM save fails
+            pass
     else:
         print(f"Lead Recorrente: {name}")
 
