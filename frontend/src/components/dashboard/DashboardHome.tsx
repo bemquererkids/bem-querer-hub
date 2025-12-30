@@ -12,7 +12,9 @@ import {
     CreditCardIcon,
     ArrowUpRightIcon,
     ArrowDownRightIcon,
+    XCircleIcon,
 } from '@heroicons/react/24/outline';
+import { MessageCircle } from 'lucide-react';
 import {
     BarChart,
     Bar,
@@ -154,7 +156,20 @@ export const DashboardHome: React.FC = () => {
                         Este Mês
                     </Button>
                     <Button
-                        onClick={() => window.location.reload()}
+                        onClick={() => {
+                            const fetchMetrics = async () => {
+                                try {
+                                    const res = await fetch(`${import.meta.env.VITE_API_URL}/api/crm/metrics?period=${period}`);
+                                    const data = await res.json();
+                                    if (data && data.funnelData) {
+                                        setMetrics(data);
+                                    }
+                                } catch (error) {
+                                    console.error("Failed to fetch dashboard metrics", error);
+                                }
+                            };
+                            fetchMetrics();
+                        }}
                         className="h-9 text-xs bg-indigo-600 dark:bg-primary text-white dark:text-primary-foreground hover:bg-indigo-700 dark:hover:bg-primary/90 shadow-sm"
                     >
                         <ArrowPathIcon className="w-4 h-4 mr-2" /> Atualizar
@@ -168,12 +183,20 @@ export const DashboardHome: React.FC = () => {
                     variants={staggerContainer}
                     initial="initial"
                     animate="animate"
-                    className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6"
+                    className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6"
                 >
                     <MetricCard
                         title="Total de Leads"
                         value={metrics.totalLeads}
                         icon={UserGroupIcon}
+                        color="zinc"
+                        trend="up"
+                    />
+                    <MetricCard
+                        title="Em Negociação"
+                        value={metrics.qualifying}
+                        subtext={`${metrics.percentages.qualifyingRate}% dos leads`}
+                        icon={MessageCircle}
                         color="zinc"
                         trend="up"
                     />
@@ -194,9 +217,17 @@ export const DashboardHome: React.FC = () => {
                         trend="up"
                     />
                     <MetricCard
+                        title="Faltou (No-Show)"
+                        value={metrics.noshow}
+                        subtext={`${metrics.percentages.noshowRate}% dos agendados`}
+                        icon={XCircleIcon}
+                        color="zinc"
+                        trend="down"
+                    />
+                    <MetricCard
                         title="Vendas Realizadas"
                         value={metrics.sales}
-                        subtext={`Ticket Médio R$ ${metrics.ticket.toLocaleString()}`}
+                        subtext={`${metrics.percentages.conversionRate}% de conversão`}
                         icon={ArrowTrendingUpIcon}
                         color="zinc"
                         trend="up"
