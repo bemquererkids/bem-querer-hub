@@ -42,6 +42,7 @@ import {
     useSensor,
     useSensors,
     closestCorners,
+    pointerWithin,
     DragOverEvent,
     useDroppable,
 } from '@dnd-kit/core';
@@ -570,7 +571,7 @@ export const KanbanBoard: React.FC<{ highlightDealId?: string | null }> = ({ hig
     return (
         <DndContext
             sensors={sensors}
-            collisionDetection={closestCorners}
+            collisionDetection={pointerWithin}
             onDragStart={handleDragStart}
             onDragOver={handleDragOver}
             onDragEnd={handleDragEnd}
