@@ -41,11 +41,12 @@ export const useWhatsAppChats = () => {
             const transformed: ChatContact[] = (data || []).map(conv => ({
                 id: conv.id,
                 name: conv.contact_name || conv.phone_number,
+                phoneNumber: conv.phone_number,
                 lastMessage: conv.last_message || '',
                 lastMessageTime: formatTime(conv.last_message_at),
                 unreadCount: conv.unread_count || 0,
                 tags: conv.tags || [],
-                avatar: `https://ui-avatars.com/api/?name=${encodeURIComponent(conv.contact_name || conv.phone_number)}&background=random&size=128`
+                avatar: `https://ui-avatars.com/api/?name=${encodeURIComponent(conv.contact_name || conv.phone_number || 'U')}&background=random&size=128`
             }));
 
             setChats(transformed);
@@ -86,26 +87,23 @@ function formatTime(timestamp: string | null): string {
 
     const date = new Date(timestamp);
     const now = new Date();
-    const diff = now.getTime() - date.getTime();
 
-    // Less than 24 hours - show time
-    if (diff < 86400000) {
+    // Check if it's today
+    const isToday = date.getDate() === now.getDate() &&
+        date.getMonth() === now.getMonth() &&
+        date.getFullYear() === now.getFullYear();
+
+    if (isToday) {
         return date.toLocaleTimeString('pt-BR', {
             hour: '2-digit',
             minute: '2-digit'
         });
     }
 
-    // Less than 7 days - show day of week
-    if (diff < 604800000) {
-        return date.toLocaleDateString('pt-BR', {
-            weekday: 'short'
-        });
-    }
-
-    // Older - show date
+    // Else: dd/mm/yyyy
     return date.toLocaleDateString('pt-BR', {
         day: '2-digit',
-        month: '2-digit'
+        month: '2-digit',
+        year: 'numeric'
     });
 }

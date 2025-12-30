@@ -6,6 +6,7 @@ export interface ChatContact {
     unreadCount: number;
     tags: string[];
     avatar?: string;
+    phoneNumber?: string;
     status?: 'online' | 'offline';
 }
 
