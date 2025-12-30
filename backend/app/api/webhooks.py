@@ -48,7 +48,8 @@ async def save_whatsapp_message(
     media_url: str = None,
     timestamp: str = None,
     is_from_me: bool = False,
-    instance_id: str = "main"  # Added instance_id
+    instance_id: str = "main",
+    provided_avatar_url: str = None # New argument
 ):
     """
     Saves WhatsApp message to database for chat integration.
@@ -71,18 +72,19 @@ async def save_whatsapp_message(
         conversation_res = supabase.table('whatsapp_conversations').select('*').eq('phone_number', phone).eq('clinic_id', clinic_id).execute()
         
         conversation_id = None
-        current_avatar = None
+        current_avatar = provided_avatar_url
         
         if not conversation_res.data:
             # Create new conversation
             logger.info("Creating new conversation")
             
-            # Fetch Avatar
-            try:
-                uazapi = get_uazapi_service()
-                current_avatar = await uazapi.get_profile_picture(instance_id, phone)
-            except Exception as e:
-                logger.warning(f"Failed to fetch avatar for new conv: {e}")
+            # Fetch Avatar if not provided
+            if not current_avatar:
+                try:
+                    uazapi = get_uazapi_service()
+                    current_avatar = await uazapi.get_profile_picture(instance_id, phone)
+                except Exception as e:
+                    logger.warning(f"Failed to fetch avatar for new conv: {e}")
 
             new_conversation = {
                 "clinic_id": clinic_id,
@@ -104,7 +106,7 @@ async def save_whatsapp_message(
             current_unread = conversation_res.data[0].get('unread_count', 0)
             existing_avatar = conversation_res.data[0].get('avatar')
             
-            # Fetch avatar if missing
+            # Update logic
             updates = {
                 "last_message": content,
                 "last_message_at": timestamp or datetime.now().isoformat(),
@@ -112,13 +114,16 @@ async def save_whatsapp_message(
                 "updated_at": datetime.now().isoformat()
             }
             
-            if not existing_avatar:
-                try:
+            # Update avatar if provided or missing
+            if provided_avatar_url:
+                updates['avatar'] = provided_avatar_url
+            elif not existing_avatar:
+                 try:
                     uazapi = get_uazapi_service()
                     new_avatar = await uazapi.get_profile_picture(instance_id, phone)
                     if new_avatar:
                         updates['avatar'] = new_avatar
-                except Exception as e:
+                 except Exception as e:
                     logger.warning(f"Failed to fetch avatar for update: {e}")
 
             logger.info(f"Updating existing conversation ID: {conversation_id}")
@@ -190,6 +195,11 @@ async def receive_whatsapp_message(request: Request, background_tasks: Backgroun
         if 'message' in payload:
             # New UazAPI format
             message_data = payload.get('message', {})
+            chat_data = payload.get('chat', {})
+            
+            # Extract Avatar from Chat Object
+            avatar_url = chat_data.get('imagePreview') or chat_data.get('image')
+            
             data = {
                 'key': {
                     'remoteJid': message_data.get('chatid', message_data.get('sender', '')),
@@ -201,7 +211,8 @@ async def receive_whatsapp_message(request: Request, background_tasks: Backgroun
                 'message': {
                     'conversation': message_data.get('content', message_data.get('text', ''))
                 },
-                'messageType': message_data.get('messageType', 'conversation')
+                'messageType': message_data.get('messageType', 'conversation'),
+                'provided_avatar': avatar_url # Injected field
             }
         else:
             # Old format (if any)
@@ -271,6 +282,7 @@ async def process_single_message_data(data: dict, instance_id: str, clinic_id: s
     message_id = data.get('key', {}).get('id', str(uuid.uuid4()))
     timestamp = data.get('messageTimestamp')
     is_from_me = data.get('key', {}).get('fromMe', False)
+    provided_avatar = data.get('provided_avatar') # Extract injected avatar
     
     # Tentar extrair texto
     text_content = ""
@@ -304,7 +316,8 @@ async def process_single_message_data(data: dict, instance_id: str, clinic_id: s
         media_url=media_url,
         timestamp=datetime.fromtimestamp(int(timestamp)).isoformat() if timestamp else None,
         is_from_me=is_from_me,
-        instance_id=instance_id
+        instance_id=instance_id,
+        provided_avatar_url=provided_avatar # Pass to saver
     )
 
     # Process lead (existing functionality)
