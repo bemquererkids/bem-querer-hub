@@ -118,7 +118,6 @@ export const ChatLayout: React.FC = () => {
     }
 
     return (
-    return (
         <div className="h-full w-full flex flex-col md:flex-row overflow-hidden bg-white dark:bg-card border-x border-zinc-200 dark:border-border shadow-sm">
             {/* SIDEBAR AREA */}
             <div className={`
@@ -147,6 +146,5 @@ export const ChatLayout: React.FC = () => {
                 />
             </div>
         </div>
-    );
     );
 };
