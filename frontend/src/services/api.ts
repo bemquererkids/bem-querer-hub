@@ -56,6 +56,16 @@ export const chatService = {
   markAsRead: async (conversationId: string) => {
     const response = await api.post(`/chat/read/${conversationId}`);
     return response.data;
+  },
+  sendMedia: async (conversationId: string, mediaUrl: string, mediaType: 'image' | 'audio' | 'document', caption?: string, filename?: string) => {
+    const response = await api.post('/chat/send-media', {
+      conversation_id: conversationId,
+      media_url: mediaUrl,
+      media_type: mediaType,
+      caption,
+      filename
+    });
+    return response.data;
   }
 };
 
