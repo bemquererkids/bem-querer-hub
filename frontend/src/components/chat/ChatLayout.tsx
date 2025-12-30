@@ -118,18 +118,24 @@ export const ChatLayout: React.FC = () => {
     }
 
     return (
-        <div className="h-full animate-in fade-in slide-in-from-bottom-4 duration-300">
-            <Card className="h-full flex overflow-hidden border-zinc-200 dark:border-border shadow-sm rounded-lg bg-white dark:bg-card">
+        <div className="h-full animate-in fade-in zoom-in-95 duration-300">
+            <Card className="h-full flex flex-col md:flex-row overflow-hidden border-zinc-200 dark:border-border shadow-xl rounded-xl bg-white dark:bg-card">
                 <ChatSidebar
                     chats={chats}
                     activeChatId={activeChatId}
                     onSelectChat={setActiveChatId}
+                    className={activeChatId ? 'hidden md:flex' : 'flex'}
                 />
-                <ChatWindow
-                    chat={activeChat}
-                    messages={activeChatId ? messages : []}
-                    onSendMessage={handleSendMessage}
-                />
+
+                {/* Chat Window Container - Hidden on mobile if no chat selected */}
+                <div className={`flex-1 flex flex-col h-full overflow-hidden ${!activeChatId ? 'hidden md:flex' : 'flex'}`}>
+                    <ChatWindow
+                        chat={activeChat}
+                        messages={activeChatId ? messages : []}
+                        onSendMessage={handleSendMessage}
+                        onBack={() => setActiveChatId(undefined)}
+                    />
+                </div>
             </Card>
         </div>
     );
