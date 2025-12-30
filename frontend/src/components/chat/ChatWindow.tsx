@@ -19,6 +19,7 @@ interface ChatWindowProps {
     messages: ChatMessage[];
     onSendMessage: (text: string) => void;
     onBack?: () => void;
+    onNavigateToDeal?: (dealId: string) => void;
 }
 
 const formatPhoneNumber = (phone: string) => {
@@ -42,7 +43,7 @@ const formatPhoneNumber = (phone: string) => {
     return phone;
 };
 
-export const ChatWindow: React.FC<ChatWindowProps> = ({ chat, messages: initialMessages, onSendMessage, onBack }) => {
+export const ChatWindow: React.FC<ChatWindowProps> = ({ chat, messages: initialMessages, onSendMessage, onBack, onNavigateToDeal }) => {
     const [newMessage, setNewMessage] = useState('');
     const [messages, setMessages] = useState<ChatMessage[]>(initialMessages);
     const [isTyping, setIsTyping] = useState(false);
@@ -262,6 +263,9 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({ chat, messages: initialM
         if (!chat) return;
         try {
             await crmService.updateDealStatus(chat.id, newStatus);
+            if (onNavigateToDeal) {
+                onNavigateToDeal(chat.id);
+            }
         } catch (e) {
             console.error("Failed to update status", e);
         }
@@ -314,7 +318,7 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({ chat, messages: initialM
                         <DropdownMenuContent align="end">
                             <DropdownMenuItem onClick={() => handleStatusChange('Lead')}>
                                 <div className="w-2 h-2 rounded-full bg-indigo-500 mr-2" />
-                                Lead
+                                <Lead />
                             </DropdownMenuItem>
                             <DropdownMenuItem onClick={() => handleStatusChange('Em Negociação')}>
                                 <div className="w-2 h-2 rounded-full bg-indigo-500 mr-2" />
