@@ -149,8 +149,8 @@ export const ChatSidebar: React.FC<ChatSidebarProps> = ({ chats, activeChatId, o
                                     </p>
 
                                     {/* Action Trigger (Hover) */}
-                                    <div className="absolute right-3 top-8 hidden group-hover:block" onClick={(e) => e.stopPropagation()}>
-                                        <DropdownMenu>
+                                    <div className="absolute right-3 top-8 opacity-0 group-hover:opacity-100 transition-opacity duration-200" onClick={(e) => e.stopPropagation()}>
+                                        <DropdownMenu modal={false}>
                                             <DropdownMenuTrigger asChild>
                                                 <button className="p-1 rounded-full hover:bg-black/10 bg-transparent text-[#54656f] dark:text-[#aebac1]">
                                                     <ChevronDown className="w-5 h-5" />
