@@ -75,31 +75,12 @@ export const ChatLayout: React.FC = () => {
 
     // Show empty state if no chats available (WhatsApp not connected)
     if (chats.length === 0) {
-        return (
-            <div className="relative h-full">
-                <div className="absolute top-0 left-0 right-0 bg-yellow-100 text-xs p-2 z-50 border-b border-yellow-300 text-yellow-900 overflow-auto max-h-32">
-                    <strong>DEBUG INFO:</strong><br />
-                    VITE_API_URL: {import.meta.env.VITE_API_URL || '(Not Set - Using Default)'}<br />
-                    VITE_SUPABASE_URL: {import.meta.env.VITE_SUPABASE_URL || '(Not Set)'}<br />
-                    Loading: {loading ? 'True' : 'False'}<br />
-                    Chats: {chats.length}<br />
-                    Last Error: {typeof error === 'string' ? error : JSON.stringify(error)}
-                </div>
-                <WhatsAppEmptyState />
-            </div>
-        );
+        return <WhatsAppEmptyState />;
     }
 
     return (
-        <div className="h-full animate-in fade-in slide-in-from-bottom-4 duration-300 relative">
-            <div className="absolute top-0 left-0 right-0 bg-yellow-100 text-xs p-2 z-50 border-b border-yellow-300 text-yellow-900 overflow-auto max-h-32">
-                <strong>DEBUG BAR (V2):</strong><br />
-                VITE_API_URL: {import.meta.env.VITE_API_URL || '(Default)'}<br />
-                API_URL_FINAL: {chatService.toString()}<br />
-                Chats: {chats.length} | Loading: {String(loading)}
-            </div>
-
-            <Card className="h-full flex overflow-hidden border-zinc-200 dark:border-border shadow-sm rounded-lg bg-white dark:bg-card pt-12">
+        <div className="h-full animate-in fade-in slide-in-from-bottom-4 duration-300">
+            <Card className="h-full flex overflow-hidden border-zinc-200 dark:border-border shadow-sm rounded-lg bg-white dark:bg-card">
                 <ChatSidebar
                     chats={chats}
                     activeChatId={activeChatId}
