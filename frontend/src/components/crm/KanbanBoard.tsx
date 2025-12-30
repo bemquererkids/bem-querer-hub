@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { WhatsAppModal } from './WhatsAppModal';
 import { Deal, CRMStatus } from '../../types/crm';
-import { crmService } from '../../services/api';
+import { crmService, chatService } from '../../services/api';
 import {
     Users,
     Calendar,
