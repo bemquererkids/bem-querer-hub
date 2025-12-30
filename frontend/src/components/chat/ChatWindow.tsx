@@ -313,19 +313,27 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({ chat, messages: initialM
                         </DropdownMenuTrigger>
                         <DropdownMenuContent align="end">
                             <DropdownMenuItem onClick={() => handleStatusChange('Lead')}>
-                                <div className="w-2 h-2 rounded-full bg-slate-400 mr-2" />
+                                <div className="w-2 h-2 rounded-full bg-indigo-500 mr-2" />
                                 Lead
                             </DropdownMenuItem>
                             <DropdownMenuItem onClick={() => handleStatusChange('Em Negociação')}>
-                                <div className="w-2 h-2 rounded-full bg-blue-400 mr-2" />
+                                <div className="w-2 h-2 rounded-full bg-indigo-500 mr-2" />
                                 Em Negociação
                             </DropdownMenuItem>
                             <DropdownMenuItem onClick={() => handleStatusChange('Agendado')}>
-                                <div className="w-2 h-2 rounded-full bg-yellow-400 mr-2" />
+                                <div className="w-2 h-2 rounded-full bg-purple-500 mr-2" />
                                 Agendado
                             </DropdownMenuItem>
+                            <DropdownMenuItem onClick={() => handleStatusChange('Compareceu')}>
+                                <div className="w-2 h-2 rounded-full bg-emerald-500 mr-2" />
+                                Compareceu
+                            </DropdownMenuItem>
+                            <DropdownMenuItem onClick={() => handleStatusChange('Faltou')}>
+                                <div className="w-2 h-2 rounded-full bg-red-500 mr-2" />
+                                Faltou
+                            </DropdownMenuItem>
                             <DropdownMenuItem onClick={() => handleStatusChange('Venda Realizada')}>
-                                <div className="w-2 h-2 rounded-full bg-green-500 mr-2" />
+                                <div className="w-2 h-2 rounded-full bg-amber-500 mr-2" />
                                 Venda Realizada
                             </DropdownMenuItem>
                         </DropdownMenuContent>

@@ -155,6 +155,10 @@ app.include_router(integration_router)
 from app.api.chat import router as chat_router
 app.include_router(chat_router)
 
+# Import and include crm router
+from app.api.crm import router as crm_router
+app.include_router(crm_router)
+
 @app.get("/")
 async def root():
     return {"status": "ok", "message": "Bem-Querer Hub API", "version": "1.0.0"}
