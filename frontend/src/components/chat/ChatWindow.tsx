@@ -13,6 +13,16 @@ interface ChatWindowProps {
     onSendMessage: (text: string) => void;
 }
 
+const formatPhoneNumber = (phone: string) => {
+    // Simple format for BR numbers: +55 (11) 99999-9999
+    if (!phone) return '';
+    const cleaned = phone.replace(/\D/g, '');
+    if (cleaned.length === 12 || cleaned.length === 13) { // 55 + DDD + 8/9 digits
+        return `+${cleaned.slice(0, 2)} (${cleaned.slice(2, 4)}) ${cleaned.slice(4, 9)}-${cleaned.slice(9)}`;
+    }
+    return phone;
+};
+
 export const ChatWindow: React.FC<ChatWindowProps> = ({ chat, messages: initialMessages, onSendMessage }) => {
     const [newMessage, setNewMessage] = useState('');
     const [messages, setMessages] = useState<ChatMessage[]>(initialMessages);
@@ -125,9 +135,11 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({ chat, messages: initialM
                         <AvatarImage src={`https://ui-avatars.com/api/?name=${(chat.name || 'Desconhecido').replace(' ', '+')}&background=random`} />
                         <AvatarFallback>{(chat.name || 'U').substring(0, 2).toUpperCase()}</AvatarFallback>
                     </Avatar>
-                    <div>
+                    <div className="cursor-pointer" title={`Nome: ${chat.name}\nTelefone: ${chat.phoneNumber || 'Não informado'}\nClique para ver detalhes`}>
                         <h3 className="font-bold text-slate-800 text-sm">{chat.name}</h3>
-                        <p className="text-xs text-green-600 font-medium">Carol (IA) Ativa</p>
+                        <p className="text-xs text-slate-500 font-medium">
+                            {chat.phoneNumber ? formatPhoneNumber(chat.phoneNumber) : 'Carol (IA) Ativa'}
+                        </p>
                     </div>
                 </div>
                 <div className="flex items-center gap-1 text-slate-400">

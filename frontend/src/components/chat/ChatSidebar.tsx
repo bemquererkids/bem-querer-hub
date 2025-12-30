@@ -131,7 +131,7 @@ export const ChatSidebar: React.FC<ChatSidebarProps> = ({ chats, activeChatId, o
                                     </p>
 
                                     {/* Unread Badge */}
-                                    {chat.unreadCount > 0 && (
+                                    {chat.unreadCount > 0 && chat.id !== activeChatId && (
                                         <div className="min-w-[1.25rem] h-5 px-1 bg-[#25d366] text-white text-xs font-medium rounded-full flex items-center justify-center">
                                             {chat.unreadCount}
                                         </div>
