@@ -58,7 +58,18 @@ const FUNNEL_STAGES = [
         textColor: 'text-indigo-700 dark:text-indigo-300',
         iconColor: 'text-indigo-600 dark:text-indigo-400',
         borderColor: 'border-indigo-200 dark:border-indigo-800',
-        statuses: ['new', 'qualifying']
+        statuses: ['new']
+    },
+    {
+        id: 'negotiation',
+        title: 'Em Negociação',
+        icon: MessageCircle,
+        bgLight: 'bg-blue-50 dark:bg-blue-900/20',
+        cardBg: 'bg-blue-50/50 dark:bg-blue-900/10',
+        textColor: 'text-blue-700 dark:text-blue-300',
+        iconColor: 'text-blue-600 dark:text-blue-400',
+        borderColor: 'border-blue-200 dark:border-blue-800',
+        statuses: ['qualifying']
     },
     {
         id: 'scheduled',

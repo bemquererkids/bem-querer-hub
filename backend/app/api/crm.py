@@ -105,14 +105,26 @@ async def update_deal_status(
     """
     Updates the status of a deal (appointment or lead).
     """
-    print(f"Updating Deal {deal_id} to status: {request.status}")
+    # Map frontend Portuguese labels to internal keys
+    status_map = {
+        'Lead': 'new',
+        'Em Negociação': 'qualifying',
+        'Agendado': 'scheduled',
+        'Compareceu': 'attended',
+        'Faltou': 'noshow',
+        'Venda Realizada': 'won',
+        'Perdido': 'lost'
+    }
+    
+    internal_status = status_map.get(request.status, request.status)
+    print(f"Updating Deal {deal_id} to status: {request.status} -> {internal_status}")
     
     # 1. If it's a Supabase ID (UUID), update DB
     if len(deal_id) == 36: # Simple UUID check
         try:
             if supabase:
                 # Update Tags based on Status
-                new_tag = f"crm:{request.status}" # e.g. crm:won
+                new_tag = f"crm:{internal_status}" # e.g. crm:won
                 
                 # Fetch current tags first
                 res = supabase.table("whatsapp_conversations").select("tags").eq("id", deal_id).execute()
