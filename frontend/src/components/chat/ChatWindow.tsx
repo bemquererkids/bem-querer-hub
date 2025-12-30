@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { ChatContact, ChatMessage } from '../../types/chat';
+import { supabase } from '../../services/supabase';
 import { Send, Paperclip, Mic, MoreVertical, Phone, Video } from 'lucide-react';
 import { Button } from '../ui/button';
 import { Input } from '../ui/input';
@@ -21,6 +22,41 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({ chat, messages: initialM
     useEffect(() => {
         setMessages(initialMessages);
     }, [initialMessages]);
+
+    useEffect(() => {
+        if (!chat?.id) return;
+
+        // Subscribe to new messages for this conversation
+        const subscription = supabase
+            .channel(`chat:${chat.id}`)
+            .on('postgres_changes', {
+                event: 'INSERT',
+                schema: 'public',
+                table: 'whatsapp_messages',
+                filter: `conversation_id=eq.${chat.id}`
+            }, (payload) => {
+                const newMsg = payload.new;
+
+                // Avoid duplicating distinct messages (check ID)
+                setMessages(prev => {
+                    if (prev.some(m => m.id === newMsg.message_id)) return prev;
+
+                    return [...prev, {
+                        id: newMsg.message_id,
+                        content: newMsg.content,
+                        sender: newMsg.is_from_me ? 'agent' : 'user',
+                        timestamp: newMsg.created_at,
+                        type: newMsg.message_type,
+                        status: 'read'
+                    }];
+                });
+            })
+            .subscribe();
+
+        return () => {
+            subscription.unsubscribe();
+        };
+    }, [chat?.id]);
 
     useEffect(() => {
         if (scrollRef.current) {
