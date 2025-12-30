@@ -14,12 +14,23 @@ interface ChatWindowProps {
 }
 
 const formatPhoneNumber = (phone: string) => {
-    // Simple format for BR numbers: +55 (11) 99999-9999
     if (!phone) return '';
+    // Remove non-digits
     const cleaned = phone.replace(/\D/g, '');
-    if (cleaned.length === 12 || cleaned.length === 13) { // 55 + DDD + 8/9 digits
+
+    // Check for Brazilian format: 55 + DDD + Number
+    // Landline: 55 (2) + DDD (2) + 8 digits = 12 chars
+    // Mobile: 55 (2) + DDD (2) + 9 digits = 13 chars
+
+    if (cleaned.length === 13) { // Mobile: +55 (11) 99999-9999
         return `+${cleaned.slice(0, 2)} (${cleaned.slice(2, 4)}) ${cleaned.slice(4, 9)}-${cleaned.slice(9)}`;
     }
+
+    if (cleaned.length === 12) { // Landline: +55 (11) 4444-4444
+        return `+${cleaned.slice(0, 2)} (${cleaned.slice(2, 4)}) ${cleaned.slice(4, 8)}-${cleaned.slice(8)}`;
+    }
+
+    // Fallback for other formats, just return as is or basic formatting
     return phone;
 };
 

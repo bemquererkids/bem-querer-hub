@@ -201,7 +201,9 @@ async def receive_whatsapp_message(request: Request, background_tasks: Backgroun
             # Extract Avatar & Name from Chat Object
             avatar_url = chat_data.get('imagePreview') or chat_data.get('image')
             chat_name = chat_data.get('name') or message_data.get('senderName', '')
-            
+            chat_phone = chat_data.get('phone') # Formatted phone if needed
+            msg_source = message_data.get('source') # web, android, ios, etc.
+
             data = {
                 'key': {
                     'remoteJid': message_data.get('chatid', message_data.get('sender', '')),
@@ -214,7 +216,9 @@ async def receive_whatsapp_message(request: Request, background_tasks: Backgroun
                     'conversation': message_data.get('content', message_data.get('text', ''))
                 },
                 'messageType': message_data.get('messageType', 'conversation'),
-                'provided_avatar': avatar_url # Injected field
+                'provided_avatar': avatar_url, # Injected field
+                'message_source': msg_source,
+                'formatted_phone': chat_phone
             }
         else:
             # Old format (if any)
@@ -285,6 +289,7 @@ async def process_single_message_data(data: dict, instance_id: str, clinic_id: s
     timestamp = data.get('messageTimestamp')
     is_from_me = data.get('key', {}).get('fromMe', False)
     provided_avatar = data.get('provided_avatar') # Extract injected avatar
+    message_source = data.get('message_source') # Extract injected source
     
     # Tentar extrair texto
     text_content = ""
@@ -324,15 +329,24 @@ async def process_single_message_data(data: dict, instance_id: str, clinic_id: s
 
     # Process lead (existing functionality)
     if not is_from_me:
-        await process_new_lead(remote_jid, push_name, text_content, instance_id)
-    # except Exception as e:
-    #     logger.error(f"Error processing single message: {e}") 
-    #     raise e # Re-raise for debug
+        await process_new_lead(
+            phone=remote_jid.split('@')[0], 
+            name=push_name, 
+            message=text_content, 
+            instance_id=instance_id,
+            explicit_source=message_source
+        )
 
-async def process_new_lead(phone: str, name: str, message: str, instance_id: str = "main"):
+async def process_new_lead(
+    phone: str, 
+    name: str, 
+    message: str, 
+    instance_id: str = "main", 
+    explicit_source: str = None
+):
     """
     Lógica Principal:
-    1. Verifica se paciente existe (TABELA: pacientes). Se não, cria.
+    1. Verifica se paciente existe (TABELA: pacientes). Se não, cria. Se sim, ATUALIZA.
     2. Detecta origem (Google/Insta).
     3. Salva mensagem do usuário (TABELA: whatsapp_messages).
     4. Cria Chat se não existir (TABELA: whatsapp_conversations).
@@ -347,7 +361,7 @@ async def process_new_lead(phone: str, name: str, message: str, instance_id: str
     supabase = SupabaseClient.get_admin_client()
     uazapi = get_uazapi_service()
     gpt_service = get_gpt_service()
-    clean_phone = phone.split('@')[0]
+    clean_phone = phone # Already cleaned in caller
     
     # 1. Busca Paciente (pacientes)
     # Correct column: telefone
@@ -355,28 +369,50 @@ async def process_new_lead(phone: str, name: str, message: str, instance_id: str
     
     clinic_id = "00000000-0000-0000-0000-000000000001" 
     
+    # Determine Source
+    # Map 'web' to 'Whatsapp' or keep as is? User said 'web, instagram, facebook'.
+    # If explicit_source is valid, use it. Else detect.
+    final_source = explicit_source if explicit_source else LeadSourceDetector.detect(message)
+    
     if not patient_res.data:
-        # Detectar Origem
-        source = LeadSourceDetector.detect(message)
-        
         # Criar Novo Paciente
         new_patient = {
             "clinica_id": clinic_id, # Schema PT-BR usa clinica_id e não clinic_id
             "nome": name,   # telefone
             "telefone": clean_phone, 
-            "origem": source
+            "origem": final_source
         }
         
         try:
             res = supabase.table('pacientes').insert(new_patient).execute()
             if res.data:
-                print(f"✅ Novo Lead Criado: {name} via {source}")
+                print(f"✅ Novo Lead Criado: {name} via {final_source}")
         except Exception as e:
             print(f"⚠️ Erro no cadastro de paciente (ignorando para continuar chat): {e}")
             # Non-blocking error: Allow chat to proceed even if CRM save fails
             pass
     else:
-        print(f"Lead Recorrente: {name}")
+        # Atualizar Paciente Existente (CRM VIVO)
+        patient_id = patient_res.data[0]['id']
+        current_name = patient_res.data[0].get('nome')
+        current_source = patient_res.data[0].get('origem')
+        
+        updates = {}
+        # Update name if changed and valid
+        if name and name != 'Desconhecido' and name != current_name:
+            updates['nome'] = name
+            
+        # Update source if we have a better one now (optional, but requested to keep data 'real')
+        # If we have explicit source, it might be worth capturing
+        if final_source and final_source != 'Indefinido' and not current_source:
+             updates['origem'] = final_source
+             
+        if updates:
+            try:
+                supabase.table('pacientes').update(updates).eq('id', patient_id).execute()
+                print(f"🔄 Lead Atualizado: {name} (Updates: {updates.keys()})")
+            except Exception as e:
+                print(f"⚠️ Erro ao atualizar lead: {e}")
 
     # 2. Busca ou Cria Chat (whatsapp_conversations)
     # This table uses 'phone_number' and 'clinic_id'
