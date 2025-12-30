@@ -111,6 +111,7 @@ async def save_whatsapp_message(
                 "last_message": content,
                 "last_message_at": timestamp or datetime.now().isoformat(),
                 "unread_count": current_unread + (0 if is_from_me else 1),
+                "contact_name": contact_name, # Always update contact name to keep it fresh
                 "updated_at": datetime.now().isoformat()
             }
             
@@ -197,8 +198,9 @@ async def receive_whatsapp_message(request: Request, background_tasks: Backgroun
             message_data = payload.get('message', {})
             chat_data = payload.get('chat', {})
             
-            # Extract Avatar from Chat Object
+            # Extract Avatar & Name from Chat Object
             avatar_url = chat_data.get('imagePreview') or chat_data.get('image')
+            chat_name = chat_data.get('name') or message_data.get('senderName', '')
             
             data = {
                 'key': {
@@ -206,7 +208,7 @@ async def receive_whatsapp_message(request: Request, background_tasks: Backgroun
                     'fromMe': message_data.get('fromMe', False),
                     'id': message_data.get('messageid', message_data.get('id', ''))
                 },
-                'pushName': message_data.get('senderName', ''),
+                'pushName': chat_name, # Prioritize chat.name
                 'messageTimestamp': message_data.get('messageTimestamp', 0) // 1000,  # Convert to seconds
                 'message': {
                     'conversation': message_data.get('content', message_data.get('text', ''))
