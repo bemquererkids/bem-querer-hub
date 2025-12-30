@@ -1,11 +1,20 @@
 import React, { useState } from 'react';
 import { ChatContact } from '../../types/chat';
-import { Search, Filter, MoreVertical, MessageCircle } from 'lucide-react';
+import { Search, Filter, MoreVertical, MessageCircle, ChevronDown, Archive, BellOff, PinOff, Mail, Heart, Ban, Trash2 } from 'lucide-react';
 import { Input } from '../ui/input';
 import { Badge } from '../ui/badge';
 import { Tabs, TabsList, TabsTrigger } from '../ui/tabs';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../ui/select';
+import {
+    DropdownMenu,
+    DropdownMenuContent,
+    DropdownMenuItem,
+    DropdownMenuLabel,
+    DropdownMenuSeparator,
+    DropdownMenuTrigger,
+} from "../ui/dropdown-menu";
 import clsx from 'clsx';
+import { chatService } from '../../services/api';
 
 interface ChatSidebarProps {
     chats: ChatContact[];
@@ -26,6 +35,16 @@ export const ChatSidebar: React.FC<ChatSidebarProps> = ({ chats, activeChatId, o
     });
 
     const totalUnread = chats.reduce((sum, chat) => sum + (chat.unreadCount || 0), 0);
+
+    const handleAction = (action: string, chatId: string, e: React.MouseEvent) => {
+        e.stopPropagation();
+        console.log(`Action ${action} on chat ${chatId}`);
+        // Implement actions here (e.g., delete, archive)
+        if (action === 'delete') {
+            // chatService.deleteChat(chatId); // To be implemented
+            alert(`Apagar conversa ${chatId} (Backend pendente)`);
+        }
+    };
 
     return (
         <div className="w-[400px] flex flex-col h-full border-r border-[#e9edef] dark:border-zinc-800 bg-white dark:bg-[#111b21]">
@@ -97,7 +116,7 @@ export const ChatSidebar: React.FC<ChatSidebarProps> = ({ chats, activeChatId, o
                             key={chat.id}
                             onClick={() => onSelectChat(chat.id)}
                             className={clsx(
-                                "group px-3 py-3 cursor-pointer flex items-center gap-3 transition-colors hover:bg-[#f5f6f6] dark:hover:bg-[#202c33]",
+                                "group px-3 py-3 cursor-pointer flex items-center gap-3 transition-colors hover:bg-[#f5f6f6] dark:hover:bg-[#202c33] relative",
                                 activeChatId === chat.id ? "bg-[#f0f2f5] dark:bg-[#2a3942]" : ""
                             )}
                         >
@@ -125,12 +144,53 @@ export const ChatSidebar: React.FC<ChatSidebarProps> = ({ chats, activeChatId, o
                                 </div>
                                 <div className="flex justify-between items-center mt-0.5">
                                     <p className="text-[14px] text-[#667781] dark:text-[#8696a0] truncate max-w-[85%] flex items-center gap-1">
-                                        {/* Tick check if from me (mock logic for now) */}
                                         <span className="text-indigo-500 dark:text-indigo-400 text-[10px]">✓✓</span>
                                         {chat.lastMessage}
                                     </p>
 
-                                    {/* Unread Badge */}
+                                    {/* Action Trigger (Hover) */}
+                                    <div className="absolute right-3 top-8 hidden group-hover:block" onClick={(e) => e.stopPropagation()}>
+                                        <DropdownMenu>
+                                            <DropdownMenuTrigger asChild>
+                                                <button className="p-1 rounded-full hover:bg-black/10 bg-transparent text-[#54656f] dark:text-[#aebac1]">
+                                                    <ChevronDown className="w-5 h-5" />
+                                                </button>
+                                            </DropdownMenuTrigger>
+                                            <DropdownMenuContent align="end" className="w-56 bg-white dark:bg-[#233138] border-none shadow-lg py-2">
+                                                <DropdownMenuItem className="cursor-pointer text-[#111b21] dark:text-[#d1d7db] hover:bg-[#f5f6f6] dark:hover:bg-[#111b21] py-2.5" onClick={(e) => handleAction('archive', chat.id, e)}>
+                                                    <Archive className="mr-3 h-4 w-4" />
+                                                    <span>Arquivar conversa</span>
+                                                </DropdownMenuItem>
+                                                <DropdownMenuItem className="cursor-pointer text-[#111b21] dark:text-[#d1d7db] hover:bg-[#f5f6f6] dark:hover:bg-[#111b21] py-2.5" onClick={(e) => handleAction('mute', chat.id, e)}>
+                                                    <BellOff className="mr-3 h-4 w-4" />
+                                                    <span>Silenciar notificações</span>
+                                                </DropdownMenuItem>
+                                                <DropdownMenuItem className="cursor-pointer text-[#111b21] dark:text-[#d1d7db] hover:bg-[#f5f6f6] dark:hover:bg-[#111b21] py-2.5" onClick={(e) => handleAction('unpin', chat.id, e)}>
+                                                    <PinOff className="mr-3 h-4 w-4" />
+                                                    <span>Desafixar conversa</span>
+                                                </DropdownMenuItem>
+                                                <DropdownMenuItem className="cursor-pointer text-[#111b21] dark:text-[#d1d7db] hover:bg-[#f5f6f6] dark:hover:bg-[#111b21] py-2.5" onClick={(e) => handleAction('mark_unread', chat.id, e)}>
+                                                    <Mail className="mr-3 h-4 w-4" />
+                                                    <span>Marcar como não lida</span>
+                                                </DropdownMenuItem>
+                                                <DropdownMenuItem className="cursor-pointer text-[#111b21] dark:text-[#d1d7db] hover:bg-[#f5f6f6] dark:hover:bg-[#111b21] py-2.5" onClick={(e) => handleAction('favorite', chat.id, e)}>
+                                                    <Heart className="mr-3 h-4 w-4" />
+                                                    <span>Adicionar aos favoritos</span>
+                                                </DropdownMenuItem>
+                                                <DropdownMenuSeparator className="bg-[#e9edef] dark:bg-[#374248]" />
+                                                <DropdownMenuItem className="cursor-pointer text-[#111b21] dark:text-[#d1d7db] hover:bg-[#f5f6f6] dark:hover:bg-[#111b21] py-2.5" onClick={(e) => handleAction('block', chat.id, e)}>
+                                                    <Ban className="mr-3 h-4 w-4" />
+                                                    <span>Bloquear</span>
+                                                </DropdownMenuItem>
+                                                <DropdownMenuItem className="cursor-pointer text-red-500 hover:bg-[#f5f6f6] dark:hover:bg-[#111b21] py-2.5" onClick={(e) => handleAction('delete', chat.id, e)}>
+                                                    <Trash2 className="mr-3 h-4 w-4" />
+                                                    <span>Apagar conversa</span>
+                                                </DropdownMenuItem>
+                                            </DropdownMenuContent>
+                                        </DropdownMenu>
+                                    </div>
+
+                                    {/* Unread Badge (Hidden if menu open or no unread) */}
                                     {chat.unreadCount > 0 && chat.id !== activeChatId && (
                                         <div className="min-w-[1.25rem] h-5 px-1 bg-[#25d366] text-white text-xs font-medium rounded-full flex items-center justify-center">
                                             {chat.unreadCount}
