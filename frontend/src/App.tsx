@@ -21,6 +21,12 @@ function AppContent() {
     const [isSigningUp, setIsSigningUp] = useState(false);
     const [currentView, setCurrentView] = useState<ViewType>('dashboard');
     const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+    const [highlightDealId, setHighlightDealId] = useState<string | null>(null);
+
+    const handleNavigateToDeal = (dealId: string) => {
+        setHighlightDealId(dealId);
+        setCurrentView('crm');
+    };
 
     if (!isAuthenticated) {
         if (isSigningUp) {
@@ -58,8 +64,8 @@ function AppContent() {
                             className="w-full h-full"
                         >
                             {currentView === 'dashboard' && <DashboardHome />}
-                            {currentView === 'chat' && <ChatLayout />}
-                            {currentView === 'crm' && <KanbanBoard />}
+                            {currentView === 'chat' && <ChatLayout onNavigateToDeal={handleNavigateToDeal} />}
+                            {currentView === 'crm' && <KanbanBoard highlightDealId={highlightDealId} />}
                             {currentView === 'followup' && <FollowUpPage />}
                             {currentView === 'prompt-config' && <ConfigPromptPage />}
                             {currentView === 'clinic-config' && <IntegrationsSettings />}

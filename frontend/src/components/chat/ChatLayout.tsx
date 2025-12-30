@@ -9,7 +9,7 @@ import { Card } from '../ui/card';
 import { RefreshCw } from 'lucide-react';
 import { formatTime } from '../../utils/formatDate';
 
-export const ChatLayout: React.FC = () => {
+export const ChatLayout: React.FC<{ onNavigateToDeal?: (dealId: string) => void }> = ({ onNavigateToDeal }) => {
     const [chats, setChats] = useState<ChatContact[]>([]);
     const [activeChatId, setActiveChatId] = useState<string | undefined>(undefined);
     const [messages, setMessages] = useState<ChatMessage[]>([]);
@@ -143,6 +143,7 @@ export const ChatLayout: React.FC = () => {
                     messages={activeChatId ? messages : []}
                     onSendMessage={handleSendMessage}
                     onBack={() => setActiveChatId(undefined)}
+                    onNavigateToDeal={onNavigateToDeal}
                 />
             </div>
         </div>

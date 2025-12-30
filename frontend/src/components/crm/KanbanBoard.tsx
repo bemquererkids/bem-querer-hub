@@ -37,17 +37,7 @@ import {
 import { SortableContext, verticalListSortingStrategy, useSortable } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
 
-// --- MOCK DATA FOR DEV/FALLBACK ---
-const MOCK_DEALS: Deal[] = [
-    { id: '1', patientName: 'Roberto Silva', status: 'new', source: 'instagram', campaignId: 'IG-2024-001', lastContact: new Date().toISOString(), phone: '(11) 99999-1111', probability: 'high' },
-    { id: '2', patientName: 'Maria Oliveira', status: 'qualifying', source: 'google', campaignId: 'GGL-ADS-042', lastContact: new Date().toISOString(), phone: '(11) 98888-2222', probability: 'medium' },
-    { id: '3', patientName: 'João Santos', status: 'scheduled', source: 'facebook', campaignId: 'FB-CAMP-789', lastContact: new Date().toISOString(), phone: '(11) 97777-3333', probability: 'high' },
-    { id: '4', patientName: 'Ana Costa', status: 'won', source: 'instagram', campaignId: 'IG-2024-002', lastContact: new Date().toISOString(), phone: '(11) 96666-4444', probability: 'high' },
-    { id: '5', patientName: 'Carlos Pereira', status: 'noshow', source: 'google', campaignId: 'GGL-ADS-043', lastContact: new Date().toISOString(), phone: '(11) 95555-5555', probability: 'low' },
-    { id: '6', patientName: 'Fernanda Lima', status: 'attended', source: 'facebook', campaignId: 'FB-CAMP-790', lastContact: new Date().toISOString(), phone: '(11) 94444-6666', probability: 'medium' },
-];
-
-// Sales Funnel Stages - 5 RAIAS
+// Sales Funnel Stages - 6 RAIAS
 const FUNNEL_STAGES = [
     {
         id: 'lead',
@@ -151,6 +141,14 @@ const getSourceInfo = (source: Deal['source']) => {
                 bg: 'bg-green-50 dark:bg-green-900/20',
                 border: 'border-green-200 dark:border-green-800',
                 label: 'Indicação'
+            };
+        default:
+            return {
+                icon: Search,
+                color: 'text-zinc-600 dark:text-zinc-400',
+                bg: 'bg-zinc-50 dark:bg-zinc-900/20',
+                border: 'border-zinc-200 dark:border-zinc-800',
+                label: 'Outros'
             };
     }
 };
@@ -265,7 +263,7 @@ const SortableDealCard: React.FC<DealCardProps> = (props) => {
     };
 
     return (
-        <div ref={setNodeRef} style={style} {...attributes} {...listeners}>
+        <div ref={setNodeRef} style={style} {...attributes} {...listeners} id={`deal-${props.deal.id}`}>
             <DealCard {...props} isDragging={isDragging} />
         </div>
     );
@@ -326,7 +324,7 @@ const DroppableColumn: React.FC<{
     );
 };
 
-export const KanbanBoard: React.FC = () => {
+export const KanbanBoard: React.FC<{ highlightDealId?: string | null }> = ({ highlightDealId }) => {
     const [deals, setDeals] = useState<Deal[]>([]);
     const [loading, setLoading] = useState(true);
     const [selectedDeal, setSelectedDeal] = useState<Deal | null>(null);
@@ -357,6 +355,21 @@ export const KanbanBoard: React.FC = () => {
 
         fetchDeals();
     }, []);
+
+    useEffect(() => {
+        if (highlightDealId && !loading && deals.length > 0) {
+            setTimeout(() => {
+                const element = document.getElementById(`deal-${highlightDealId}`);
+                if (element) {
+                    element.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                    element.classList.add('ring-4', 'ring-cyan-500', 'ring-offset-2');
+                    setTimeout(() => {
+                        element.classList.remove('ring-4', 'ring-cyan-500', 'ring-offset-2');
+                    }, 3000);
+                }
+            }, 500);
+        }
+    }, [highlightDealId, loading, deals]);
 
     const getDealsByStage = useMemo(() => {
         return (statuses: string[]) => deals.filter(deal => statuses.includes(deal.status));
@@ -481,8 +494,8 @@ export const KanbanBoard: React.FC = () => {
                     </div>
                 </div>
 
-                {/* Kanban Columns - 5 RAIAS */}
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-3 flex-1 min-h-0">
+                {/* Kanban Columns - 6 RAIAS */}
+                <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-6 gap-2 flex-1 min-h-0 overflow-x-auto">
                     {FUNNEL_STAGES.map(stage => {
                         const stageDeals = getDealsByStage(stage.statuses);
                         return (
