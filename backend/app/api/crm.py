@@ -233,9 +233,7 @@ async def get_dashboard_metrics():
             "ticket": avg_ticket,
             "funnelData": funnel_data
         }
-            "ticket": 2100,
-            "funnelData": funnel_data
-        }
+
         
     except Exception as e:
         print(f"Metrics Error: {e}")
