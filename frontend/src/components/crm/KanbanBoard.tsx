@@ -456,18 +456,21 @@ export const KanbanBoard: React.FC<{ highlightDealId?: string | null }> = ({ hig
 
         // Find which stage the card was dropped into
         let targetStage = FUNNEL_STAGES.find(stage => stage.id === overId);
+        console.log('[DRAG] Dropped on ID:', overId, 'Found stage:', targetStage?.title);
 
         // If dropped on a card, find that card's stage
         if (!targetStage) {
             const targetDeal = deals.find(d => d.id === overId);
             if (targetDeal) {
                 targetStage = FUNNEL_STAGES.find(s => s.statuses.includes(targetDeal.status));
+                console.log('[DRAG] Dropped on card, found stage:', targetStage?.title);
             }
         }
 
         if (targetStage) {
             const currentDeal = deals.find(d => d.id === activeId);
             const isMovingToNewStage = currentDeal && !targetStage.statuses.includes(currentDeal.status);
+            console.log('[DRAG] Current status:', currentDeal?.status, 'Target statuses:', targetStage.statuses, 'Is moving?', isMovingToNewStage);
 
             if (isMovingToNewStage && currentDeal) {
                 const newStatus = targetStage.statuses[0] as CRMStatus;
