@@ -136,7 +136,8 @@ async def update_deal_status(
         'Agendado': 'scheduled',
         'Compareceu': 'attended',
         'Faltou': 'noshow',
-        'Venda Realizada': 'won',
+        'Venda': 'won',  # Frontend sends this
+        'Venda Realizada': 'won',  # Legacy support
         'Perdido': 'lost'
     }
     
@@ -200,6 +201,8 @@ async def get_dashboard_metrics():
         total_leads = len(raw_chats)
         scheduled = 0
         attended = 0
+        noshow = 0  # Faltou
+        qualifying = 0  # Em Negociação
         sales = 0
         revenue = 0.0
         
@@ -209,6 +212,8 @@ async def get_dashboard_metrics():
 
             if 'crm:scheduled' in tags: scheduled += 1
             if 'crm:attended' in tags: attended += 1
+            if 'crm:noshow' in tags: noshow += 1
+            if 'crm:qualifying' in tags: qualifying += 1
             if 'crm:won' in tags: 
                 sales += 1
                 revenue += val
@@ -227,6 +232,8 @@ async def get_dashboard_metrics():
             "totalLeads": total_leads,
             "scheduled": scheduled,
             "attended": attended,
+            "noshow": noshow,
+            "qualifying": qualifying,
             "sales": sales,
             "revenue": revenue,
             "ticket": avg_ticket,
