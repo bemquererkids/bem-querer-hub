@@ -444,7 +444,7 @@ export const KanbanBoard: React.FC<{ highlightDealId?: string | null }> = ({ hig
         }
     };
 
-    const handleDragEnd = (event: DragEndEvent) => {
+    const handleDragEnd = async (event: DragEndEvent) => {
         const { active, over } = event;
         setActiveDeal(null);
         setActiveStage(null);
@@ -469,19 +469,37 @@ export const KanbanBoard: React.FC<{ highlightDealId?: string | null }> = ({ hig
             const currentDeal = deals.find(d => d.id === activeId);
             const isMovingToNewStage = currentDeal && !targetStage.statuses.includes(currentDeal.status);
 
-            // Update deal status and timestamp
-            setDeals(prevDeals =>
-                prevDeals.map(deal =>
-                    deal.id === activeId
-                        ? {
-                            ...deal,
-                            status: targetStage!.statuses[0] as CRMStatus,
-                            // Update lastContact to current time when moving to a different stage
-                            lastContact: isMovingToNewStage ? new Date().toISOString() : deal.lastContact
-                        }
-                        : deal
-                )
-            );
+            if (isMovingToNewStage && currentDeal) {
+                const newStatus = targetStage.statuses[0] as CRMStatus;
+
+                // Update deal status and timestamp (optimistic update)
+                setDeals(prevDeals =>
+                    prevDeals.map(deal =>
+                        deal.id === activeId
+                            ? {
+                                ...deal,
+                                status: newStatus,
+                                lastContact: new Date().toISOString()
+                            }
+                            : deal
+                    )
+                );
+
+                // Persist to backend
+                try {
+                    await crmService.updateDealStatus(activeId, targetStage.title);
+                } catch (error) {
+                    console.error('Failed to update deal status:', error);
+                    // Revert on error
+                    setDeals(prevDeals =>
+                        prevDeals.map(deal =>
+                            deal.id === activeId
+                                ? { ...deal, status: currentDeal.status, lastContact: currentDeal.lastContact }
+                                : deal
+                        )
+                    );
+                }
+            }
         }
     };
 
