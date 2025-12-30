@@ -120,13 +120,19 @@ async def save_whatsapp_message(
         
     except Exception as e:
         logger.error(f"❌ Error saving WhatsApp message: {e}")
-        logger.error(f"Exception type: {type(e).__name__}")
+        # Log specific Supabase error if available
+        if hasattr(e, 'code'):
+            logger.error(f"Supabase Error Code: {e.code}")
+        if hasattr(e, 'details'):
+            logger.error(f"Supabase Details: {e.details}")
+
         import traceback
         logger.error(f"Traceback: {traceback.format_exc()}")
-        import traceback
-        logger.error(f"Traceback: {traceback.format_exc()}")
-        # Don't raise - we don't want to break the webhook if this fails
-        raise e # DEBUG: Re-raise to catch in probe
+        
+        # DO NOT RAISE. If saving message fails, we still want to try processing the lead?
+        # Actually if we can't save the message, chat won't work. But determining WHY is key.
+        # Let's swallow the error to prevent Webhook 500 loop, but user won't see msg.
+        pass
 
 class UazApiMessage(BaseModel):
     # Modelo simplificado da UazAPI/Baileys

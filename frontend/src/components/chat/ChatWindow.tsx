@@ -144,26 +144,32 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({ chat, messages: initialM
                     return (
                         <div key={msg.id} className={`flex ${isMe ? 'justify-end' : 'justify-start'}`}>
                             <div
-                                className={`max-w-[70%] px-4 py-2 shadow-sm relative text-sm ${isMe
-                                    ? 'bg-gradient-to-r from-cyan-500 to-teal-500 text-white rounded-2xl rounded-tr-sm'
-                                    : 'bg-white border border-slate-100 text-slate-700 rounded-2xl rounded-tl-sm'
+                                className={`max-w-[70%] px-3 py-1.5 shadow-sm relative text-[14.2px] leading-relaxed ${isMe
+                                    ? 'bg-[#d9fdd3] text-[#111b21] rounded-lg rounded-tr-none'
+                                    : 'bg-white text-[#111b21] rounded-lg rounded-tl-none'
                                     }`}
                             >
-                                <p className="leading-relaxed whitespace-pre-wrap">{msg.content}</p>
-                                <span className="text-[10px] text-slate-200 block text-right mt-1 opacity-70">
-                                    {new Date(msg.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-                                    {isMe && <span className="ml-1 text-blue-200">✓✓</span>}
-                                </span>
+                                <p className="whitespace-pre-wrap">{msg.content}</p>
+                                <div className="flex justify-end items-center gap-1 mt-1 select-none">
+                                    <span className="text-[11px] text-[#667781] min-w-fit">
+                                        {msg.timestamp ? new Date(msg.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : ''}
+                                    </span>
+                                    {isMe && (
+                                        <span className={`text-[11px] ${msg.status === 'read' ? 'text-[#53bdeb]' : 'text-[#667781]'}`}>
+                                            ✓✓
+                                        </span>
+                                    )}
+                                </div>
                             </div>
                         </div>
                     );
                 })}
                 {isTyping && (
                     <div className="flex justify-start animate-pulse">
-                        <div className="bg-white rounded-lg p-3 rounded-tl-none shadow-sm flex gap-1 items-center">
-                            <span className="w-2 h-2 bg-slate-400 rounded-full animate-bounce"></span>
-                            <span className="w-2 h-2 bg-slate-400 rounded-full animate-bounce delay-100"></span>
-                            <span className="w-2 h-2 bg-slate-400 rounded-full animate-bounce delay-200"></span>
+                        <div className="bg-white rounded-lg p-2 rounded-tl-none shadow-sm flex gap-1 items-center">
+                            <span className="w-1.5 h-1.5 bg-[#667781] rounded-full animate-bounce"></span>
+                            <span className="w-1.5 h-1.5 bg-[#667781] rounded-full animate-bounce delay-100"></span>
+                            <span className="w-1.5 h-1.5 bg-[#667781] rounded-full animate-bounce delay-200"></span>
                         </div>
                     </div>
                 )}
