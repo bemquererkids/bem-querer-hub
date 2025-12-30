@@ -104,7 +104,7 @@ export const ChatSidebar: React.FC<ChatSidebarProps> = ({ chats, activeChatId, o
                             {/* Avatar */}
                             <div className="relative w-12 h-12 flex-shrink-0">
                                 <img
-                                    src={chat.avatar || `https://ui-avatars.com/api/?name=${encodeURIComponent(chat.name)}`}
+                                    src={chat.avatar || `https://ui-avatars.com/api/?name=${encodeURIComponent(chat.name || 'Desconhecido')}&background=random&size=128`}
                                     alt={chat.name}
                                     className="w-full h-full rounded-full object-cover"
                                 />
@@ -113,8 +113,8 @@ export const ChatSidebar: React.FC<ChatSidebarProps> = ({ chats, activeChatId, o
                             {/* Content */}
                             <div className="flex-1 min-w-0 pr-1 pb-3 border-b border-[#e9edef] dark:border-zinc-800 group-last:border-0 h-full flex flex-col justify-center">
                                 <div className="flex justify-between items-center">
-                                    <h3 className="text-[17px] text-[#111b21] dark:text-[#e9edef] font-normal truncate">
-                                        {chat.name}
+                                    <h3 className="text-[17px] text-[#111b21] dark:text-[#e9edef] font-bold truncate">
+                                        {chat.name || 'Desconhecido'}
                                     </h3>
                                     <span className={clsx(
                                         "text-xs",
@@ -124,15 +124,31 @@ export const ChatSidebar: React.FC<ChatSidebarProps> = ({ chats, activeChatId, o
                                     </span>
                                 </div>
                                 <div className="flex justify-between items-center mt-0.5">
-                                    <p className="text-[14px] text-[#667781] dark:text-[#8696a0] truncate max-w-[85%]">
+                                    <p className="text-[14px] text-[#667781] dark:text-[#8696a0] truncate max-w-[85%] flex items-center gap-1">
                                         {/* Tick check if from me (mock logic for now) */}
+                                        <span className="text-indigo-500 dark:text-indigo-400 text-[10px]">✓✓</span>
                                         {chat.lastMessage}
                                     </p>
+
+                                    {/* Unread Badge */}
                                     {chat.unreadCount > 0 && (
                                         <div className="min-w-[1.25rem] h-5 px-1 bg-[#25d366] text-white text-xs font-medium rounded-full flex items-center justify-center">
                                             {chat.unreadCount}
                                         </div>
                                     )}
+                                </div>
+
+                                {/* WhatsApp Business Labels (Restored functionality) */}
+                                <div className="flex gap-1 mt-1">
+                                    {chat.tags && chat.tags.includes('financial') && (
+                                        <span className="bg-[#f0f2f5] text-[#54656f] text-[10px] px-1.5 py-0.5 rounded-sm border border-[#d1d7db] font-medium">
+                                            💰 Venda
+                                        </span>
+                                    )}
+                                    {/* Default 'Lead' label if no specific tags */}
+                                    <span className="bg-[#f0f2f5] text-[#54656f] text-[10px] px-1.5 py-0.5 rounded-sm border border-[#d1d7db] font-medium">
+                                        👤 Lead
+                                    </span>
                                 </div>
                             </div>
                         </div>
