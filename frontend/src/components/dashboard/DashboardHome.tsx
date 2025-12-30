@@ -81,10 +81,13 @@ const MetricCard = ({ title, value, subtext, icon: Icon, trend, color = 'zinc' }
 };
 
 export const DashboardHome: React.FC = () => {
+    const [period, setPeriod] = React.useState('month'); // week, month, custom
     const [metrics, setMetrics] = React.useState({
         totalLeads: 0,
         scheduled: 0,
         attended: 0,
+        noshow: 0,
+        qualifying: 0,
         sales: 0,
         revenue: 0,
         ticket: 0,
@@ -93,13 +96,20 @@ export const DashboardHome: React.FC = () => {
             { name: 'Agendados', value: 0, fill: '#6366f1' },
             { name: 'Compareceram', value: 0, fill: '#818cf8' },
             { name: 'Vendas', value: 0, fill: '#a5b4fc' },
-        ]
+        ],
+        percentages: {
+            schedulingRate: 0,
+            attendanceRate: 0,
+            conversionRate: 0,
+            noshowRate: 0,
+            qualifyingRate: 0
+        }
     });
 
     React.useEffect(() => {
         const fetchMetrics = async () => {
             try {
-                const res = await fetch(`${import.meta.env.VITE_API_URL}/api/crm/metrics`);
+                const res = await fetch(`${import.meta.env.VITE_API_URL}/api/crm/metrics?period=${period}`);
                 const data = await res.json();
                 if (data && data.funnelData) {
                     setMetrics(data);
@@ -110,7 +120,7 @@ export const DashboardHome: React.FC = () => {
         };
 
         fetchMetrics();
-    }, []);
+    }, [period]);
 
     return (
         <div className="p-8 space-y-8 min-h-full max-w-7xl mx-auto">
@@ -127,11 +137,26 @@ export const DashboardHome: React.FC = () => {
                 </div>
 
                 <div className="flex items-center gap-3">
-                    <Button variant="outline" className="h-9 text-xs bg-white dark:bg-card border-zinc-200 dark:border-border text-zinc-600 dark:text-muted-foreground font-medium hover:bg-zinc-50 dark:hover:bg-accent hover:text-zinc-900 dark:hover:text-foreground shadow-sm">
+                    <Button
+                        variant="outline"
+                        onClick={() => setPeriod('week')}
+                        className={`h-9 text-xs ${period === 'week' ? 'bg-indigo-50 border-indigo-200 text-indigo-700' : 'bg-white border-zinc-200 text-zinc-600'} dark:bg-card dark:border-border dark:text-muted-foreground font-medium hover:bg-zinc-50 dark:hover:bg-accent hover:text-zinc-900 dark:hover:text-foreground shadow-sm`}
+                    >
+                        <CalendarIcon className="w-4 h-4 mr-2" />
+                        Esta Semana
+                    </Button>
+                    <Button
+                        variant="outline"
+                        onClick={() => setPeriod('month')}
+                        className={`h-9 text-xs ${period === 'month' ? 'bg-indigo-50 border-indigo-200 text-indigo-700' : 'bg-white border-zinc-200 text-zinc-600'} dark:bg-card dark:border-border dark:text-muted-foreground font-medium hover:bg-zinc-50 dark:hover:bg-accent hover:text-zinc-900 dark:hover:text-foreground shadow-sm`}
+                    >
                         <CalendarIcon className="w-4 h-4 mr-2" />
                         Este Mês
                     </Button>
-                    <Button className="h-9 text-xs bg-indigo-600 dark:bg-primary text-white dark:text-primary-foreground hover:bg-indigo-700 dark:hover:bg-primary/90 shadow-sm">
+                    <Button
+                        onClick={() => window.location.reload()}
+                        className="h-9 text-xs bg-indigo-600 dark:bg-primary text-white dark:text-primary-foreground hover:bg-indigo-700 dark:hover:bg-primary/90 shadow-sm"
+                    >
                         <ArrowPathIcon className="w-4 h-4 mr-2" /> Atualizar
                     </Button>
                 </div>
@@ -155,7 +180,7 @@ export const DashboardHome: React.FC = () => {
                     <MetricCard
                         title="Agendamentos"
                         value={metrics.scheduled}
-                        subtext={`${metrics.totalLeads ? ((metrics.scheduled / metrics.totalLeads) * 100).toFixed(1) : 0}% de conversão`}
+                        subtext={`${metrics.percentages.schedulingRate}% de conversão`}
                         icon={CalendarIcon}
                         color="zinc"
                         trend="up"
@@ -163,7 +188,7 @@ export const DashboardHome: React.FC = () => {
                     <MetricCard
                         title="Comparecimentos"
                         value={metrics.attended}
-                        subtext={`${metrics.scheduled ? ((metrics.attended / metrics.scheduled) * 100).toFixed(1) : 0}% de presença`}
+                        subtext={`${metrics.percentages.attendanceRate}% de presença`}
                         icon={CheckCircleIcon}
                         color="zinc"
                         trend="up"
