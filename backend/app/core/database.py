@@ -42,7 +42,7 @@ class MockSupabaseQuery:
         
     def execute(self):
         # Return Mock Data based on table
-        if self.table_name == "chats" or self.table_name == "whatsapp_conversations":
+        if self.table_name == "chats":
             if self._data_to_set:
                 # Return the data being inserted/updated as if it worked
                 return MockSupabaseResponse([{"id": "mock_chat_new", **self._data_to_set}])
@@ -56,11 +56,7 @@ class MockSupabaseQuery:
                     "patients": {
                         "full_name": "Ana (Simulada)",
                         "source": "google_ads"
-                    },
-                    "phone_number": "5511999990001",
-                    "contact_name": "Ana da Silva",
-                    "tags": ["crm:new"],
-                    "deal_value": 0
+                    }
                 },
                 {
                     "id": "mock_chat_2",
@@ -70,11 +66,7 @@ class MockSupabaseQuery:
                     "patients": {
                         "full_name": "Pedro (Simulado)",
                         "source": "instagram"
-                    },
-                    "phone_number": "5511999990002",
-                    "contact_name": "Pedro Santos",
-                    "tags": ["crm:scheduled"],
-                    "deal_value": 1500
+                    }
                 }
             ])
         
@@ -98,9 +90,6 @@ class SupabaseClient:
         """Get or create Supabase client instance"""
         if cls._instance is None:
             try:
-                # Force Mock for Debugging
-                # raise ValueError("Forcing Mock Mode")
-
                 if "placeholder" in settings.SUPABASE_URL:
                      raise ValueError("Placeholder URL detected")
                      
@@ -117,22 +106,15 @@ class SupabaseClient:
     @classmethod
     def get_admin_client(cls) -> Client:
         """Get Supabase client with service role key (bypasses RLS)"""
-        try:
-            if not settings.SUPABASE_SERVICE_KEY or "placeholder" in settings.SUPABASE_SERVICE_KEY:
-                print("Using Mock Admin Client: No valid SERVICE_KEY")
-                return MockSupabaseClient()
-            
-            if "placeholder" in settings.SUPABASE_URL:
-                print("Using Mock Admin Client: Placeholder URL")
-                return MockSupabaseClient()
-            
-            return create_client(
-                supabase_url=settings.SUPABASE_URL,
-                supabase_key=settings.SUPABASE_SERVICE_KEY
-            )
-        except Exception as e:
-            print(f"Using Mock Admin Client due to: {e}")
-            return MockSupabaseClient()
+        # For admin client, we might also want to mock or fail hard
+        # Let's mock it too to be safe for now
+        if not settings.SUPABASE_SERVICE_KEY or "placeholder" in settings.SUPABASE_SERVICE_KEY:
+             return MockSupabaseClient()
+        
+        return create_client(
+            supabase_url=settings.SUPABASE_URL,
+            supabase_key=settings.SUPABASE_SERVICE_KEY
+        )
 
 
 def get_supabase() -> Client:

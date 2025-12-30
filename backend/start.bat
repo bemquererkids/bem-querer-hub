@@ -24,4 +24,4 @@ echo [INFO] Access the docs at: http://localhost:8000/docs
 echo.
 
 REM Start uvicorn
-uvicorn app.main:app --reload --host 127.0.0.1 --port 8000
+uvicorn app.main:app --reload --host 0.0.0.0 --port 8000

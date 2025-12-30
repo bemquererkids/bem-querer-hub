@@ -124,7 +124,6 @@ const getSourceInfo = (source: Deal['source']) => {
         case 'instagram':
             return {
                 icon: Instagram,
-                image: '/icons/instagram.png',
                 color: 'text-pink-600 dark:text-pink-400',
                 bg: 'bg-pink-50 dark:bg-pink-900/20',
                 border: 'border-pink-200 dark:border-pink-800',
@@ -133,7 +132,6 @@ const getSourceInfo = (source: Deal['source']) => {
         case 'google':
             return {
                 icon: Search,
-                image: '/icons/google.png',
                 color: 'text-blue-600 dark:text-blue-400',
                 bg: 'bg-blue-50 dark:bg-blue-900/20',
                 border: 'border-blue-200 dark:border-blue-800',
@@ -142,7 +140,6 @@ const getSourceInfo = (source: Deal['source']) => {
         case 'facebook':
             return {
                 icon: Facebook,
-                image: '/icons/facebook.png',
                 color: 'text-blue-700 dark:text-blue-400',
                 bg: 'bg-blue-50 dark:bg-blue-900/20',
                 border: 'border-blue-200 dark:border-blue-800',
@@ -187,17 +184,17 @@ const DealCard = React.memo<DealCardProps>(({ deal, stage, onWhatsApp, onEditVal
             shadow-sm hover:shadow-md transition-all group
             ${isDragging ? 'opacity-50 rotate-2 scale-105' : ''}
         `}>
-            <CardContent className="p-2">
-                <div className="flex items-start gap-1.5 mb-1.5">
-                    <GripVertical className="w-3.5 h-3.5 text-zinc-400 dark:text-zinc-500 cursor-grab active:cursor-grabbing flex-shrink-0 mt-0.5" />
+            <CardContent className="p-3">
+                <div className="flex items-start gap-2 mb-2">
+                    <GripVertical className="w-4 h-4 text-zinc-400 dark:text-zinc-500 cursor-grab active:cursor-grabbing flex-shrink-0 mt-0.5" />
                     <div className="flex-1 min-w-0">
-                        <div className="flex justify-between items-start mb-1.5">
+                        <div className="flex justify-between items-start mb-2">
                             <div className="flex items-center gap-1.5">
-                                <div className={`rounded-full ${stage.bgLight} border ${stage.borderColor} overflow-hidden w-8 h-8 flex items-center justify-center shrink-0`}>
+                                <div className={`rounded-full ${stage.bgLight} border ${stage.borderColor} overflow-hidden w-9 h-9 flex items-center justify-center shrink-0`}>
                                     {deal.patientAvatar ? (
                                         <img src={deal.patientAvatar} alt="A" className="w-full h-full object-cover" />
                                     ) : (
-                                        <stage.icon className={`w-4 h-4 ${stage.iconColor}`} />
+                                        <stage.icon className={`w-5 h-5 ${stage.iconColor}`} />
                                     )}
                                 </div>
                                 <div className="min-w-0">
@@ -213,13 +210,18 @@ const DealCard = React.memo<DealCardProps>(({ deal, stage, onWhatsApp, onEditVal
                         </div>
 
                         <div className="space-y-1.5 mb-2.5">
-                            {/* Source with logo only */}
-                            <div className={`flex items-center justify-center p-1 rounded-full ${sourceInfo.bg} border ${sourceInfo.border} w-7 h-7 overflow-hidden`}>
-                                {sourceInfo.image ? (
-                                    <img src={sourceInfo.image} alt={sourceInfo.label} className="w-6 h-6 object-contain" />
-                                ) : (
-                                    <sourceInfo.icon className={`w-3.5 h-3.5 ${sourceInfo.color}`} />
-                                )}
+                            {/* Source with logo and campaign ID */}
+                            <div className={`flex items-center gap-1.5 p-1.5 rounded-full ${sourceInfo.bg} border ${sourceInfo.border}`}>
+                                <sourceInfo.icon className={`w-3.5 h-3.5 ${sourceInfo.color}`} />
+                                <div className="flex-1 min-w-0">
+                                    <p className={`text-[10px] font-semibold ${sourceInfo.color}`}>{sourceInfo.label}</p>
+                                    {deal.campaignId && (
+                                        <div className="flex items-center gap-0.5">
+                                            <Hash className="w-2.5 h-2.5 text-zinc-400" />
+                                            <p className="text-[9px] text-zinc-500 dark:text-zinc-400 font-mono">{deal.campaignId}</p>
+                                        </div>
+                                    )}
+                                </div>
                             </div>
 
                             {deal.phone && (
@@ -246,18 +248,20 @@ const DealCard = React.memo<DealCardProps>(({ deal, stage, onWhatsApp, onEditVal
                             </div>
                         </div>
 
+                        {/* Deal Value */}
                         <div className="flex items-center justify-between text-[11px] font-medium text-zinc-700 dark:text-zinc-300 bg-zinc-50 dark:bg-zinc-800/50 p-1 rounded border border-zinc-100 dark:border-zinc-800">
                             <span>{new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(deal.value || 0)}</span>
-                            <div className="flex items-center gap-0.5">
-                                <Button variant="ghost" size="icon" className="h-4 w-4 hover:bg-zinc-200 dark:hover:bg-zinc-700" onClick={(e) => { e.stopPropagation(); onEditValue(); }}>
-                                    <Pencil className="w-2.5 h-2.5" />
-                                </Button>
-                                <Button variant="ghost" size="icon" className="h-4 w-4 hover:bg-green-100 dark:hover:bg-green-900/30" onClick={(e) => { e.stopPropagation(); onWhatsApp(); }}>
-                                    <MessageCircle className="w-2.5 h-2.5 text-green-600 dark:text-green-400" />
-                                </Button>
-                            </div>
+                            <Button variant="ghost" size="icon" className="h-4 w-4 hover:bg-zinc-200 dark:hover:bg-zinc-700" onClick={(e) => { e.stopPropagation(); onEditValue(); }}>
+                                <Pencil className="w-2.5 h-2.5" />
+                            </Button>
                         </div>
 
+                        <Button
+                            onClick={onWhatsApp}
+                            className="w-full bg-[#25D366] hover:bg-[#20bd5a] text-white font-semibold h-7 gap-1 shadow-sm text-[11px]"
+                        >
+                            <MessageCircle className="w-3 h-3" /> WhatsApp
+                        </Button>
                     </div>
                 </div>
             </CardContent>
@@ -440,7 +444,7 @@ export const KanbanBoard: React.FC<{ highlightDealId?: string | null }> = ({ hig
         }
     };
 
-    const handleDragEnd = async (event: DragEndEvent) => {
+    const handleDragEnd = (event: DragEndEvent) => {
         const { active, over } = event;
         setActiveDeal(null);
         setActiveStage(null);
@@ -465,42 +469,19 @@ export const KanbanBoard: React.FC<{ highlightDealId?: string | null }> = ({ hig
             const currentDeal = deals.find(d => d.id === activeId);
             const isMovingToNewStage = currentDeal && !targetStage.statuses.includes(currentDeal.status);
 
-            if (isMovingToNewStage && currentDeal) {
-                const newStatus = targetStage.statuses[0] as CRMStatus;
-
-                // Update deal status and timestamp
-                setDeals(prevDeals =>
-                    prevDeals.map(deal =>
-                        deal.id === activeId
-                            ? {
-                                ...deal,
-                                status: newStatus,
-                                // Update lastContact to current time when moving to a different stage
-                                lastContact: new Date().toISOString()
-                            }
-                            : deal
-                    )
-                );
-
-                // Persist to backend
-                console.log(`[DRAG] Attempting to update deal ${activeId} to status ${newStatus}`);
-                try {
-                    console.log('[DRAG] Calling crmService.updateDealStatus...');
-                    const result = await crmService.updateDealStatus(activeId, newStatus);
-                    console.log(`[DRAG] SUCCESS: Deal ${activeId} moved to ${newStatus}`, result);
-                } catch (error) {
-                    console.error('[DRAG] FAILED to update deal status:', error);
-                    console.error('[DRAG] Error details:', JSON.stringify(error, null, 2));
-                    // Revert on error
-                    setDeals(prevDeals =>
-                        prevDeals.map(deal =>
-                            deal.id === activeId
-                                ? { ...deal, status: currentDeal.status, lastContact: currentDeal.lastContact }
-                                : deal
-                        )
-                    );
-                }
-            }
+            // Update deal status and timestamp
+            setDeals(prevDeals =>
+                prevDeals.map(deal =>
+                    deal.id === activeId
+                        ? {
+                            ...deal,
+                            status: targetStage!.statuses[0] as CRMStatus,
+                            // Update lastContact to current time when moving to a different stage
+                            lastContact: isMovingToNewStage ? new Date().toISOString() : deal.lastContact
+                        }
+                        : deal
+                )
+            );
         }
     };
 

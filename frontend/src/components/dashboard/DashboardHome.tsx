@@ -99,8 +99,8 @@ export const DashboardHome: React.FC = () => {
     React.useEffect(() => {
         const fetchMetrics = async () => {
             try {
-                // Use centralized service to ensure correct API URL and headers
-                const data = await import('../../services/api').then(m => m.crmService.getMetrics());
+                const res = await fetch(`${import.meta.env.VITE_API_URL}/api/crm/metrics`);
+                const data = await res.json();
                 if (data && data.funnelData) {
                     setMetrics(data);
                 }
