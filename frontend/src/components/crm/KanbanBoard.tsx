@@ -267,7 +267,7 @@ const DealCard = React.memo<DealCardProps>(({ deal, stage, onWhatsApp, onEditVal
                 </div>
             </div>
         </CardContent>
-        </Card >
+    </Card >
     );
 });
 
