@@ -34,6 +34,10 @@ export const crmService = {
   updateDealStatus: async (dealId: string, status: string) => {
     const response = await api.put(`/crm/deals/${dealId}/status`, { status });
     return response.data;
+  },
+  updateDealValue: async (dealId: string, value: number) => {
+    const response = await api.put(`/crm/deals/${dealId}/value`, { value });
+    return response.data;
   }
 };
 

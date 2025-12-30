@@ -65,7 +65,7 @@ async def get_deals(
                 "id": chat["id"],
                 "patientName": chat.get("contact_name") or patient.get("nome") or phone,
                 "patientAvatar": chat.get("avatar"),
-                "value": 0,
+                "value": chat.get("deal_value") or 0,
                 "status": status,
                 "lastContact": chat.get("last_message_at") or chat.get("created_at"),
                 "source": 'google', # Default fallback
@@ -95,6 +95,30 @@ from pydantic import BaseModel
 
 class UpdateDealStatusRequest(BaseModel):
     status: str # 'attended', 'noshow', 'scheduled', 'won', 'lost'
+
+class UpdateDealValueRequest(BaseModel):
+    value: float
+
+@router.put("/deals/{deal_id}/value")
+async def update_deal_value(
+    deal_id: str,
+    request: UpdateDealValueRequest,
+    supabase: Optional[Client] = Depends(get_supabase)
+):
+    if not deal_id:
+        raise HTTPException(status_code=400, detail="Invalid Deal ID")
+
+    try:
+        from app.core.database import SupabaseClient
+        admin_supabase = SupabaseClient.get_admin_client()
+        
+        admin_supabase.table("whatsapp_conversations").update({"deal_value": request.value}).eq("id", deal_id).execute()
+        
+    except Exception as e:
+        print(f"Error updating value: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+    return {"status": "success", "value": request.value}
 
 @router.put("/deals/{deal_id}/status")
 async def update_deal_status(

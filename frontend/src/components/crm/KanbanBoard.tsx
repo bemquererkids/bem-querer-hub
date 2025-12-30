@@ -16,12 +16,24 @@ import {
     Instagram,
     Search,
     Facebook,
+    Facebook,
     UserCheck,
     Hash,
+    Pencil,
 } from 'lucide-react';
 import { Card, CardContent } from '../ui/card';
 import { Badge } from '../ui/badge';
 import { Button } from '../ui/button';
+import { Input } from '../ui/input';
+import { Label } from '../ui/label';
+import {
+    Dialog,
+    DialogContent,
+    DialogDescription,
+    DialogFooter,
+    DialogHeader,
+    DialogTitle,
+} from "../ui/dialog";
 import {
     DndContext,
     DragEndEvent,
@@ -157,10 +169,11 @@ interface DealCardProps {
     deal: Deal;
     stage: typeof FUNNEL_STAGES[0];
     onWhatsApp: () => void;
+    onEditValue: () => void;
     isDragging?: boolean;
 }
 
-const DealCard = React.memo<DealCardProps>(({ deal, stage, onWhatsApp, isDragging = false }) => {
+const DealCard = React.memo<DealCardProps>(({ deal, stage, onWhatsApp, onEditValue, isDragging = false }) => {
     const displayDate = new Date(deal.lastContact).toLocaleDateString('pt-BR', { day: '2-digit', month: 'short' });
     const displayTime = new Date(deal.lastContact).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
     const sourceInfo = getSourceInfo(deal.source);
@@ -178,15 +191,15 @@ const DealCard = React.memo<DealCardProps>(({ deal, stage, onWhatsApp, isDraggin
                     <div className="flex-1 min-w-0">
                         <div className="flex justify-between items-start mb-2">
                             <div className="flex items-center gap-1.5">
-                                <div className={`rounded-lg ${stage.bgLight} border ${stage.borderColor} overflow-hidden w-9 h-9 flex items-center justify-center`}>
+                                <div className={`rounded-full ${stage.bgLight} border ${stage.borderColor} overflow-hidden w-9 h-9 flex items-center justify-center shrink-0`}>
                                     {deal.patientAvatar ? (
                                         <img src={deal.patientAvatar} alt="A" className="w-full h-full object-cover" />
                                     ) : (
                                         <stage.icon className={`w-5 h-5 ${stage.iconColor}`} />
                                     )}
                                 </div>
-                                <div>
-                                    <h3 className="font-bold text-zinc-900 dark:text-foreground text-sm leading-tight">{deal.patientName}</h3>
+                                <div className="min-w-0">
+                                    <h3 className="font-bold text-zinc-900 dark:text-foreground text-sm leading-tight truncate">{deal.patientName}</h3>
                                     <p className="text-[10px] text-zinc-500 dark:text-muted-foreground">Particular</p>
                                 </div>
                             </div>
@@ -236,16 +249,25 @@ const DealCard = React.memo<DealCardProps>(({ deal, stage, onWhatsApp, isDraggin
                             </div>
                         </div>
 
-                        <Button
-                            onClick={onWhatsApp}
-                            className="w-full bg-[#25D366] hover:bg-[#20bd5a] text-white font-semibold h-7 gap-1 shadow-sm text-[11px]"
-                        >
-                            <MessageCircle className="w-3 h-3" /> WhatsApp
-                        </Button>
+                        {/* Deal Value */}
+                        <div className="flex items-center justify-between text-[11px] font-medium text-zinc-700 dark:text-zinc-300 bg-zinc-50 dark:bg-zinc-800/50 p-1 rounded border border-zinc-100 dark:border-zinc-800">
+                            <span>{new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(deal.value || 0)}</span>
+                            <Button variant="ghost" size="icon" className="h-4 w-4 hover:bg-zinc-200 dark:hover:bg-zinc-700" onClick={(e) => { e.stopPropagation(); onEditValue(); }}>
+                                <Pencil className="w-2.5 h-2.5" />
+                            </Button>
+                        </div>
                     </div>
+
+                    <Button
+                        onClick={onWhatsApp}
+                        className="w-full bg-[#25D366] hover:bg-[#20bd5a] text-white font-semibold h-7 gap-1 shadow-sm text-[11px]"
+                    >
+                        <MessageCircle className="w-3 h-3" /> WhatsApp
+                    </Button>
                 </div>
-            </CardContent>
-        </Card>
+            </div>
+        </CardContent>
+        </Card >
     );
 });
 
@@ -278,7 +300,8 @@ const DroppableColumn: React.FC<{
     stage: typeof FUNNEL_STAGES[0];
     deals: Deal[];
     onWhatsApp: (deal: Deal) => void;
-}> = ({ stage, deals, onWhatsApp }) => {
+    onEditValue: (deal: Deal) => void;
+}> = ({ stage, deals, onWhatsApp, onEditValue }) => {
     const { setNodeRef, isOver } = useDroppable({
         id: stage.id,
     });
@@ -318,7 +341,10 @@ const DroppableColumn: React.FC<{
                                 key={deal.id}
                                 deal={deal}
                                 stage={stage}
+                                deal={deal}
+                                stage={stage}
                                 onWhatsApp={() => onWhatsApp(deal)}
+                                onEditValue={() => onEditValue(deal)}
                             />
                         ))
                     )}
@@ -335,6 +361,11 @@ export const KanbanBoard: React.FC<{ highlightDealId?: string | null }> = ({ hig
     const [showWhatsAppModal, setShowWhatsAppModal] = useState(false);
     const [activeDeal, setActiveDeal] = useState<Deal | null>(null);
     const [activeStage, setActiveStage] = useState<typeof FUNNEL_STAGES[0] | null>(null);
+
+    // Value Editing State
+    const [editValueModalOpen, setEditValueModalOpen] = useState(false);
+    const [tempValue, setTempValue] = useState('');
+    const [editingDeal, setEditingDeal] = useState<Deal | null>(null);
 
     const sensors = useSensors(
         useSensor(PointerSensor, {
@@ -476,6 +507,32 @@ export const KanbanBoard: React.FC<{ highlightDealId?: string | null }> = ({ hig
         }
     };
 
+    const handleOpenEditValue = (deal: Deal) => {
+        setEditingDeal(deal);
+        setTempValue(deal.value?.toString() || '0');
+        setEditValueModalOpen(true);
+    };
+
+    const handleSaveValue = async () => {
+        if (!editingDeal) return;
+        try {
+            const val = parseFloat(tempValue.replace(',', '.').replace(/^R\$\s?/, '')); // Simple cleanup
+            if (isNaN(val)) {
+                alert("Valor inválido");
+                return;
+            }
+
+            await crmService.updateDealValue(editingDeal.id, val);
+
+            // Optimistic update
+            setDeals(prev => prev.map(d => d.id === editingDeal.id ? { ...d, value: val } : d));
+            setEditValueModalOpen(false);
+        } catch (error) {
+            console.error("Failed to update value", error);
+            alert("Erro ao atualizar valor.");
+        }
+    };
+
     if (loading) {
         return (
             <div className="h-full flex items-center justify-center">
@@ -515,7 +572,9 @@ export const KanbanBoard: React.FC<{ highlightDealId?: string | null }> = ({ hig
                                 key={stage.id}
                                 stage={stage}
                                 deals={stageDeals}
+                                deals={stageDeals}
                                 onWhatsApp={handleOpenWhatsApp}
+                                onEditValue={handleOpenEditValue}
                             />
                         );
                     })}
@@ -527,7 +586,9 @@ export const KanbanBoard: React.FC<{ highlightDealId?: string | null }> = ({ hig
                         <DealCard
                             deal={activeDeal}
                             stage={activeStage}
+                            stage={activeStage}
                             onWhatsApp={() => { }}
+                            onEditValue={() => { }}
                             isDragging
                         />
                     ) : null}
@@ -544,6 +605,38 @@ export const KanbanBoard: React.FC<{ highlightDealId?: string | null }> = ({ hig
                     onSend={handleSendWhatsApp}
                 />
             )}
+
+            {/* Edit Value Modal */}
+            <Dialog open={editValueModalOpen} onOpenChange={setEditValueModalOpen}>
+                <DialogContent className="sm:max-w-[425px]">
+                    <DialogHeader>
+                        <DialogTitle>Editar Valor do Negócio</DialogTitle>
+                        <DialogDescription>
+                            Insira o valor estimado para este negócio.
+                        </DialogDescription>
+                    </DialogHeader>
+                    <div className="grid gap-4 py-4">
+                        <div className="grid grid-cols-4 items-center gap-4">
+                            <Label htmlFor="value" className="text-right">
+                                Valor (R$)
+                            </Label>
+                            <Input
+                                id="value"
+                                type="number"
+                                value={tempValue}
+                                onChange={(e) => setTempValue(e.target.value)}
+                                className="col-span-3"
+                                placeholder="0.00"
+                                step="0.01"
+                            />
+                        </div>
+                    </div>
+                    <DialogFooter>
+                        <Button type="button" variant="outline" onClick={() => setEditValueModalOpen(false)}>Cancelar</Button>
+                        <Button type="button" onClick={handleSaveValue}>Salvar</Button>
+                    </DialogFooter>
+                </DialogContent>
+            </Dialog>
         </DndContext>
     );
 };
