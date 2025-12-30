@@ -301,7 +301,7 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({ chat, messages: initialM
                     )}
 
                     <Avatar className="h-10 w-10 border border-slate-100 cursor-pointer">
-                        <AvatarImage src={`https://ui-avatars.com/api/?name=${(chat.name || 'Desconhecido').replace(' ', '+')}&background=random`} />
+                        <AvatarImage src={chat.avatar || `https://ui-avatars.com/api/?name=${(chat.name || 'Desconhecido').replace(' ', '+')}&background=random`} />
                         <AvatarFallback>{(chat.name || 'U').substring(0, 2).toUpperCase()}</AvatarFallback>
                     </Avatar>
                     <div className="cursor-pointer" title={`Nome: ${chat.name}\nTelefone: ${chat.phoneNumber || 'Não informado'}\nClique para ver detalhes`}>
