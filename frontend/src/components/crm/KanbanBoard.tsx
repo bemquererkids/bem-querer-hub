@@ -302,10 +302,19 @@ const DroppableColumn: React.FC<{
 }> = ({ stage, deals, onWhatsApp, onEditValue }) => {
     const { setNodeRef, isOver } = useDroppable({
         id: stage.id,
+        data: {
+            type: 'column',
+            stage: stage
+        }
     });
 
     return (
-        <div ref={setNodeRef} className="flex flex-col min-h-0 h-full">
+        <div
+            ref={setNodeRef}
+            className="flex flex-col min-h-0 h-full"
+            data-droppable="true"
+            data-stage-id={stage.id}
+        >
             {/* Column Header */}
             <div className={`
                 ${stage.bgLight} border ${stage.borderColor} p-2.5 rounded-lg shadow-sm mb-2
