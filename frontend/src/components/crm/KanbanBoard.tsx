@@ -184,7 +184,7 @@ const DealCard = React.memo<DealCardProps>(({ deal, stage, onWhatsApp, onEditVal
             shadow-sm hover:shadow-md transition-all group
             ${isDragging ? 'opacity-50 rotate-2 scale-105' : ''}
         `}>
-            <CardContent className="p-3">
+            <CardContent className="p-3 overflow-hidden">
                 <div className="flex items-start gap-2 mb-2">
                     <GripVertical className="w-4 h-4 text-zinc-400 dark:text-zinc-500 cursor-grab active:cursor-grabbing flex-shrink-0 mt-0.5" />
                     <div className="flex-1 min-w-0">
@@ -197,9 +197,9 @@ const DealCard = React.memo<DealCardProps>(({ deal, stage, onWhatsApp, onEditVal
                                         <stage.icon className={`w-5 h-5 ${stage.iconColor}`} />
                                     )}
                                 </div>
-                                <div className="min-w-0">
-                                    <h3 className="font-bold text-zinc-900 dark:text-foreground text-sm leading-tight truncate">{deal.patientName}</h3>
-                                    <p className="text-[10px] text-zinc-500 dark:text-muted-foreground">Particular</p>
+                                <div className="min-w-0 flex-1 overflow-hidden">
+                                    <h3 className="font-bold text-zinc-900 dark:text-foreground text-sm leading-tight truncate max-w-full">{deal.patientName}</h3>
+                                    <p className="text-[10px] text-zinc-500 dark:text-muted-foreground truncate">Particular</p>
                                 </div>
                             </div>
                             {deal.probability === 'high' && (
