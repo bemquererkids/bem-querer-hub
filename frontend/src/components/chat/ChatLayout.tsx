@@ -7,6 +7,7 @@ import { supabase } from '../../services/supabase';
 import { ChatContact, ChatMessage } from '../../types/chat';
 import { Card } from '../ui/card';
 import { RefreshCw } from 'lucide-react';
+import { formatTime } from '../../utils/formatDate';
 
 export const ChatLayout: React.FC = () => {
     const [chats, setChats] = useState<ChatContact[]>([]);
@@ -20,7 +21,14 @@ export const ChatLayout: React.FC = () => {
         const fetchChats = async () => {
             try {
                 const data = await chatService.getChats();
-                setChats(data);
+
+                // Transform data using our strict date formatter
+                const formattedData = (data || []).map((chat: any) => ({
+                    ...chat,
+                    lastMessageTime: formatTime(chat.lastMessageTime)
+                }));
+
+                setChats(formattedData);
                 setError(null);
             } catch (err) {
                 console.error("Failed to fetch chats", err);

@@ -26,6 +26,7 @@ class ChatMessage(BaseModel):
 class Conversation(BaseModel):
     id: str
     name: str  # Changed from contact_name to match frontend
+    phoneNumber: Optional[str] = None # Added for frontend display
     lastMessage: Optional[str] = None  # Changed from last_message
     lastMessageTime: Optional[str] = None  # Changed from last_message_at
     unreadCount: int = 0  # Changed from unread_count
@@ -55,6 +56,7 @@ async def get_conversations():
             Conversation(
                 id=conv["id"],
                 name=conv.get("contact_name") or conv.get("phone_number", "Desconhecido"),
+                phoneNumber=conv.get("phone_number"),
                 lastMessage=conv.get("last_message") or "",
                 lastMessageTime=conv.get("last_message_at") or "",
                 unreadCount=conv.get("unread_count", 0),
