@@ -156,6 +156,20 @@ export const DashboardHome: React.FC = () => {
                         Este Mês
                     </Button>
                     <Button
+                        variant="outline"
+                        onClick={() => setPeriod('last7days')}
+                        className={`h-9 text-xs ${period === 'last7days' ? 'bg-indigo-50 border-indigo-200 text-indigo-700' : 'bg-white border-zinc-200 text-zinc-600'} dark:bg-card dark:border-border dark:text-muted-foreground font-medium hover:bg-zinc-50 dark:hover:bg-accent hover:text-zinc-900 dark:hover:text-foreground shadow-sm`}
+                    >
+                        Últimos 7 dias
+                    </Button>
+                    <Button
+                        variant="outline"
+                        onClick={() => setPeriod('last30days')}
+                        className={`h-9 text-xs ${period === 'last30days' ? 'bg-indigo-50 border-indigo-200 text-indigo-700' : 'bg-white border-zinc-200 text-zinc-600'} dark:bg-card dark:border-border dark:text-muted-foreground font-medium hover:bg-zinc-50 dark:hover:bg-accent hover:text-zinc-900 dark:hover:text-foreground shadow-sm`}
+                    >
+                        Últimos 30 dias
+                    </Button>
+                    <Button
                         onClick={() => {
                             const fetchMetrics = async () => {
                                 try {
@@ -236,13 +250,14 @@ export const DashboardHome: React.FC = () => {
             </div>
 
             {/* CHARTS SECTION */}
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6"
+            >
                 {/* Funnel Chart */}
                 <motion.div
                     initial={{ opacity: 0, y: 20 }}
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ delay: 0.2 }}
-                    className="lg:col-span-2 bg-white dark:bg-card p-6 rounded-xl border border-zinc-200 dark:border-border shadow-sm"
+                    className="bg-white dark:bg-card p-6 rounded-xl border border-zinc-200 dark:border-border shadow-sm"
                 >
                     <div className="flex items-center justify-between mb-6">
                         <h2 className="text-base font-semibold text-zinc-900 dark:text-card-foreground">Funil de Vendas</h2>
@@ -286,12 +301,12 @@ export const DashboardHome: React.FC = () => {
                     </div>
                 </motion.div>
 
-                {/* Financial Summary (Mini) */}
+                {/* Financial Summary */}
                 <motion.div
                     initial={{ opacity: 0, y: 20 }}
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ delay: 0.3 }}
-                    className="space-y-6"
+                    className="grid grid-cols-1 gap-6"
                 >
                     <MetricCard
                         title="Faturamento (Mês)"

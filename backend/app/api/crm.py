@@ -202,15 +202,26 @@ async def get_dashboard_metrics(
         
         # Calculate date range based on period
         now = datetime.now()
+        
         if period == "week":
-            start_dt = now - timedelta(days=7)
+            # Start of current week (Monday) to today
+            start_dt = now - timedelta(days=now.weekday())
+            start_dt = start_dt.replace(hour=0, minute=0, second=0, microsecond=0)
         elif period == "month":
+            # Start of current month to today
+            start_dt = now.replace(day=1, hour=0, minute=0, second=0, microsecond=0)
+        elif period == "last7days":
+            # Last 7 days from today
+            start_dt = now - timedelta(days=7)
+        elif period == "last30days":
+            # Last 30 days from today
             start_dt = now - timedelta(days=30)
         elif period == "custom" and start_date and end_date:
             start_dt = datetime.fromisoformat(start_date)
             end_dt = datetime.fromisoformat(end_date)
         else:
-            start_dt = now - timedelta(days=30)  # Default to month
+            # Default to current month
+            start_dt = now.replace(day=1, hour=0, minute=0, second=0, microsecond=0)
         
         # Fetch conversations filtered by date
         query = admin_supabase.table("whatsapp_conversations").select("id, tags, deal_value, created_at")
