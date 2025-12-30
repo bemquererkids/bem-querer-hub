@@ -267,14 +267,7 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({ chat, messages: initialM
         }
     };
 
-    const handleStatusChange = async (newStatus: string) => {
-        if (!chat) return;
-        try {
-            await crmService.updateDealStatus(chat.id, newStatus);
-        } catch (e) {
-            console.error("Failed to update status", e);
-        }
-    };
+
 
     if (!chat) {
         return (
