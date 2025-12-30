@@ -60,12 +60,21 @@ export const ChatLayout: React.FC = () => {
         };
     }, []);
 
-    // Fetch Messages when Active Chat changes
+    // Fetch Messages & Mark as Read when Active Chat changes
     useEffect(() => {
         if (!activeChatId) return;
 
-        const fetchMessages = async () => {
+        const handleChatSelection = async () => {
+            // 1. Optimistic Update locally
+            setChats(prev => prev.map(c =>
+                c.id === activeChatId ? { ...c, unreadCount: 0 } : c
+            ));
+
             try {
+                // 2. Mark as read on backend
+                await chatService.markAsRead(activeChatId);
+
+                // 3. Fetch messages
                 const rawData = await chatService.getMessages(activeChatId);
                 // Transform API data to Frontend Model
                 const formattedMessages: ChatMessage[] = rawData.map((msg: any) => ({
@@ -79,10 +88,11 @@ export const ChatLayout: React.FC = () => {
                 }));
                 setMessages(formattedMessages);
             } catch (error) {
-                console.error("Failed to fetch messages", error);
+                console.error("Failed to fetch messages or mark read", error);
             }
         };
-        fetchMessages();
+
+        handleChatSelection();
     }, [activeChatId]);
 
     const handleSendMessage = (text: string) => {
