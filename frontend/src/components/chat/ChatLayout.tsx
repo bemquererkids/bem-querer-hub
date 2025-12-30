@@ -12,6 +12,7 @@ export const ChatLayout: React.FC = () => {
     const [activeChatId, setActiveChatId] = useState<string | undefined>(undefined);
     const [messages, setMessages] = useState<ChatMessage[]>([]);
     const [loading, setLoading] = useState(true);
+    const [error, setError] = useState<string | null>(null);
 
     // Fetch Chat List with timeout
     useEffect(() => {
@@ -19,8 +20,10 @@ export const ChatLayout: React.FC = () => {
             try {
                 const data = await chatService.getChats();
                 setChats(data);
-            } catch (error) {
-                console.error("Failed to fetch chats", error);
+                setError(null);
+            } catch (err) {
+                console.error("Failed to fetch chats", err);
+                setError(err instanceof Error ? err.message : 'Unknown error');
                 setChats([]);
             } finally {
                 setLoading(false);
