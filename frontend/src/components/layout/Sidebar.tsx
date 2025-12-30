@@ -1,6 +1,7 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { useAuth } from '../../context/AuthContext';
+import { supabase } from '../../services/supabase';
 import {
     ChatBubbleLeftRightIcon,
     UserGroupIcon,
@@ -34,10 +35,39 @@ interface SidebarProps {
 export const Sidebar: React.FC<SidebarProps> = ({ currentView, setCurrentView, isMobileMenuOpen, setIsMobileMenuOpen }) => {
     const { user } = useAuth();
     const [isCollapsed, setIsCollapsed] = useState(false);
+    const [unreadCount, setUnreadCount] = useState(0);
+
+    // Fetch Unread Count
+    useEffect(() => {
+        const fetchUnread = async () => {
+            const { count } = await supabase
+                .from('whatsapp_conversations')
+                .select('*', { count: 'exact', head: true })
+                .gt('unread_count', 0);
+            setUnreadCount(count || 0);
+        };
+
+        fetchUnread();
+
+        const subscription = supabase
+            .channel('sidebar_unread_count')
+            .on('postgres_changes', {
+                event: '*',
+                schema: 'public',
+                table: 'whatsapp_conversations'
+            }, () => {
+                fetchUnread();
+            })
+            .subscribe();
+
+        return () => {
+            subscription.unsubscribe();
+        };
+    }, []);
 
     const navItems = [
         { id: 'dashboard' as ViewType, icon: Squares2X2Icon, label: 'Dashboard' },
-        { id: 'chat' as ViewType, icon: ChatBubbleLeftRightIcon, label: 'Chat', badge: '80' },
+        { id: 'chat' as ViewType, icon: ChatBubbleLeftRightIcon, label: 'Chat', badge: unreadCount > 0 ? unreadCount.toString() : undefined },
         { id: 'crm' as ViewType, icon: UserGroupIcon, label: 'CRM' },
         { id: 'followup' as ViewType, icon: CalendarIcon, label: 'Follow-up' },
     ];
