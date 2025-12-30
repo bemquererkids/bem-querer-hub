@@ -177,8 +177,26 @@ async def send_message(request: SendMessageRequest):
             "message": "Mensagem enviada com sucesso"
         }
         
-    except HTTPException:
-        raise
     except Exception as e:
         logger.error(f"Error sending message: {e}", exc_info=True)
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.post("/read/{conversation_id}")
+async def mark_as_read(conversation_id: str):
+    """
+    Mark a conversation as read (reset unread_count to 0)
+    """
+    try:
+        supabase = SupabaseClient.get_admin_client()
+        
+        supabase.table("whatsapp_conversations") \
+            .update({"unread_count": 0}) \
+            .eq("id", conversation_id) \
+            .execute()
+            
+        return {"success": True}
+        
+    except Exception as e:
+        logger.error(f"Error marking as read: {e}")
         raise HTTPException(status_code=500, detail=str(e))

@@ -52,6 +52,10 @@ export const chatService = {
       message
     });
     return response.data;
+  },
+  markAsRead: async (conversationId: string) => {
+    const response = await api.post(`/chat/read/${conversationId}`);
+    return response.data;
   }
 };
 
