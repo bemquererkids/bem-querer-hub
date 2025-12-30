@@ -47,7 +47,8 @@ async def save_whatsapp_message(
     message_type: str = "text",
     media_url: str = None,
     timestamp: str = None,
-    is_from_me: bool = False
+    is_from_me: bool = False,
+    instance_id: str = "main"  # Added instance_id
 ):
     """
     Saves WhatsApp message to database for chat integration.
@@ -59,6 +60,8 @@ async def save_whatsapp_message(
     
     try:
         from app.core.database import SupabaseClient
+        from app.services.uazapi_service import get_uazapi_service
+        
         # Use Admin Client to bypass RLS
         supabase = SupabaseClient.get_admin_client()
         logger.info("Supabase Admin client obtained for saving message")
@@ -66,11 +69,21 @@ async def save_whatsapp_message(
         # 1. Get or create conversation (filtered by clinic_id)
         logger.info(f"Querying conversation for phone={phone}, clinic_id={clinic_id}")
         conversation_res = supabase.table('whatsapp_conversations').select('*').eq('phone_number', phone).eq('clinic_id', clinic_id).execute()
-        logger.info(f"Conversation query result: {len(conversation_res.data) if conversation_res.data else 0} rows")
+        
+        conversation_id = None
+        current_avatar = None
         
         if not conversation_res.data:
             # Create new conversation
             logger.info("Creating new conversation")
+            
+            # Fetch Avatar
+            try:
+                uazapi = get_uazapi_service()
+                current_avatar = await uazapi.get_profile_picture(instance_id, phone)
+            except Exception as e:
+                logger.warning(f"Failed to fetch avatar for new conv: {e}")
+
             new_conversation = {
                 "clinic_id": clinic_id,
                 "phone_number": phone,
@@ -78,7 +91,8 @@ async def save_whatsapp_message(
                 "last_message": content,
                 "last_message_at": timestamp or datetime.now().isoformat(),
                 "unread_count": 0 if is_from_me else 1,
-                "tags": []
+                "tags": [],
+                "avatar": current_avatar
             }
             logger.info(f"Inserting conversation: {new_conversation}")
             conv_res = supabase.table('whatsapp_conversations').insert(new_conversation).execute()
@@ -88,14 +102,27 @@ async def save_whatsapp_message(
             # Update existing conversation
             conversation_id = conversation_res.data[0]['id']
             current_unread = conversation_res.data[0].get('unread_count', 0)
-            logger.info(f"Updating existing conversation ID: {conversation_id}")
+            existing_avatar = conversation_res.data[0].get('avatar')
             
-            supabase.table('whatsapp_conversations').update({
+            # Fetch avatar if missing
+            updates = {
                 "last_message": content,
                 "last_message_at": timestamp or datetime.now().isoformat(),
                 "unread_count": current_unread + (0 if is_from_me else 1),
                 "updated_at": datetime.now().isoformat()
-            }).eq('id', conversation_id).execute()
+            }
+            
+            if not existing_avatar:
+                try:
+                    uazapi = get_uazapi_service()
+                    new_avatar = await uazapi.get_profile_picture(instance_id, phone)
+                    if new_avatar:
+                        updates['avatar'] = new_avatar
+                except Exception as e:
+                    logger.warning(f"Failed to fetch avatar for update: {e}")
+
+            logger.info(f"Updating existing conversation ID: {conversation_id}")
+            supabase.table('whatsapp_conversations').update(updates).eq('id', conversation_id).execute()
             logger.info("Conversation updated")
         
         # 2. Save message
@@ -276,7 +303,8 @@ async def process_single_message_data(data: dict, instance_id: str, clinic_id: s
         message_type=message_type,
         media_url=media_url,
         timestamp=datetime.fromtimestamp(int(timestamp)).isoformat() if timestamp else None,
-        is_from_me=is_from_me
+        is_from_me=is_from_me,
+        instance_id=instance_id
     )
 
     # Process lead (existing functionality)
