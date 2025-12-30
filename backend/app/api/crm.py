@@ -185,17 +185,42 @@ async def update_deal_status(
     return {"status": "success", "new_status": request.status, "message": "Status atualizado com sucesso"}
 
 @router.get("/metrics")
-async def get_dashboard_metrics():
+async def get_dashboard_metrics(
+    period: str = "month",  # week, month, custom
+    start_date: Optional[str] = None,
+    end_date: Optional[str] = None
+):
     """
     Returns aggregated metrics from real WhatsApp/CRM data.
+    Supports filtering by time period.
     """
+    from datetime import datetime, timedelta
+    
     try:
         from app.core.database import SupabaseClient
         admin_supabase = SupabaseClient.get_admin_client()
         
-        # Fetch all conversations
-        # For a massive DB we should use .count() with filters, but for this scale fetching id,tags is fine
-        res = admin_supabase.table("whatsapp_conversations").select("id, tags, deal_value").execute()
+        # Calculate date range based on period
+        now = datetime.now()
+        if period == "week":
+            start_dt = now - timedelta(days=7)
+        elif period == "month":
+            start_dt = now - timedelta(days=30)
+        elif period == "custom" and start_date and end_date:
+            start_dt = datetime.fromisoformat(start_date)
+            end_dt = datetime.fromisoformat(end_date)
+        else:
+            start_dt = now - timedelta(days=30)  # Default to month
+        
+        # Fetch conversations filtered by date
+        query = admin_supabase.table("whatsapp_conversations").select("id, tags, deal_value, created_at")
+        
+        if period == "custom" and start_date and end_date:
+            query = query.gte("created_at", start_date).lte("created_at", end_date)
+        else:
+            query = query.gte("created_at", start_dt.isoformat())
+        
+        res = query.execute()
         raw_chats = res.data or []
         
         total_leads = len(raw_chats)
@@ -218,6 +243,13 @@ async def get_dashboard_metrics():
                 sales += 1
                 revenue += val
             
+        # Calculate percentages
+        scheduling_rate = (scheduled / total_leads * 100) if total_leads > 0 else 0
+        attendance_rate = (attended / scheduled * 100) if scheduled > 0 else 0
+        conversion_rate = (sales / total_leads * 100) if total_leads > 0 else 0
+        noshow_rate = (noshow / scheduled * 100) if scheduled > 0 else 0
+        qualifying_rate = (qualifying / total_leads * 100) if total_leads > 0 else 0
+        
         # Funnel (simplified)
         funnel_data = [
             { "name": "Leads", "value": total_leads, "fill": "#4f46e5" },
@@ -237,7 +269,14 @@ async def get_dashboard_metrics():
             "sales": sales,
             "revenue": revenue,
             "ticket": avg_ticket,
-            "funnelData": funnel_data
+            "funnelData": funnel_data,
+            "percentages": {
+                "schedulingRate": round(scheduling_rate, 1),
+                "attendanceRate": round(attendance_rate, 1),
+                "conversionRate": round(conversion_rate, 1),
+                "noshowRate": round(noshow_rate, 1),
+                "qualifyingRate": round(qualifying_rate, 1)
+            }
         }
 
         
