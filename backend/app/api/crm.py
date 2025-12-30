@@ -195,24 +195,24 @@ async def get_dashboard_metrics():
         
         # Fetch all conversations
         # For a massive DB we should use .count() with filters, but for this scale fetching id,tags is fine
-        res = admin_supabase.table("whatsapp_conversations").select("id, tags").execute()
+        res = admin_supabase.table("whatsapp_conversations").select("id, tags, deal_value").execute()
         raw_chats = res.data or []
         
         total_leads = len(raw_chats)
         scheduled = 0
         attended = 0
         sales = 0
-        won = 0
-        new_leads = 0
+        revenue = 0.0
         
         for chat in raw_chats:
             tags = chat.get('tags') or []
+            val = float(chat.get('deal_value') or 0)
+
             if 'crm:scheduled' in tags: scheduled += 1
             if 'crm:attended' in tags: attended += 1
             if 'crm:won' in tags: 
                 sales += 1
-                won += 1
-            if not tags or 'crm:new' in tags: new_leads += 1
+                revenue += val
             
         # Funnel (simplified)
         funnel_data = [
@@ -222,12 +222,17 @@ async def get_dashboard_metrics():
             { "name": "Vendas", "value": sales, "fill": "#a5b4fc" }
         ]
         
+        avg_ticket = revenue / sales if sales > 0 else 0
+
         return {
             "totalLeads": total_leads,
             "scheduled": scheduled,
             "attended": attended,
             "sales": sales,
-            "revenue": sales * 2100, # Mock average ticket R$ 2.100
+            "revenue": revenue,
+            "ticket": avg_ticket,
+            "funnelData": funnel_data
+        }
             "ticket": 2100,
             "funnelData": funnel_data
         }
