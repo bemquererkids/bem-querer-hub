@@ -3,6 +3,7 @@ import { ChatSidebar } from './ChatSidebar';
 import { ChatWindow } from './ChatWindow';
 import { WhatsAppEmptyState } from './WhatsAppEmptyState';
 import { chatService } from '../../services/api';
+import { supabase } from '../../services/supabase';
 import { ChatContact, ChatMessage } from '../../types/chat';
 import { Card } from '../ui/card';
 import { RefreshCw } from 'lucide-react';
@@ -30,15 +31,25 @@ export const ChatLayout: React.FC = () => {
             }
         };
 
-        // Reduced timeout from 5s to 3s
-        const timeout = setTimeout(() => {
-            setLoading(false);
-            setChats([]);
-        }, 3000);
+        fetchChats();
 
-        fetchChats().then(() => clearTimeout(timeout));
+        // REALTIME SUBSCRIPTION FOR CHAT LIST
+        const subscription = supabase
+            .channel('public:whatsapp_conversations')
+            .on('postgres_changes', {
+                event: '*',
+                schema: 'public',
+                table: 'whatsapp_conversations'
+            }, async (payload) => {
+                // Simplest strategy: Refetch list on any change to ensure correct sorting/counts
+                // Optimally we would merge payload, but refetch is safer for consistency
+                await fetchChats();
+            })
+            .subscribe();
 
-        return () => clearTimeout(timeout);
+        return () => {
+            subscription.unsubscribe();
+        };
     }, []);
 
     // Fetch Messages when Active Chat changes
