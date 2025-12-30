@@ -11,72 +11,84 @@ from datetime import date
 from app.services.clinicorp_service import ClinicorpClient
 
 @router.get("/deals")
+@router.get("/deals")
 async def get_deals(
     clinic_id: Optional[str] = None, # In real multi-tenant, this comes from token
     supabase: Optional[Client] = Depends(get_supabase)
 ):
     """
     Fetch deals (chats/patients) for the Kanban board.
-    Merges local chats with Clinicorp appointments.
+    Merges local chats with real CRM data.
     """
     deals = []
     
-    # 1. Fetch from Supabase (Local Chats)
     try:
-        from app.core.config import settings
-        if supabase and "placeholder" not in settings.SUPABASE_URL:
-            query = supabase.table("chats").select("*, patients(*)")
-            if clinic_id:
-                query = query.eq("clinic_id", clinic_id)
-            response = query.execute()
+        # 1. Fetch Conversations (The active deals)
+        # Assuming clinic_id 'bemquerer' for now or the default one we use in webhooks
+        target_clinic_id = clinic_id or "00000000-0000-0000-0000-000000000001"
+        
+        # Use Admin Client usually for backend, but depends accepts normal client. 
+        # If RLS issues, might need admin.
+        from app.core.database import SupabaseClient
+        admin_supabase = SupabaseClient.get_admin_client()
+        
+        # Get conversations
+        conv_res = admin_supabase.table("whatsapp_conversations").select("*").execute()
+        conversations = conv_res.data if conv_res.data else []
+        
+        # Get Patients (to look up source)
+        # Collect phones first
+        phones = [c.get('phone_number') for c in conversations if c.get('phone_number')]
+        
+        patient_map = {}
+        if phones:
+            pat_res = admin_supabase.table("pacientes").select("*").in_("telefone", phones).execute()
+            if pat_res.data:
+                for p in pat_res.data:
+                    patient_map[p.get('telefone')] = p
+        
+        for chat in conversations:
+            phone = chat.get('phone_number')
+            patient = patient_map.get(phone, {})
             
-            for chat in response.data:
-                patient = chat.get("patients")
-                if not patient: continue
-                
-                status = "new"
-                if chat.get("intent") == "booking": status = "qualifying"
-                elif chat.get("status") == "closed": status = "won"
-                
-                deals.append({
-                    "id": chat["id"],
-                    "patientName": patient["full_name"],
-                    "patientAvatar": None,
-                    "value": 0, 
-                    "status": status,
-                    "lastContact": chat["last_message_at"],
-                    "source": "google", # Default
-                    "treatmentType": chat.get("intent", "Geral"),
-                    "probability": "medium" 
-                })
-    except Exception as e:
-        print(f"Supabase Fetch Error: {e}")
-
-    # 2. Fetch from Clinicorp (Real Appointments)
-    try:
-        # Using the hardcoded credentials we validated
-        client = ClinicorpClient(clinic_id="bemquerer", integration_config={
-            "client_id": "bemquerer",
-            "client_secret": "8b6b218c-b536-4db5-97a1-babffc283eec"
-        })
-        
-        appointments = await client.get_appointments(str(date.today()))
-        
-        for appt in appointments:
-            deals.append({
-                "id": str(appt.get("id", "appt_unknown")),
-                "patientName": appt.get("patientName") or appt.get("patient", {}).get("name") or "Paciente Clinicorp",
-                "patientAvatar": None,
+            # Determine Status from Tags or Defaults
+            # Logic: If tags contains 'crm:won' -> 'won', etc.
+            status = 'new' # Default to Lead
+            tags = chat.get('tags') or []
+            
+            if 'crm:won' in tags: status = 'won'
+            elif 'crm:scheduled' in tags: status = 'scheduled'
+            elif 'crm:attended' in tags: status = 'attended'
+            elif 'crm:noshow' in tags: status = 'noshow'
+            elif 'crm:qualifying' in tags: status = 'qualifying'
+            
+            # Determine Source
+            source_raw = patient.get('origem') or 'manual'
+            source = 'google' # Default for UI icons
+            if 'insta' in source_raw.lower(): source = 'instagram'
+            elif 'facebook' in source_raw.lower(): source = 'facebook'
+            elif 'indica' in source_raw.lower(): source = 'indication'
+            
+            deal = {
+                "id": chat["id"],
+                "patientName": chat.get("contact_name") or patient.get("nome") or phone,
+                "patientAvatar": chat.get("avatar"),
                 "value": 0,
-                "status": "scheduled", # Force status for CRM
-                "lastContact": appt.get("date") or str(date.today()),
-                "source": "indication", # Assume integration
-                "treatmentType": "Consulta",
-                "probability": "high"
-            })
+                "status": status,
+                "lastContact": chat.get("last_message_at") or chat.get("created_at"),
+                "source": source,
+                "campaignId": None,
+                "phone": chat.get("phone_number"),
+                "probability": "medium"
+            }
+            deals.append(deal)
             
     except Exception as e:
-        print(f"Clinicorp Fetch Error: {e}")
+        print(f"CRM Fetch Error: {e}")
+        import traceback
+        traceback.print_exc()
+
+    return deals
 
 from pydantic import BaseModel
 

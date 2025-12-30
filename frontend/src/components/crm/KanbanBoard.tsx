@@ -344,14 +344,7 @@ export const KanbanBoard: React.FC = () => {
             }
         };
 
-        const timeout = setTimeout(() => {
-            setLoading(false);
-            setDeals(MOCK_DEALS);
-        }, 3000);
-
-        fetchDeals().then(() => clearTimeout(timeout));
-
-        return () => clearTimeout(timeout);
+        fetchDeals();
     }, []);
 
     const getDealsByStage = useMemo(() => {
