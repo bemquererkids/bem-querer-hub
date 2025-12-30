@@ -30,7 +30,7 @@ export const ChatSidebar: React.FC<ChatSidebarProps> = ({ chats, activeChatId, o
 
     return (
         <div className={clsx(
-            "w-full md:w-[350px] lg:w-[400px] flex flex-col h-full border-r border-[#e9edef] dark:border-zinc-800 bg-white dark:bg-[#111b21]",
+            "flex flex-col h-full bg-white dark:bg-[#111b21]",
             className
         )}>
 
