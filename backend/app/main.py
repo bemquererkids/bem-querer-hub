@@ -155,9 +155,14 @@ app.include_router(integration_router)
 from app.api.chat import router as chat_router
 app.include_router(chat_router)
 
+
 # Import and include crm router
 from app.api.crm import router as crm_router
 app.include_router(crm_router, prefix="/api")
+
+# Import and include productivity router (Notes, Reminders)
+from app.api.productivity import router as productivity_router
+app.include_router(productivity_router, prefix="/api")
 
 @app.get("/")
 async def root():
