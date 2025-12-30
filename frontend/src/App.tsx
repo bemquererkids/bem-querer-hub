@@ -49,7 +49,8 @@ function AppContent() {
                 <Navbar onMobileMenuToggle={() => setIsMobileMenuOpen(!isMobileMenuOpen)} />
 
                 {/* SCROLLABLE VIEWPORT */}
-                <main className="flex-1 overflow-y-auto bg-background transition-colors duration-300">
+                <main className={`flex-1 bg-background transition-colors duration-300 ${['chat', 'crm'].includes(currentView) ? 'overflow-hidden' : 'overflow-y-auto'
+                    }`}>
                     <AnimatePresence mode="wait">
                         <motion.div
                             key={currentView}
