@@ -46,7 +46,13 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({ chat, messages: initialM
     const [newMessage, setNewMessage] = useState('');
     const [messages, setMessages] = useState<ChatMessage[]>(initialMessages);
     const [isTyping, setIsTyping] = useState(false);
+    const [isUploading, setIsUploading] = useState(false);
+    const [isRecording, setIsRecording] = useState(false);
+
     const scrollRef = useRef<HTMLDivElement>(null);
+    const fileInputRef = useRef<HTMLInputElement>(null);
+    const mediaRecorderRef = useRef<MediaRecorder | null>(null);
+    const audioChunksRef = useRef<Blob[]>([]);
 
     useEffect(() => {
         setMessages(initialMessages);
