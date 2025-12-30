@@ -24,9 +24,35 @@ interface ChatSidebarProps {
 }
 
 export const ChatSidebar: React.FC<ChatSidebarProps> = ({ chats, activeChatId, onSelectChat, className }) => {
-    // ... logic ...
+    const [searchQuery, setSearchQuery] = useState('');
+    const [filterTab, setFilterTab] = useState<'all' | 'unread'>('all');
 
-    // ... handleAction ...
+    const filteredChats = chats.filter(chat => {
+        // 1. Text Search
+        const matchesSearch = (chat.name || '').toLowerCase().includes(searchQuery.toLowerCase()) ||
+            (chat.lastMessage || '').toLowerCase().includes(searchQuery.toLowerCase()) ||
+            (chat.phoneNumber || '').includes(searchQuery);
+
+        // 2. Tab Filter
+        const matchesTab = filterTab === 'all' || (filterTab === 'unread' && chat.unreadCount > 0);
+
+        return matchesSearch && matchesTab;
+    });
+
+    const handleAction = async (action: string, chatId: string, e: React.MouseEvent) => {
+        e.stopPropagation();
+        console.log(`Action: ${action} on chat ${chatId}`);
+
+        try {
+            // Implement actions here
+            if (action === 'archive') {
+                // Call API to archive
+            }
+            // For now just console log to avoid build errors if service method missing
+        } catch (error) {
+            console.error("Action failed", error);
+        }
+    };
 
     return (
         <div className={clsx(

@@ -11,6 +11,7 @@ interface ChatWindowProps {
     chat?: ChatContact;
     messages: ChatMessage[];
     onSendMessage: (text: string) => void;
+    onBack?: () => void;
 }
 
 const formatPhoneNumber = (phone: string) => {
@@ -34,7 +35,7 @@ const formatPhoneNumber = (phone: string) => {
     return phone;
 };
 
-export const ChatWindow: React.FC<ChatWindowProps> = ({ chat, messages: initialMessages, onSendMessage }) => {
+export const ChatWindow: React.FC<ChatWindowProps> = ({ chat, messages: initialMessages, onSendMessage, onBack }) => {
     const [newMessage, setNewMessage] = useState('');
     const [messages, setMessages] = useState<ChatMessage[]>(initialMessages);
     const [isTyping, setIsTyping] = useState(false);
@@ -140,8 +141,15 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({ chat, messages: initialM
     return (
         <div className="flex-1 flex flex-col h-full bg-[#efeae2]">
             {/* Header */}
-            <div className="h-16 bg-white border-b border-border flex items-center justify-between px-4 shadow-sm z-10">
+            <div className="h-16 bg-white border-b border-border flex items-center justify-between px-4 shadow-sm z-10 shrink-0">
                 <div className="flex items-center gap-3">
+                    {/* Back Button (Mobile Only) */}
+                    {onBack && (
+                        <Button variant="ghost" size="icon" className="md:hidden text-slate-500 -ml-2" onClick={onBack}>
+                            <ChevronLeft className="w-6 h-6" />
+                        </Button>
+                    )}
+
                     <Avatar className="h-10 w-10 border border-slate-100 cursor-pointer">
                         <AvatarImage src={`https://ui-avatars.com/api/?name=${(chat.name || 'Desconhecido').replace(' ', '+')}&background=random`} />
                         <AvatarFallback>{(chat.name || 'U').substring(0, 2).toUpperCase()}</AvatarFallback>
