@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { ChatContact, ChatMessage } from '../../types/chat';
 import { supabase } from '../../services/supabase';
-import { Send, Paperclip, Mic, MoreVertical, Phone, Video } from 'lucide-react';
+import { Send, Paperclip, Mic, MoreVertical, Phone, Video, ChevronLeft } from 'lucide-react';
 import { Button } from '../ui/button';
 import { Input } from '../ui/input';
 import { Avatar, AvatarFallback, AvatarImage } from '../ui/avatar';
