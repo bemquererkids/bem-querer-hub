@@ -66,8 +66,18 @@ export const ChatLayout: React.FC = () => {
 
         const fetchMessages = async () => {
             try {
-                const data = await chatService.getMessages(activeChatId);
-                setMessages(data);
+                const rawData = await chatService.getMessages(activeChatId);
+                // Transform API data to Frontend Model
+                const formattedMessages: ChatMessage[] = rawData.map((msg: any) => ({
+                    id: msg.id,
+                    content: msg.content,
+                    // Map is_from_me to sender: true = agent (me), false = user
+                    sender: msg.is_from_me ? 'agent' : 'user',
+                    timestamp: msg.created_at,
+                    type: msg.message_type || 'text',
+                    status: 'read'
+                }));
+                setMessages(formattedMessages);
             } catch (error) {
                 console.error("Failed to fetch messages", error);
             }
