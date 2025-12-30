@@ -211,7 +211,7 @@ const DealCard = React.memo<DealCardProps>(({ deal, stage, onWhatsApp, onEditVal
 
                         <div className="space-y-1.5 mb-2.5">
                             {/* Source with logo and campaign ID */}
-                            <div className={`flex items-center gap-1.5 p-1.5 rounded-md ${sourceInfo.bg} border ${sourceInfo.border}`}>
+                            <div className={`flex items-center gap-1.5 p-1.5 rounded-full ${sourceInfo.bg} border ${sourceInfo.border}`}>
                                 <sourceInfo.icon className={`w-3.5 h-3.5 ${sourceInfo.color}`} />
                                 <div className="flex-1 min-w-0">
                                     <p className={`text-[10px] font-semibold ${sourceInfo.color}`}>{sourceInfo.label}</p>
