@@ -16,6 +16,13 @@ class SendMessageRequest(BaseModel):
     conversation_id: str
     message: str
 
+class SendMediaRequest(BaseModel):
+    conversation_id: str
+    media_url: str
+    media_type: str  # image, audio, document
+    caption: Optional[str] = None
+    filename: Optional[str] = None
+
 class ChatMessage(BaseModel):
     id: str
     content: str
@@ -199,4 +206,92 @@ async def mark_as_read(conversation_id: str):
         
     except Exception as e:
         logger.error(f"Error marking as read: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.post("/send-media")
+async def send_media(request: SendMediaRequest):
+    """
+    Send a media message (image, audio, document)
+    """
+    try:
+        supabase = SupabaseClient.get_admin_client()
+        
+        # 1. Get conversation details
+        conv_response = supabase.table("whatsapp_conversations") \
+            .select("*") \
+            .eq("id", request.conversation_id) \
+            .single() \
+            .execute()
+        
+        if not conv_response.data:
+            raise HTTPException(status_code=404, detail="Conversation not found")
+        
+        conversation = conv_response.data
+        phone_number = conversation.get("phone_number")
+        
+        if not phone_number:
+            raise HTTPException(status_code=400, detail="Phone number not found in conversation")
+        
+        # 2. Send via UazAPI
+        uazapi = get_uazapi_service()
+        instance = "main"
+        
+        try:
+            if request.media_type == 'image':
+                await uazapi.send_image(instance, phone_number, request.media_url, request.caption)
+            elif request.media_type == 'audio':
+                await uazapi.send_audio(instance, phone_number, request.media_url)
+            elif request.media_type == 'document':
+                await uazapi.send_document(instance, phone_number, request.media_url, request.filename, request.caption)
+            else:
+                 raise HTTPException(status_code=400, detail="Invalid media type")
+        except Exception as send_error:
+            logger.error(f"Failed to send media via UazAPI: {send_error}")
+            raise HTTPException(status_code=500, detail=f"Falha ao enviar mídia: {str(send_error)}")
+        
+        # 3. Save message to database
+        message_id = str(uuid.uuid4())
+        clinic_id = conversation.get("clinic_id", "00000000-0000-0000-0000-000000000001")
+        
+        content_preview = {
+            'image': '📷 Imagem',
+            'audio': '🎵 Áudio',
+            'document': '📄 Documento'
+        }.get(request.media_type, 'Anexo')
+
+        if request.caption:
+            content_preview += f": {request.caption}"
+        
+        message_data = {
+            "message_id": message_id,
+            "conversation_id": request.conversation_id,
+            "clinic_id": clinic_id,
+            "from_number": "system",
+            "to_number": phone_number,
+            "content": request.media_url,
+            "is_from_me": True,
+            "message_type": request.media_type,
+            "created_at": datetime.now().isoformat()
+        }
+        
+        supabase.table("whatsapp_messages").insert(message_data).execute()
+        
+        # 4. Update conversation last_message
+        supabase.table("whatsapp_conversations") \
+            .update({
+                "last_message": content_preview,
+                "last_message_at": datetime.now().isoformat()
+            }) \
+            .eq("id", request.conversation_id) \
+            .execute()
+        
+        return {
+            "success": True,
+            "message_id": message_id,
+            "message": "Mídia enviada com sucesso"
+        }
+        
+    except Exception as e:
+        logger.error(f"Error sending media: {e}", exc_info=True)
         raise HTTPException(status_code=500, detail=str(e))

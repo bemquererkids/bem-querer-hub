@@ -304,6 +304,33 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({ chat, messages: initialM
                     </div>
                 </div>
                 <div className="flex items-center gap-1 text-slate-400">
+                    <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                            <Button variant="outline" size="sm" className="mr-2 gap-2 text-slate-600 border-slate-200">
+                                <span className="hidden md:inline">Funil de Vendas</span>
+                                <ChevronDown className="w-4 h-4" />
+                            </Button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent align="end">
+                            <DropdownMenuItem onClick={() => handleStatusChange('Lead')}>
+                                <div className="w-2 h-2 rounded-full bg-slate-400 mr-2" />
+                                Lead
+                            </DropdownMenuItem>
+                            <DropdownMenuItem onClick={() => handleStatusChange('Em Negociação')}>
+                                <div className="w-2 h-2 rounded-full bg-blue-400 mr-2" />
+                                Em Negociação
+                            </DropdownMenuItem>
+                            <DropdownMenuItem onClick={() => handleStatusChange('Agendado')}>
+                                <div className="w-2 h-2 rounded-full bg-yellow-400 mr-2" />
+                                Agendado
+                            </DropdownMenuItem>
+                            <DropdownMenuItem onClick={() => handleStatusChange('Venda Realizada')}>
+                                <div className="w-2 h-2 rounded-full bg-green-500 mr-2" />
+                                Venda Realizada
+                            </DropdownMenuItem>
+                        </DropdownMenuContent>
+                    </DropdownMenu>
+
                     <Button variant="ghost" size="icon"><Video className="w-5 h-5" /></Button>
                     <Button variant="ghost" size="icon"><Phone className="w-5 h-5" /></Button>
                     <Button variant="ghost" size="icon"><MoreVertical className="w-5 h-5" /></Button>
