@@ -39,11 +39,16 @@ async def get_deals(
         
         patient_map = {}
         if phones:
-            # Only query if we have phones
-            pat_res = admin_supabase.table("pacientes").select("*").in_("telefone", phones).execute()
-            if pat_res.data:
-                for p in pat_res.data:
-                    patient_map[p.get('telefone')] = p
+            try:
+                # Only query if we have phones
+                pat_res = admin_supabase.table("pacientes").select("*").in_("telefone", phones).execute()
+                if pat_res.data:
+                    for p in pat_res.data:
+                        patient_map[p.get('telefone')] = p
+            except Exception as e:
+                with open("crm_crash.log", "a") as f:
+                    f.write(f"Pacientes Query Failed: {e}\n")
+                print(f"Pacientes Warning: {e}")
         
         for chat in conversations:
             phone = chat.get('phone_number')
@@ -146,41 +151,44 @@ async def update_deal_status(
     if not deal_id:
         raise HTTPException(status_code=400, detail="Invalid Deal ID")
 
-    # 1. If it's a Supabase ID (UUID), update DB
-    if len(deal_id) == 36: # Simple UUID check
-        try:
-            # Use Admin Client to ensure strict isolation and bypass RLS context
-            from app.core.database import SupabaseClient
-            admin_supabase = SupabaseClient.get_admin_client()
+    # Update DB (removed UUID length restriction)
+    try:
+        # Use Admin Client to ensure strict isolation and bypass RLS context
+        from app.core.database import SupabaseClient
+        admin_supabase = SupabaseClient.get_admin_client()
 
-            # Update Tags based on Status
-            new_tag = f"crm:{internal_status}" # e.g. crm:won
-            
-            # Fetch current tags first
-            res = admin_supabase.table("whatsapp_conversations").select("tags").eq("id", deal_id).execute()
-            
-            if not res.data:
-                print(f"Deal {deal_id} not found in DB")
-                raise HTTPException(status_code=404, detail="Deal not found")
+        # Update Tags based on Status
+        new_tag = f"crm:{internal_status}" # e.g. crm:won
+        
+        # Fetch current tags first
+        res = admin_supabase.table("whatsapp_conversations").select("tags").eq("id", deal_id).execute()
+        
+        if not res.data:
+            print(f"Deal {deal_id} not found in DB")
+            raise HTTPException(status_code=404, detail="Deal not found")
 
-            current_tags = res.data[0].get("tags") or []
-            
-            # Remove old status tags
-            status_tags = ["crm:new", "crm:qualifying", "crm:scheduled", "crm:attended", "crm:noshow", "crm:won", "crm:lost"]
-            updated_tags = [t for t in current_tags if t not in status_tags]
-            
-            # Avoid duplicates
-            if new_tag not in updated_tags:
-                updated_tags.append(new_tag)
-            
-            print(f"Updating tags for {deal_id}: {current_tags} -> {updated_tags}")
-            
-            update_res = admin_supabase.table("whatsapp_conversations").update({"tags": updated_tags}).eq("id", deal_id).execute()
-            print(f"Update Result: {len(update_res.data)} rows affected")
-            
-        except Exception as e:
-            print(f"Error updating Supabase: {e}")
-            raise HTTPException(status_code=500, detail=str(e))
+        current_tags = res.data[0].get("tags") or []
+        
+        # Remove old status tags
+        status_tags = ["crm:new", "crm:qualifying", "crm:scheduled", "crm:attended", "crm:noshow", "crm:won", "crm:lost"]
+        updated_tags = [t for t in current_tags if t not in status_tags]
+        
+        # Avoid duplicates
+        if new_tag not in updated_tags:
+            updated_tags.append(new_tag)
+        
+        print(f"Updating tags for {deal_id}: {current_tags} -> {updated_tags}")
+        
+        update_res = admin_supabase.table("whatsapp_conversations").update({"tags": updated_tags}).eq("id", deal_id).execute()
+        print(f"[UPDATE] Result: {len(update_res.data) if update_res.data else 0} rows affected")
+        print(f"[UPDATE] Data returned: {update_res.data}")
+        
+        if not update_res.data or len(update_res.data) == 0:
+            print(f"[UPDATE] WARNING: No rows were updated for deal_id {deal_id}!")
+        
+    except Exception as e:
+        print(f"Error updating Supabase: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
 
     return {"status": "success", "new_status": request.status, "message": "Status atualizado com sucesso"}
 

@@ -3,12 +3,9 @@ import axios from 'axios';
 import { Deal } from '../types/crm';
 
 // Get API URL from Environment (Vite) or fallback to local/relative
-// Get API URL from Environment (Vite) or fallback to local/relative
-let envApiUrl = import.meta.env.VITE_API_URL;
-if (envApiUrl && !envApiUrl.endsWith('/api')) {
-  envApiUrl += '/api';
-}
-const API_URL = envApiUrl || (import.meta.env.DEV ? 'http://localhost:8000/api' : '/api');
+const envApiUrl = import.meta.env.VITE_API_URL;
+// Always use relative path to leverage Vite Proxy in dev and relative path in prod
+const API_URL = envApiUrl || '/api';
 
 export const api = axios.create({
   baseURL: API_URL,
@@ -37,6 +34,10 @@ export const crmService = {
   },
   updateDealValue: async (dealId: string, value: number) => {
     const response = await api.put(`/crm/deals/${dealId}/value`, { value });
+    return response.data;
+  },
+  getMetrics: async () => {
+    const response = await api.get('/crm/metrics');
     return response.data;
   }
 };
