@@ -118,25 +118,35 @@ export const ChatLayout: React.FC = () => {
     }
 
     return (
-        <div className="h-full animate-in fade-in zoom-in-95 duration-300">
-            <Card className="h-full flex flex-col md:flex-row overflow-hidden border-zinc-200 dark:border-border shadow-xl rounded-xl bg-white dark:bg-card">
+    return (
+        <div className="h-full w-full flex flex-col md:flex-row overflow-hidden bg-white dark:bg-card border-x border-zinc-200 dark:border-border shadow-sm">
+            {/* SIDEBAR AREA */}
+            <div className={`
+                flex-none w-full md:w-80 lg:w-96 border-r border-zinc-200 dark:border-zinc-800 bg-white dark:bg-[#111b21] z-10
+                ${activeChatId ? 'hidden md:flex' : 'flex'}
+                flex-col h-full
+            `}>
                 <ChatSidebar
                     chats={chats}
                     activeChatId={activeChatId}
                     onSelectChat={setActiveChatId}
-                    className={activeChatId ? 'hidden md:flex' : 'flex'}
+                    className="h-full w-full"
                 />
+            </div>
 
-                {/* Chat Window Container - Hidden on mobile if no chat selected */}
-                <div className={`flex-1 flex flex-col h-full overflow-hidden ${!activeChatId ? 'hidden md:flex' : 'flex'}`}>
-                    <ChatWindow
-                        chat={activeChat}
-                        messages={activeChatId ? messages : []}
-                        onSendMessage={handleSendMessage}
-                        onBack={() => setActiveChatId(undefined)}
-                    />
-                </div>
-            </Card>
+            {/* CHAT WINDOW AREA */}
+            <div className={`
+                flex-1 min-w-0 h-full bg-[#efeae2] dark:bg-[#0b141a] relative
+                ${!activeChatId ? 'hidden md:flex' : 'flex flex-col'}
+            `}>
+                <ChatWindow
+                    chat={activeChat}
+                    messages={activeChatId ? messages : []}
+                    onSendMessage={handleSendMessage}
+                    onBack={() => setActiveChatId(undefined)}
+                />
+            </div>
         </div>
+    );
     );
 };
