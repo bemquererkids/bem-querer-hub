@@ -110,3 +110,43 @@ export const integrationService = {
     return response.data;
   }
 };
+
+export const productivityService = {
+  // Notes
+  getNotes: async (conversationId: string) => {
+    const response = await api.get(`/notes/${conversationId}`);
+    return response.data;
+  },
+  createNote: async (conversationId: string, content: string) => {
+    const response = await api.post('/notes', { conversation_id: conversationId, content });
+    return response.data;
+  },
+  deleteNote: async (noteId: string) => {
+    const response = await api.delete(`/notes/${noteId}`);
+    return response.data;
+  },
+
+  // Reminders
+  getReminders: async (conversationId: string) => {
+    const response = await api.get(`/reminders/${conversationId}`);
+    return response.data;
+  },
+  createReminder: async (conversationId: string, title: string, dueAt: string) => {
+    const response = await api.post('/reminders', { conversation_id: conversationId, title, due_at: dueAt });
+    return response.data;
+  },
+  updateReminderStatus: async (reminderId: string, status: string) => {
+    const response = await api.put(`/reminders/${reminderId}/status`, { status });
+    return response.data;
+  },
+
+  // Tags
+  addTag: async (conversationId: string, tag: string) => {
+    const response = await api.post(`/tags/${conversationId}`, { tag });
+    return response.data;
+  },
+  removeTag: async (conversationId: string, tag: string) => {
+    const response = await api.delete(`/tags/${conversationId}`, { data: { tag } });
+    return response.data;
+  }
+};
