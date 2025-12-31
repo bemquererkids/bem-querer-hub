@@ -195,7 +195,6 @@ async def get_dashboard_metrics(
     Returns aggregated metrics from real WhatsApp/CRM data or Clinicorp.
     Supports filtering by time period.
     """
-    """
     from datetime import datetime, timedelta
     import pytz
     
