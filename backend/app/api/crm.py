@@ -234,6 +234,8 @@ async def get_dashboard_metrics(
         # --- CLINICORP SOURCE ---
         if source == "clinicorp":
             try:
+                print(f"[Clinicorp Metrics] Fetching for period: {period} ({start_str} to {end_str})")
+                
                 # 1. Get Client (using helper logic)
                 from app.api.integration import get_clinicorp_client
                 client = get_clinicorp_client()
@@ -241,6 +243,8 @@ async def get_dashboard_metrics(
                 # 2. Fetch Data
                 appointments = await client.get_appointments(start_str, end_str)
                 financials = await client.get_financials(start_str, end_str)
+                
+                print(f"[Clinicorp Metrics] Appointments: {len(appointments)} | Financials: {financials}")
                 
                 # 3. Calculate Metrics
                 total_leads = len(appointments) # Approximation, ideal would be new patients
