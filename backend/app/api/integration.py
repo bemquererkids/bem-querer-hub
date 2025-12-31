@@ -45,7 +45,8 @@ CLINIC_ID_DEFAULT = "00000000-0000-0000-0000-000000000001" # Bem-Querer Matriz (
 def db_save_config(integration_type: str, config: dict):
     """Save config to Supabase"""
     try:
-        supabase = get_supabase()
+        from app.core.database import SupabaseClient
+        supabase = SupabaseClient.get_admin_client()
         
         data = {
             "clinica_id": CLINIC_ID_DEFAULT,
@@ -65,7 +66,8 @@ def db_save_config(integration_type: str, config: dict):
 def db_load_config(integration_type: str) -> dict:
     """Load config from Supabase"""
     try:
-        supabase = get_supabase()
+        from app.core.database import SupabaseClient
+        supabase = SupabaseClient.get_admin_client()
         res = supabase.table("clinic_integrations") \
             .select("config") \
             .eq("clinica_id", CLINIC_ID_DEFAULT) \
