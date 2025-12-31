@@ -84,18 +84,47 @@ class ClinicorpClient:
     # Public Methods (Business Logic)
     # ==========================================
 
-    async def get_appointments(self, date: str) -> List[Dict]:
+    async def get_appointments(self, start_date: str, end_date: str) -> List[Dict]:
         """
-        Lista agendamentos de uma data.
+        Lista agendamentos de um período.
         Endpoint: /patient/list_appointments
-        Params: start, end
+        Params: start, end (YYYY-MM-DD)
         """
         try:
-            # Using same date for start and end to get daily view
-            return await self._request("GET", f"/patient/list_appointments?start={date}&end={date}")
+            return await self._request("GET", f"/patient/list_appointments?start={start_date}&end={end_date}")
         except Exception as e:
             print(f"[Clinicorp] Error fetching appointments: {e}")
             return []
+
+    async def get_financials(self, start_date: str, end_date: str) -> Dict[str, float]:
+        """
+        Busca dados financeiros (faturamento) do período.
+        Nota: Como não temos documentação exata de endpoint financeiro, 
+        vamos tentar buscar 'vendas' ou 'recebimentos'. 
+        Se não existir, retornaremos 0.
+        """
+        try:
+            # Hipótese de endpoint. Se falhar (404), o _request retorna {}
+            # Endpoint comum em sistemas médicos: /financial/list_receipts, /report/financial
+            res = await self._request("GET", f"/financial/list_receipts?start={start_date}&end={end_date}")
+            
+            total_revenue = 0.0
+            sales_count = 0
+            
+            if isinstance(res, list):
+                for item in res:
+                    total_revenue += float(item.get("value", 0))
+                    sales_count += 1
+            elif isinstance(res, dict) and "data" in res:
+                 for item in res["data"]:
+                    total_revenue += float(item.get("value", 0))
+                    sales_count += 1
+                    
+            return {"revenue": total_revenue, "sales_count": sales_count}
+            
+        except Exception as e:
+            print(f"[Clinicorp] Error fetching financials: {e}")
+            return {"revenue": 0.0, "sales_count": 0}
 
     async def check_availability(self, date: str, professional_id: Optional[str] = None) -> List[Dict]:
         """
