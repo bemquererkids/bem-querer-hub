@@ -383,3 +383,25 @@ async def get_dashboard_metrics(
             "totalLeads": 0, "scheduled": 0, "attended": 0, "sales": 0, "revenue": 0, "ticket": 0,
             "funnelData": []
         }
+
+class DashboardPreferences(BaseModel):
+    default_source: str = "whatsapp" # whatsapp, clinicorp
+
+@router.get("/preferences")
+async def get_dashboard_preferences():
+    """Get saved preferences for the dashboard"""
+    from app.api.integration import db_load_config
+    config = db_load_config("dashboard_pref")
+    return {
+        "default_source": config.get("default_source", "whatsapp")
+    }
+
+@router.post("/preferences")
+async def save_dashboard_preferences(pref: DashboardPreferences):
+    """Save dashboard preferences"""
+    from app.api.integration import db_save_config
+    try:
+        db_save_config("dashboard_pref", {"default_source": pref.default_source})
+        return {"status": "success", "saved": pref}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
