@@ -248,6 +248,7 @@ async def get_dashboard_metrics(
                 
                 attended = 0
                 noshow = 0
+                qualifying = 0
                 sales = financials.get("sales_count", 0)
                 revenue = financials.get("revenue", 0.0)
                 
