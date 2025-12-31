@@ -90,15 +90,25 @@ class ClinicorpClient:
 
     async def get_appointments(self, start_date: str, end_date: str) -> List[Dict]:
         """
-        Lista agendamentos de um período.
-        Endpoint: /patient/list_appointments
-        Params: start, end (YYYY-MM-DD)
+        Fetch appointments within date range.
+        Dates should be YYYY-MM-DD
         """
-        try:
-            return await self._request("GET", f"/patient/list_appointments?start={start_date}&end={end_date}")
-        except Exception as e:
-            print(f"[Clinicorp] Error fetching appointments: {e}")
-            return []
+        endpoint = "/appointments"
+        # Clinicorp usually expects start/end params
+        data = {
+            "start": start_date,
+            "end": end_date,
+            "limit": 100 # Safety limit
+        }
+        return await self._request("GET", endpoint, data)
+
+    async def get_patients(self) -> List[Dict]:
+        """
+        Fetch recent patients to validate data access.
+        """
+        # Limit to 5 just to check existence
+        data = {"limit": 5}
+        return await self._request("GET", "/patients", data)
 
     async def get_financials(self, start_date: str, end_date: str) -> Dict[str, float]:
         """

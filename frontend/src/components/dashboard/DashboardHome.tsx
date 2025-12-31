@@ -176,7 +176,8 @@ export const DashboardHome: React.FC = () => {
                 <div className="bg-blue-50 border border-blue-200 p-4 rounded text-xs text-blue-800 font-mono mb-4">
                     <strong>DEBUG MODE (Clinicorp):</strong><br />
                     Periodo: {debugInfo.dates} ({debugInfo.period})<br />
-                    Encontrados: {debugInfo.appointments_found}<br />
+                    Agendamentos: {debugInfo.appointments_found}<br />
+                    Pacientes (Teste): {debugInfo.patients_found_check}<br />
                     ID Usado: {debugInfo.client_id_used}
                 </div>
             )}

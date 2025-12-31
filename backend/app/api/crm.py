@@ -248,6 +248,13 @@ async def get_dashboard_metrics(
                 appointments = await client.get_appointments(start_str, end_str)
                 financials = await client.get_financials(start_str, end_str)
                 
+                # Debug: check patients
+                try:
+                    patients_check = await client.get_patients()
+                    patients_count = len(patients_check)
+                except:
+                    patients_count = -1 # Error fetching patients
+                
                 print(f"[Clinicorp Metrics] Appointments: {len(appointments)} | Financials: {financials}")
                 
                 # 3. Calculate Metrics
@@ -304,6 +311,7 @@ async def get_dashboard_metrics(
                         "period": period,
                         "dates": f"{start_str} to {end_str}",
                         "appointments_found": len(appointments),
+                        "patients_found_check": patients_count,
                         "financials_raw": financials,
                         "client_id_used": client.client_id
                     }
