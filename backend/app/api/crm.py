@@ -258,31 +258,46 @@ async def get_dashboard_metrics(
                 print(f"[Clinicorp Metrics] Appointments: {len(appointments)} | Financials: {financials}")
                 
                 # 3. Calculate Metrics
-                total_leads = len(appointments) # Approximation, ideal would be new patients
-                scheduled = len(appointments)
+                # 3. Calculate Metrics (Clinicorp Logic)
+                scheduled_count = 0
+                attended_count = 0
+                noshow_count = 0
+                canceled_count = 0
                 
-                attended = 0
-                noshow = 0
-                qualifying = 0
-                sales = financials.get("sales_count", 0)
+                unique_statuses = set()
+                
+                for appt in appointments:
+                    raw_status = str(appt.get("status", appt.get("Status", ""))).lower()
+                    unique_statuses.add(raw_status)
+                    
+                    if "agendado" in raw_status or "confirmado" in raw_status:
+                        scheduled_count += 1
+                    elif "atendido" in raw_status or "finalizado" in raw_status or "completed" in raw_status:
+                        attended_count += 1
+                    elif "faltou" in raw_status or "falta" in raw_status or "missed" in raw_status:
+                        noshow_count += 1
+                    elif "cancelado" in raw_status or "desmarcado" in raw_status:
+                        canceled_count += 1
+                    else:
+                        scheduled_count += 1 # Default
+
+                print(f"[Clinicorp] Unique Statuses: {unique_statuses}")
+
+                total_leads = len(appointments)
+                scheduled = scheduled_count + attended_count + noshow_count
+                attended = attended_count
+                
+                # Financials mapping (mock revenue if not found yet)
+                sales = financials.get("sales_count", attended) 
                 revenue = financials.get("revenue", 0.0)
                 
-                # Map statuses
-                for appt in appointments:
-                    status = str(appt.get("status", "")).lower()
-                    if status in ["completed", "attended", "realizado"]:
-                        attended += 1
-                    elif status in ["missed", "noshow", "faltou"]:
-                        noshow += 1
+                # Rates
+                scheduling_rate = 100
+                attendance_rate = round((attended / scheduled * 100), 1) if scheduled > 0 else 0
+                noshow_rate = round((noshow_count / scheduled * 100), 1) if scheduled > 0 else 0
+                conversion_rate = round((sales / attended * 100), 1) if attended > 0 else 0
                 
-                # Calculate percentages
-                scheduling_rate = 100.0 # If looking at appointments, 100% are scheduled
-                attendance_rate = (attended / scheduled * 100) if scheduled > 0 else 0
-                conversion_rate = (sales / total_leads * 100) if total_leads > 0 else 0 # Rough approx
-                noshow_rate = (noshow / scheduled * 100) if scheduled > 0 else 0
-                qualifying_rate = 0 # Clinicorp doesn't track "qualifying" easily in this view
-                
-                avg_ticket = revenue / sales if sales > 0 else 0
+                avg_ticket = round(revenue / sales, 2) if sales > 0 else 0
                 
                 funnel_data = [
                     { "name": "Agendados", "value": scheduled, "fill": "#6366f1" },

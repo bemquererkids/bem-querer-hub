@@ -172,21 +172,7 @@ export const DashboardHome: React.FC = () => {
 
     return (
         <div className="p-8 space-y-8 min-h-full max-w-7xl mx-auto">
-            {source === 'clinicorp' && debugInfo && (
-                <div className={`p-4 rounded text-xs font-mono mb-4 border ${debugInfo.error ? 'bg-red-50 border-red-200 text-red-800' : 'bg-blue-50 border-blue-200 text-blue-800'}`}>
-                    <strong>DEBUG MODE {debugInfo.error ? '(ERRO)' : '(Clinicorp)'}:</strong><br />
-                    {debugInfo.error ? (
-                        <>ERRO: {debugInfo.error}<br /></>
-                    ) : (
-                        <>
-                            Periodo: {debugInfo.dates} ({debugInfo.period})<br />
-                            Agendamentos: {debugInfo.appointments_found}<br />
-                            Check Conexão (Business): {debugInfo.patients_found_check}<br />
-                        </>
-                    )}
-                    ID Usado: {debugInfo.client_id_used}
-                </div>
-            )}
+
 
             {/* HEADER */}
             <motion.div
