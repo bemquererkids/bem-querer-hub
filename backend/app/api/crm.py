@@ -197,6 +197,7 @@ async def get_dashboard_metrics(
     """
     from datetime import datetime, timedelta
     import pytz
+    # Deployment Trigger check
     
     try:
         from app.core.database import SupabaseClient
