@@ -267,3 +267,72 @@ class ClinicorpClient:
     async def get_professionals(self) -> List[Dict]:
         """Lista dentistas disponíveis"""
         return await self._request("GET", "/professional/list_all_professionals")
+
+if __name__ == "__main__":
+    import asyncio
+    import base64
+    
+    # Credentials from User
+    CLIENT_ID = "bemquerer"
+    CLIENT_SECRET = "8b6b218c-b536-4db5-97a1-babffc283eec"
+    BASE_URL = "https://api.clinicorp.com/rest/v1"
+
+    async def debug_main():
+        auth_str = f"{CLIENT_ID}:{CLIENT_SECRET}"
+        b64_auth = base64.b64encode(auth_str.encode()).decode()
+        headers = {
+            "Authorization": f"Basic {b64_auth}",
+            "Content-Type": "application/json"
+        }
+        
+        async with httpx.AsyncClient() as client:
+            print("\n--- DEBUG RUN ---")
+            print(f"Auth Header: Basic {b64_auth[:10]}...")
+            
+            # 1. Discovery
+            url = f"{BASE_URL}/group/list_subscribers_clinics"
+            print(f"GET {url}")
+            try:
+                resp = await client.get(url, headers=headers)
+                print(f"Status: {resp.status_code}")
+                print(f"Raw Body: {resp.text}")
+            except Exception as e:
+                print(f"Error: {e}")
+                
+            # 2. Security List (Fallback check)
+            url2 = f"{BASE_URL}/security/list_users?subscriber_id=bemquerer"
+            print(f"\nGET {url2}")
+            try:
+                resp = await client.get(url2, headers=headers)
+                print(f"Status: {resp.status_code}")
+                print(f"Raw Body: {resp.text[:1000]}") 
+                
+                # Check for clues
+                if "SubscriberBussinessUID" in resp.text:
+                    print(">>> Found SubscriberBussinessUID in users list!")
+            except Exception as e:
+                print(f"Error: {e}")
+
+            # 3. Business List with param
+            url3 = f"{BASE_URL}/business/list?subscriber_id=bemquerer"
+            print(f"\nGET {url3}")
+            try:
+                resp = await client.get(url3, headers=headers)
+                print(f"Status: {resp.status_code}")
+                print(f"Raw Body: {resp.text[:1000]}")
+            except Exception as e:
+                print(f"Error: {e}")
+
+            # 4. DIRECT APPOINTMENT TEST (The Golden Test)
+            # Using ID found in user's JSON: 5841644010143744
+            print("\n4. GET /appointment/list (Magic ID Test)")
+            # Dates: 2025-12-01 to 2025-12-31 (like dashboard)
+            url4 = f"{BASE_URL}/appointment/list?from=2025-12-01&to=2025-12-31&businessId=5841644010143744&subscriber_id=bemquerer"
+            try:
+                resp = await client.get(url4, headers=headers)
+                print(f"Status: {resp.status_code}")
+                print(f"Body: {resp.text[:1000]}")
+            except Exception as e:
+                print(f"Error: {e}")
+
+    asyncio.run(debug_main())
