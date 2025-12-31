@@ -195,14 +195,17 @@ async def get_dashboard_metrics(
     Returns aggregated metrics from real WhatsApp/CRM data or Clinicorp.
     Supports filtering by time period.
     """
+    """
     from datetime import datetime, timedelta
+    import pytz
     
     try:
         from app.core.database import SupabaseClient
         admin_supabase = SupabaseClient.get_admin_client()
         
-        # Calculate date range based on period
-        now = datetime.now()
+        # Calculate date range based on period (Force BRT)
+        tz_br = pytz.timezone("America/Sao_Paulo")
+        now = datetime.now(tz_br)
         
         if period == "week":
             # Start of current week (Monday) to today
@@ -218,8 +221,9 @@ async def get_dashboard_metrics(
             # Last 30 days from today
             start_dt = now - timedelta(days=30)
         elif period == "custom" and start_date and end_date:
-            start_dt = datetime.fromisoformat(start_date)
-            end_dt = datetime.fromisoformat(end_date)
+            # Parse assuming input is YYYY-MM-DD
+            start_dt = datetime.fromisoformat(start_date).replace(tzinfo=tz_br)
+            end_dt = datetime.fromisoformat(end_date).replace(tzinfo=tz_br)
         else:
             # Default to current month
             start_dt = now.replace(day=1, hour=0, minute=0, second=0, microsecond=0)
