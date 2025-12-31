@@ -88,27 +88,44 @@ class ClinicorpClient:
     # Public Methods (Business Logic)
     # ==========================================
 
+    async def get_business_list(self) -> List[Dict]:
+        """Fetch list of businesses (clinics) available strictly for discovery."""
+        return await self._request("GET", "/business/list")
+
     async def get_appointments(self, start_date: str, end_date: str) -> List[Dict]:
         """
         Fetch appointments within date range.
-        Dates should be YYYY-MM-DD
+        Correct endpoint: /appointment/list
+        Required params: businessId, from, to
         """
-        endpoint = "/appointments"
-        # Clinicorp usually expects start/end params
+        # 1. Discover Business ID (Dynamic to support any unit)
+        businesses = await self.get_business_list()
+        if not businesses:
+            print("[Clinicorp] No businesses found for this user.")
+            return []
+            
+        # Use the first available clinic
+        business_id = businesses[0].get("id")
+        
+        # 2. Fetch Appointments
+        endpoint = "/appointment/list"
         data = {
-            "start": start_date,
-            "end": end_date,
-            "limit": 100 # Safety limit
+            "from": start_date,
+            "to": end_date,
+            "businessId": business_id
         }
-        return await self._request("GET", endpoint, data)
-
+        
+        # Add filtering by status if needed, but docs say 'list' returns all.
+        res = await self._request("GET", endpoint, data)
+        return res if isinstance(res, list) else res.get("list", [])
+    
     async def get_patients(self) -> List[Dict]:
         """
-        Fetch recent patients to validate data access.
+        Fetch recent patients. Endpoint inferred as /patient/get (one by one) 
+        doesn't help listing. Docs mention /patient/list_appointments.
+        Let's stick to /business/list as the connectivity check.
         """
-        # Limit to 5 just to check existence
-        data = {"limit": 5}
-        return await self._request("GET", "/patients", data)
+        return await self.get_business_list()
 
     async def get_financials(self, start_date: str, end_date: str) -> Dict[str, float]:
         """
