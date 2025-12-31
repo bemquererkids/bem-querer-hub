@@ -88,52 +88,76 @@ class ClinicorpClient:
     # Public Methods (Business Logic)
     # ==========================================
 
-    async def get_business_list(self) -> List[Dict]:
-        """Fetch list of businesses (clinics) available strictly for discovery."""
-        return await self._request("GET", "/business/list")
+    async def get_access_context(self) -> Dict[str, str]:
+        """
+        Discover the valid subscriber_id and business_id for this account.
+        Endpoint: /group/list_subscribers_clinics
+        """
+        res = await self._request("GET", "/group/list_subscribers_clinics")
+        
+        # Expecting a list of clinics
+        if isinstance(res, list) and len(res) > 0:
+            first_unit = res[0]
+            return {
+                "subscriber_id": first_unit.get("SubscriberBussinessUID"),
+                "business_id": first_unit.get("CompanyId")
+            }
+        
+        # Fallback if structure is different (some APIs wrap in 'data')
+        if isinstance(res, dict) and "data" in res:
+             data_list = res.get("data", [])
+             if data_list and len(data_list) > 0:
+                  first_unit = data_list[0]
+                  return {
+                    "subscriber_id": first_unit.get("SubscriberBussinessUID"),
+                    "business_id": first_unit.get("CompanyId")
+                }
+        
+        print(f"[Clinicorp] No subscribers/clinics found in discovery. Response: {res}")
+        return {}
 
     async def get_appointments(self, start_date: str, end_date: str) -> List[Dict]:
         """
-        Fetch appointments within date range.
-        Correct endpoint: /appointment/list
-        Required params: businessId, from, to
+        Fetch appointments within date range using auto-discovered context.
         """
-        # 1. Discover Business ID (Dynamic to support any unit)
-        businesses = await self.get_business_list()
-        if not businesses:
-            print("[Clinicorp] No businesses found for this user.")
+        # 1. Discover Context
+        context = await self.get_access_context()
+        if not context:
+            print("[Clinicorp] Failed to discover context (subscriber_id).")
             return []
             
-        # Use the first available clinic
-        business_id = businesses[0].get("id")
+        subscriber_id = context.get("subscriber_id")
+        business_id = context.get("business_id")
         
         # 2. Fetch Appointments
         endpoint = "/appointment/list"
         data = {
             "from": start_date,
             "to": end_date,
-            "businessId": business_id
+            "businessId": business_id,
+            "subscriber_id": subscriber_id
         }
         
-        # Add filtering by status if needed, but docs say 'list' returns all.
         res = await self._request("GET", endpoint, data)
         return res if isinstance(res, list) else res.get("list", [])
     
     async def get_patients(self) -> List[Dict]:
         """
-        Fetch recent patients. Endpoint inferred as /patient/get (one by one) 
-        doesn't help listing. Docs mention /patient/list_appointments.
-        Let's stick to /business/list as the connectivity check.
+        Use discovery as the connectivity check.
+        Returns the raw list of clinics found.
         """
-        return await self.get_business_list()
+        return await self._request("GET", "/group/list_subscribers_clinics")
 
     async def get_financials(self, start_date: str, end_date: str) -> Dict[str, float]:
         """
-        Busca dados financeiros (faturamento) do período.
-        Nota: Como não temos documentação exata de endpoint financeiro, 
-        vamos tentar buscar 'vendas' ou 'recebimentos'. 
-        Se não existir, retornaremos 0.
+        Get financial summary. Endpoint is hypothetical or custom.
+        For now, let's try to list receipts if possible, or return mock.
+        Docs don't show clear financial summary. 
         """
+        # Discover context to be safe
+        context = await self.get_access_context()
+        if not context: return {"sales_count": 0, "revenue": 0.0}
+        
         try:
             # Hipótese de endpoint. Se falhar (404), o _request retorna {}
             # Endpoint comum em sistemas médicos: /financial/list_receipts, /report/financial
