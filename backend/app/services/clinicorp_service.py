@@ -67,7 +67,11 @@ class ClinicorpClient:
         url = f"{self.BASE_URL}{endpoint}"
         
         async with httpx.AsyncClient() as client:
-            response = await client.request(method, url, json=data, headers=headers)
+            # Inject params for GET
+            params = data if method == "GET" else None
+            json_body = data if method != "GET" else None
+            
+            response = await client.request(method, url, params=params, json=json_body, headers=headers)
             
             # Logic for OAuth refresh removed/suspended for Basic Auth focus
             # if response.status_code == 401: ...
