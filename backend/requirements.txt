@@ -31,4 +31,10 @@ python-multipart==0.0.6
 # Development
 pytest==7.4.4
 pytest-asyncio==0.23.3
+pytest-asyncio==0.23.3
 ruff==0.1.14
+
+# Knowledge Base & Utils
+rapidfuzz==3.6.1
+pypdf==4.0.1
+beautifulsoup4==4.12.3
