@@ -291,6 +291,8 @@ async def get_dashboard_metrics(
                 total_leads = len(appointments) if isinstance(appointments, list) else 0
                 scheduled = scheduled_count + attended_count + noshow_count
                 attended = attended_count
+                noshow = noshow_count      # FIX: Assign variable for return
+                qualifying = 0             # FIX: Explicit assignment
                 
                 # Financials mapping (mock revenue if not found yet)
                 sales = financials.get("sales_count", attended) 
@@ -299,7 +301,7 @@ async def get_dashboard_metrics(
                 # Rates
                 scheduling_rate = 100
                 attendance_rate = round((attended / scheduled * 100), 1) if scheduled > 0 else 0
-                noshow_rate = round((noshow_count / scheduled * 100), 1) if scheduled > 0 else 0
+                noshow_rate = round((noshow / scheduled * 100), 1) if scheduled > 0 else 0
                 conversion_rate = round((sales / attended * 100), 1) if attended > 0 else 0
                 
                 avg_ticket = round(revenue / sales, 2) if sales > 0 else 0
