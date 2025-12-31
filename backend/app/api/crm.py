@@ -187,11 +187,12 @@ async def update_deal_status(
 @router.get("/metrics")
 async def get_dashboard_metrics(
     period: str = "month",  # week, month, custom
+    source: str = "whatsapp", # whatsapp, clinicorp
     start_date: Optional[str] = None,
     end_date: Optional[str] = None
 ):
     """
-    Returns aggregated metrics from real WhatsApp/CRM data.
+    Returns aggregated metrics from real WhatsApp/CRM data or Clinicorp.
     Supports filtering by time period.
     """
     from datetime import datetime, timedelta
@@ -222,6 +223,91 @@ async def get_dashboard_metrics(
         else:
             # Default to current month
             start_dt = now.replace(day=1, hour=0, minute=0, second=0, microsecond=0)
+            
+        # Ensure we have an end_date context for queries if not custom
+        if not (period == "custom" and end_date):
+            end_dt = now
+            
+        start_str = start_dt.strftime("%Y-%m-%d")
+        end_str = end_dt.strftime("%Y-%m-%d")
+
+        # --- CLINICORP SOURCE ---
+        if source == "clinicorp":
+            try:
+                # 1. Get Client (using helper logic)
+                from app.api.integration import get_clinicorp_client
+                client = get_clinicorp_client()
+                
+                # 2. Fetch Data
+                appointments = await client.get_appointments(start_str, end_str)
+                financials = await client.get_financials(start_str, end_str)
+                
+                # 3. Calculate Metrics
+                total_leads = len(appointments) # Approximation, ideal would be new patients
+                scheduled = len(appointments)
+                
+                attended = 0
+                noshow = 0
+                sales = financials.get("sales_count", 0)
+                revenue = financials.get("revenue", 0.0)
+                
+                # Map statuses
+                for appt in appointments:
+                    status = str(appt.get("status", "")).lower()
+                    if status in ["completed", "attended", "realizado"]:
+                        attended += 1
+                    elif status in ["missed", "noshow", "faltou"]:
+                        noshow += 1
+                
+                # Calculate percentages
+                scheduling_rate = 100.0 # If looking at appointments, 100% are scheduled
+                attendance_rate = (attended / scheduled * 100) if scheduled > 0 else 0
+                conversion_rate = (sales / total_leads * 100) if total_leads > 0 else 0 # Rough approx
+                noshow_rate = (noshow / scheduled * 100) if scheduled > 0 else 0
+                qualifying_rate = 0 # Clinicorp doesn't track "qualifying" easily in this view
+                
+                avg_ticket = revenue / sales if sales > 0 else 0
+                
+                funnel_data = [
+                    { "name": "Agendados", "value": scheduled, "fill": "#6366f1" },
+                    { "name": "Compareceram", "value": attended, "fill": "#818cf8" },
+                    { "name": "Vendas", "value": sales, "fill": "#a5b4fc" }
+                ]
+
+                return {
+                    "totalLeads": total_leads,
+                    "scheduled": scheduled,
+                    "attended": attended,
+                    "noshow": noshow,
+                    "qualifying": qualifying,
+                    "sales": sales,
+                    "revenue": revenue,
+                    "ticket": avg_ticket,
+                    "funnelData": funnel_data,
+                    "percentages": {
+                        "schedulingRate": round(scheduling_rate, 1),
+                        "attendanceRate": round(attendance_rate, 1),
+                        "conversionRate": round(conversion_rate, 1),
+                        "noshowRate": round(noshow_rate, 1),
+                        "qualifyingRate": round(qualifying_rate, 1)
+                    }
+                }
+                
+            except Exception as e:
+                print(f"Clinicorp Fetch Error: {e}")
+                import traceback
+                traceback.print_exc()
+                # Fallback to empty or error
+                return {
+                    "totalLeads": 0, "scheduled": 0, "attended": 0, "sales": 0, "revenue": 0, "ticket": 0,
+                    "funnelData": [],
+                    "percentages": {
+                        "schedulingRate": 0, "attendanceRate": 0, "conversionRate": 0, "noshowRate": 0, "qualifyingRate": 0
+                    },
+                    "error": str(e)
+                }
+
+        # --- WHATSAPP SOURCE (DEFAULT) ---
         
         # Fetch conversations filtered by date
         query = admin_supabase.table("whatsapp_conversations").select("id, tags, deal_value, created_at")
