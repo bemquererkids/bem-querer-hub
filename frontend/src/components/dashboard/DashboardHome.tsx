@@ -84,11 +84,26 @@ const MetricCard = ({ title, value, subtext, icon: Icon, trend, color = 'zinc' }
 
 export const DashboardHome: React.FC = () => {
     const [period, setPeriod] = React.useState('month'); // week, month, custom
+    const [source, setSource] = React.useState('whatsapp'); // Default, will be updated by DB
+    const [isLoadingPref, setIsLoadingPref] = React.useState(true);
 
-    // Initialize source from localStorage or default to 'whatsapp'
-    const [source, setSource] = React.useState(() => {
-        return localStorage.getItem('dashboard_source') || 'whatsapp';
-    });
+    // Load preference from DB on mount
+    React.useEffect(() => {
+        const loadPref = async () => {
+            try {
+                const res = await fetch(`${import.meta.env.VITE_API_URL}/api/crm/preferences`);
+                const data = await res.json();
+                if (data && data.default_source) {
+                    setSource(data.default_source);
+                }
+            } catch (e) {
+                console.error("Failed to load preferences", e);
+            } finally {
+                setIsLoadingPref(false);
+            }
+        };
+        loadPref();
+    }, []);
 
     const [metrics, setMetrics] = React.useState({
         totalLeads: 0,
@@ -114,12 +129,27 @@ export const DashboardHome: React.FC = () => {
         }
     });
 
-    // Save source to localStorage whenever it changes
+    // Save source to DB whenever it changes (skip initial load)
     React.useEffect(() => {
-        localStorage.setItem('dashboard_source', source);
-    }, [source]);
+        if (isLoadingPref) return;
+
+        const savePref = async () => {
+            try {
+                await fetch(`${import.meta.env.VITE_API_URL}/api/crm/preferences`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ default_source: source })
+                });
+            } catch (e) {
+                console.error("Failed to save preference", e);
+            }
+        };
+        savePref();
+    }, [source, isLoadingPref]);
 
     React.useEffect(() => {
+        if (isLoadingPref) return; // Wait for source to load before fetching metrics
+
         const fetchMetrics = async () => {
             try {
                 const res = await fetch(`${import.meta.env.VITE_API_URL}/api/crm/metrics?period=${period}&source=${source}`);
@@ -133,7 +163,7 @@ export const DashboardHome: React.FC = () => {
         };
 
         fetchMetrics();
-    }, [period, source]);
+    }, [period, source, isLoadingPref]);
 
     return (
         <div className="p-8 space-y-8 min-h-full max-w-7xl mx-auto">
