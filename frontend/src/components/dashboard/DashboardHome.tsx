@@ -84,6 +84,7 @@ const MetricCard = ({ title, value, subtext, icon: Icon, trend, color = 'zinc' }
 
 export const DashboardHome: React.FC = () => {
     const [period, setPeriod] = React.useState('month'); // week, month, custom
+    const [source, setSource] = React.useState('whatsapp'); // whatsapp, clinicorp
     const [metrics, setMetrics] = React.useState({
         totalLeads: 0,
         scheduled: 0,
@@ -111,7 +112,7 @@ export const DashboardHome: React.FC = () => {
     React.useEffect(() => {
         const fetchMetrics = async () => {
             try {
-                const res = await fetch(`${import.meta.env.VITE_API_URL}/api/crm/metrics?period=${period}`);
+                const res = await fetch(`${import.meta.env.VITE_API_URL}/api/crm/metrics?period=${period}&source=${source}`);
                 const data = await res.json();
                 if (data && data.funnelData) {
                     setMetrics(data);
@@ -122,7 +123,7 @@ export const DashboardHome: React.FC = () => {
         };
 
         fetchMetrics();
-    }, [period]);
+    }, [period, source]);
 
     return (
         <div className="p-8 space-y-8 min-h-full max-w-7xl mx-auto">
@@ -133,9 +134,29 @@ export const DashboardHome: React.FC = () => {
                 animate={{ opacity: 1, y: 0 }}
                 className="flex flex-col md:flex-row md:items-center justify-between gap-4"
             >
-                <div>
-                    <h1 className="text-2xl font-semibold text-zinc-900 dark:text-foreground tracking-tight mb-1">Visão Geral</h1>
-                    <p className="text-zinc-500 dark:text-muted-foreground text-sm">Acompanhe o desempenho da sua clínica em tempo real.</p>
+                <div className="flex flex-col gap-2">
+                    <div>
+                        <h1 className="text-2xl font-semibold text-zinc-900 dark:text-foreground tracking-tight mb-1">Visão Geral</h1>
+                        <p className="text-zinc-500 dark:text-muted-foreground text-sm">Acompanhe o desempenho da sua clínica em tempo real.</p>
+                    </div>
+                    {/* Source Selector */}
+                    <div className="flex items-center gap-2 mt-2">
+                        <span className="text-xs font-medium text-zinc-500 uppercase tracking-wider">Fonte de Dados:</span>
+                        <div className="flex bg-zinc-100 dark:bg-muted p-1 rounded-lg">
+                            <button
+                                onClick={() => setSource('whatsapp')}
+                                className={`px-3 py-1 text-xs font-medium rounded-md transition-all ${source === 'whatsapp' ? 'bg-white dark:bg-card text-indigo-600 shadow-sm' : 'text-zinc-500 hover:text-zinc-900'}`}
+                            >
+                                WhatsApp (CRM)
+                            </button>
+                            <button
+                                onClick={() => setSource('clinicorp')}
+                                className={`px-3 py-1 text-xs font-medium rounded-md transition-all ${source === 'clinicorp' ? 'bg-white dark:bg-card text-indigo-600 shadow-sm' : 'text-zinc-500 hover:text-zinc-900'}`}
+                            >
+                                Clinicorp (Real)
+                            </button>
+                        </div>
+                    </div>
                 </div>
 
                 <div className="flex items-center gap-3">
