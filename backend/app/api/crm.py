@@ -316,7 +316,8 @@ async def get_dashboard_metrics(
                         "client_id_used": client.client_id,
                         # Discovered IDs
                         "subscriber_id": getattr(client, 'context', {}).get('subscriber_id'),
-                        "business_id": getattr(client, 'context', {}).get('business_id')
+                        "business_id": getattr(client, 'context', {}).get('business_id'),
+                        "discovery_raw": getattr(client, 'discovery_raw', 'N/A')
                     }
                 }
                 

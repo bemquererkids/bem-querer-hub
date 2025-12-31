@@ -115,7 +115,8 @@ class ClinicorpClient:
                 }
                   return self.context
         
-        print(f"[Clinicorp] No subscribers/clinics found in discovery. Response: {res}")
+        print(f"[Clinicorp] No subscribers/clinics found in discovery. Response structure: {type(res)}")
+        self.discovery_raw = str(res)[:300] # Capture raw for debug
         return {}
 
     async def get_appointments(self, start_date: str, end_date: str) -> List[Dict]:
