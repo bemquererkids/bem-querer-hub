@@ -177,7 +177,7 @@ export const DashboardHome: React.FC = () => {
                     <strong>DEBUG MODE (Clinicorp):</strong><br />
                     Periodo: {debugInfo.dates} ({debugInfo.period})<br />
                     Agendamentos: {debugInfo.appointments_found}<br />
-                    Pacientes (Teste): {debugInfo.patients_found_check}<br />
+                    Check Conexão (Business): {debugInfo.patients_found_check}<br />
                     ID Usado: {debugInfo.client_id_used}
                 </div>
             )}
