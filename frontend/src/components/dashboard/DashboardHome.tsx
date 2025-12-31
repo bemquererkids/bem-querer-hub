@@ -84,7 +84,12 @@ const MetricCard = ({ title, value, subtext, icon: Icon, trend, color = 'zinc' }
 
 export const DashboardHome: React.FC = () => {
     const [period, setPeriod] = React.useState('month'); // week, month, custom
-    const [source, setSource] = React.useState('whatsapp'); // whatsapp, clinicorp
+
+    // Initialize source from localStorage or default to 'whatsapp'
+    const [source, setSource] = React.useState(() => {
+        return localStorage.getItem('dashboard_source') || 'whatsapp';
+    });
+
     const [metrics, setMetrics] = React.useState({
         totalLeads: 0,
         scheduled: 0,
@@ -108,6 +113,11 @@ export const DashboardHome: React.FC = () => {
             qualifyingRate: 0
         }
     });
+
+    // Save source to localStorage whenever it changes
+    React.useEffect(() => {
+        localStorage.setItem('dashboard_source', source);
+    }, [source]);
 
     React.useEffect(() => {
         const fetchMetrics = async () => {
