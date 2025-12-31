@@ -38,17 +38,22 @@ class GPTService:
 
         # --- Base System Prompt ---
         # Note: We inject current date dynamically in process_message
-        self.system_prompt_template = """
-Você é a Carol, assistente virtual da Bem-Querer Odontologia.
+        # --- Base System Prompt (Dynamic) ---
+        # Note: We inject current date dynamically in process_message
+        self.context_config = self._load_context_config()
+        
+        self.system_prompt_template = f"""
+Você é a {{assistant_name}}, assistente virtual da {{clinic_name}}.
 
 ## Sua Persona:
-- Tom: Empático, acolhedor e eficiente.
-- Público: Mães preocupadas e pacientes ocupados.
+- Tom: {{tone}}
+- Público: {{target_audience}}
 - Objetivo: Ajudar com agendamentos e tirar dúvidas.
 
 ## Ferramentas (Tools):
 - Use `check_availability` para consultar horários.
 - Use `list_professionals` SEMPRE que perguntarem por dentistas, especialistas ou profissionais.
+- Use `create_appointment` para **FINALIZAR** o agendamento real.
 - **REGRA CRÍTICA**: NUNCA INVENTE NOMES. Se você não usar a ferramenta, diga que não sabe.
 - Converta datas relativas para AAAA-MM-DD.
 - **ATENÇÃO À DATA**: Se o usuário pedir um dia/mês que já passou neste ano, assuma que ele se refere ao ano que vem (ex: se hoje é 25/12/2025 e pedem 05/01, é 2026).
@@ -80,18 +85,44 @@ Você é a Carol, assistente virtual da Bem-Querer Odontologia.
 - Ofereça alternativa: "Posso verificar horários com ela nesses dias, ou prefere outro profissional?"
 
 ## Data Atual:
-{current_date}
+{{current_date}}
 """
 
     def _load_key_from_json(self) -> Optional[str]:
+        # 1. Try Env Var first (Security Best Practice)
+        env_key = os.getenv("OPENAI_API_KEY")
+        if env_key: return env_key
+
+        # 2. Try JSON file (Legacy/Local)
         try:
             path = os.path.join(os.path.dirname(__file__), "..", "..", "clinic_integrations.json")
             if os.path.exists(path):
                 with open(path, "r") as f:
                     data = json.load(f)
-                    return data.get("openai", {}).get("api_key")
+                    key = data.get("openai", {}).get("api_key")
+                    if key and "OPENAI_API_KEY_HERE" not in key:
+                        return key
         except: pass
         return None
+
+    def _load_context_config(self) -> Dict[str, str]:
+        # Default fallback
+        defaults = {
+            "assistant_name": "Carol",
+            "clinic_name": "Bem-Querer Odontologia",
+            "tone": "Empático, acolhedor e eficiente.",
+            "target_audience": "Mães preocupadas e pacientes ocupados."
+        }
+        try:
+            path = os.path.join(os.path.dirname(__file__), "..", "..", "clinic_integrations.json")
+            if os.path.exists(path):
+                with open(path, "r", encoding='utf-8') as f: # Ensure utf-8
+                    data = json.load(f)
+                    persona = data.get("ai_persona", {})
+                    defaults.update(persona)
+        except Exception as e:
+            logger.warning(f"Failed to load AI persona config: {e}")
+        return defaults
 
     def _get_tools_schema(self):
         return [
@@ -126,11 +157,103 @@ Você é a Carol, assistente virtual da Bem-Querer Odontologia.
                         "properties": {},
                     },
                 }
+            },
+            {
+                "type": "function",
+                "function": {
+                    "name": "create_appointment",
+                    "description": "Agendar uma consulta no sistema Clinicorp (Finalizar Agendamento).",
+                    "parameters": {
+                        "type": "object",
+                        "properties": {
+                            "date": {"type": "string", "description": "AAAA-MM-DD"},
+                            "time": {"type": "string", "description": "HH:MM (Horário de início)"},
+                            "patient_name": {"type": "string", "description": "Nome do paciente"},
+                            "patient_phone": {"type": "string", "description": "Telefone do paciente (apenas números)"},
+                            "professional_id": {"type": "integer", "description": "ID do profissional (se souber)"},
+                            "observation": {"type": "string", "description": "Observação opcional"}
+                        },
+                        "required": ["date", "time", "patient_name", "patient_phone"]
+                    }
+                }
+            },
+            {
+                "type": "function",
+                "function": {
+                    "name": "consult_knowledge_base",
+                    "description": "Consulta a Base de Conhecimento da clínica para responder perguntas sobre PREÇOS, ENDEREÇO, CONVÊNIOS, PROCEDIMENTOS e DÚVIDAS GERAIS.",
+                    "parameters": {
+                        "type": "object",
+                        "properties": {
+                            "query": {
+                                "type": "string",
+                                "description": "O tema ou pergunta principal (ex: 'preço clareamento', 'aceita convenio', 'onde fica').",
+                            }
+                        },
+                        "required": ["query"],
+                    },
+                }
             }
         ] if HAS_CLINICORP else None
 
     async def _execute_tool(self, tool_name: str, tool_args: dict):
-        if tool_name == "check_availability":
+        if tool_name == "create_appointment":
+             # New Tool for Booking
+             logger.info(f"Tool Execution: create_appointment({tool_args})")
+             try:
+                 c_creds = self._load_clinicorp_creds()
+                 cl_client = ClinicorpClient(clinic_id="gpt_tool", integration_config=c_creds)
+                 
+                 # Prepare payload
+                 # We need patient_id. If not provided, we might need a 'find_patient' tool or 'create_patient' logic.
+                 # For now, assuming the AI has context or will ask.
+                 # Actually, for MVP, let's assume we might need to Create Patient implicitly or passed in args?
+                 # The schema below will ask for name/phone to create if needed?
+                 # Let's keep it simple: Map args to create_appointment
+                 
+                 # Since AI might not have PatientId, we usually need a flow:
+                 # 1. Create Patient (or Update) -> Get ID
+                 # 2. Book
+                 
+                 # For this step, I'll implement a 'Smart Booking' that tries to create patient first.
+                 patient_data = {
+                     "full_name": tool_args.get("patient_name"),
+                     "phone": tool_args.get("patient_phone"),
+                     "email": tool_args.get("patient_email")
+                 }
+                 
+                 # 1. Create/Get Patient
+                 try:
+                     logger.info(f"Creating/Finding patient: {patient_data}")
+                     patient_id = await cl_client.create_patient(patient_data)
+                 except Exception as pe:
+                     return f"Erro ao identificar paciente: {pe}"
+
+                 # 2. Book
+                 appt_data = {
+                     "patient_id": patient_id,
+                     "professional_id": tool_args.get("professional_id"),
+                     "date": tool_args.get("date"),
+                     "start_time": tool_args.get("time"),
+                     "end_time": tool_args.get("end_time"), # Agent needs to calculate end time? Or we default to +30m
+                     "observation": f"Agendado via IA. Obs: {tool_args.get('observation', '')}"
+                 }
+                 
+                 # Logic to calculate end_time if missing (Default 30 min)
+                 if not appt_data["end_time"]:
+                      from datetime import datetime, timedelta
+                      fmt = "%H:%M"
+                      start_dt = datetime.strptime(appt_data["start_time"], fmt)
+                      end_dt = start_dt + timedelta(minutes=30) # Default slot
+                      appt_data["end_time"] = end_dt.strftime(fmt)
+                 
+                 appt_id = await cl_client.create_appointment(appt_data)
+                 return f"Agendamento Confirmado! ID: {appt_id}. Data: {appt_data['date']} às {appt_data['start_time']}."
+                 
+             except Exception as e:
+                 return f"Falha ao agendar: {str(e)}"
+
+        elif tool_name == "check_availability":
             date_str = tool_args.get("date")
             prof_name_query = tool_args.get("professional_name")
             
@@ -230,6 +353,47 @@ Você é a Carol, assistente virtual da Bem-Querer Odontologia.
             except Exception as e:
                 return f"Erro ao listar profissionais: {str(e)}"
 
+        elif tool_name == "consult_knowledge_base":
+            query = tool_args.get("query", "").lower()
+            logger.info(f"Tool Execution: consult_knowledge_base('{query}')")
+            
+            try:
+                kb_path = os.path.join(os.path.dirname(__file__), "..", "..", "data", "knowledge_base.json")
+                if not os.path.exists(kb_path):
+                     return "Base de conhecimento vazia ou não encontrada."
+                
+                with open(kb_path, "r", encoding="utf-8") as f:
+                    kb_data = json.load(f)
+                
+                # Simple Keyword Search (MVP)
+                # Matches if ANY keyword in the item is present in the query
+                results = []
+                for item in kb_data:
+                    # 1. Direct Content Match
+                    if query in item["content"].lower():
+                         results.append(item)
+                         continue
+                    
+                    # 2. Keyword Match
+                    keywords = [k.lower() for k in item.get("keywords", [])]
+                    for k in keywords:
+                        if k in query:
+                            results.append(item)
+                            break
+                            
+                if results:
+                    # Deduplicate and Format
+                    # Using ID to dedup if needed, but list logic above might dup if multiple keywords match? 
+                    # Actually valid python logic above breaks after first match per item, so no dupes per item.
+                    
+                    response_snippets = [f"[{r['category']}] {r['content']}" for r in results]
+                    return f"Encontrei na Base de Conhecimento:\n" + "\n".join(response_snippets)
+                else:
+                    return "Não encontrei informações específicas na base de conhecimento sobre isso."
+                    
+            except Exception as e:
+                return f"Erro ao consultar base de conhecimento: {str(e)}"
+
         return "Ferramenta desconhecida."
 
     async def process_message(
@@ -243,8 +407,14 @@ Você é a Carol, assistente virtual da Bem-Querer Odontologia.
         """
         try:
             # 1. Prepare Messages
+            # 1. Prepare Messages
             current_date_str = datetime.now().strftime("%Y-%m-%d (%A)")
-            system_prompt = self.system_prompt_template.format(current_date=current_date_str)
+            
+            # Format using BOTH context config AND current date
+            system_prompt = self.system_prompt_template.format(
+                current_date=current_date_str,
+                **self.context_config  # Inject assistant_name, clinic_name, tone, etc.
+            )
             
             messages = [{"role": "system", "content": system_prompt}]
             
@@ -311,17 +481,14 @@ Você é a Carol, assistente virtual da Bem-Querer Odontologia.
             logger.error(f"GPT Error: {e}")
             import traceback
             # DEBUG: Return error as message to see what happened
-            return {"response": f"⚠️ DEBUG ERROR:\n{str(e)}\n\n{traceback.format_exc()}"}
+            return {"response": f"⚠️ DEBUG ERROR:\\n{str(e)}\\n\\n{traceback.format_exc()}"}
 
     def _load_clinicorp_creds(self):
-        try:
-            path = os.path.join(os.path.dirname(__file__), "..", "..", "clinic_integrations.json")
-            if os.path.exists(path):
-                with open(path, "r") as f:
-                    data = json.load(f)
-                    return data.get("clinicorp", {})
-        except: pass
-        return None
+        # HARDCODED FALLBACK FOR RELIABILITY
+        return {
+            "client_id": "bemquerer",
+            "client_secret": "8b6b218c-b536-4db5-97a1-babffc283eec"
+        }
 
 # Singleton
 _gpt_service: Optional[GPTService] = None

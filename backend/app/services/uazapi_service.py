@@ -44,6 +44,8 @@ class UazAPIService:
             # v2.0 Endpoint: /send/text
             url = f"{self.base_url}/send/text"
             
+            import json
+            
             payload = {
                 "number": phone,
                 "text": message
@@ -52,16 +54,23 @@ class UazAPIService:
             if quoted_message_id:
                 payload["replyid"] = quoted_message_id
             
+            # Serialize manually to ensure control and logging
+            payload_str = json.dumps(payload)
+            logger.info(f"Sending UazAPI Payload: {payload_str}")
+            
             async with httpx.AsyncClient() as client:
                 response = await client.post(
                     url,
-                    json=payload,
+                    content=payload_str,
                     headers=self.headers,
                     timeout=15.0
                 )
                 response.raise_for_status()
                 return response.json()
                 
+        except httpx.HTTPStatusError as e:
+            logger.error(f"UazAPI HTTP Error: {e.response.status_code} - {e.response.text}")
+            raise
         except httpx.HTTPError as e:
             logger.error(f"Error sending message via UazAPI: {str(e)}")
             raise

@@ -237,12 +237,19 @@ async def get_dashboard_metrics(
 
         # --- CLINICORP SOURCE ---
         if source == "clinicorp":
+            import os
+            from app.services.clinicorp_service import ClinicorpClient
+            
+            # Hardcoded Credentials (Temporary Fix for Env Var Issue)
+            # User provided: bemquerer / 8b6b218c-b536-4db5-97a1-babffc283eec
+            client_id = "bemquerer"
+            client_secret = "8b6b218c-b536-4db5-97a1-babffc283eec"
+            
+            # Initialize Client
+            client = ClinicorpClient(client_id, {"client_secret": client_secret})
+            
             try:
                 print(f"[Clinicorp Metrics] Fetching for period: {period} ({start_str} to {end_str})")
-                
-                # 1. Get Client (using helper logic)
-                from app.api.integration import get_clinicorp_client
-                client = get_clinicorp_client()
                 
                 # 2. Fetch Data
                 appointments = await client.get_appointments(start_str, end_str)
@@ -462,3 +469,67 @@ async def save_dashboard_preferences(pref: DashboardPreferences):
         return {"status": "success", "saved": pref}
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
+
+
+# --- OPERATIONAL ENDPOINTS (AI/WhatsApp Interaction) ---
+
+@router.get("/professionals")
+async def list_professionals():
+    """List valid professionals from Clinicorp for Booking"""
+    try:
+        from app.services.clinicorp_service import ClinicorpClient
+        client = ClinicorpClient("bemquerer", {"client_secret": "8b6b218c-b536-4db5-97a1-babffc283eec"})
+        return await client.get_professionals()
+    except Exception as e:
+        print(f"Error listing professionals: {e}")
+        return []
+
+@router.get("/availability")
+async def check_availability(date: str, professional_id: Optional[str] = None):
+    """Check slots for a specific date (YYYY-MM-DD)"""
+    try:
+        from app.services.clinicorp_service import ClinicorpClient
+        client = ClinicorpClient("bemquerer", {"client_secret": "8b6b218c-b536-4db5-97a1-babffc283eec"})
+        return await client.check_availability(date, professional_id)
+    except Exception as e:
+        print(f"Error checking availability: {e}")
+        return []
+
+class AppointmentRequest(BaseModel):
+    patient_id: int # Clinicorp Patient ID
+    date: str
+    start_time: str
+    end_time: str
+    professional_id: Optional[int] = None
+    observation: Optional[str] = None
+
+@router.post("/appointment")
+async def create_appointment(req: AppointmentRequest):
+    """Create an appointment in Clinicorp"""
+    try:
+        from app.services.clinicorp_service import ClinicorpClient
+        client = ClinicorpClient("bemquerer", {"client_secret": "8b6b218c-b536-4db5-97a1-babffc283eec"})
+        
+        appt_id = await client.create_appointment(req.dict())
+        return {"status": "success", "id": appt_id}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+class PatientCreateRequest(BaseModel):
+    full_name: str
+    phone: str
+    cpf: Optional[str] = None
+    email: Optional[str] = None
+    birth_date: Optional[str] = None
+
+@router.post("/patient")
+async def create_patient(req: PatientCreateRequest):
+    """Create a patient in Clinicorp (if new lead)"""
+    try:
+        from app.services.clinicorp_service import ClinicorpClient
+        client = ClinicorpClient("bemquerer", {"client_secret": "8b6b218c-b536-4db5-97a1-babffc283eec"})
+        
+        pid = await client.create_patient(req.dict())
+        return {"status": "success", "patient_id": pid}
+    except Exception as e:
+         raise HTTPException(status_code=500, detail=str(e))

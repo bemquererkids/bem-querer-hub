@@ -469,6 +469,22 @@ async def process_new_lead(
     }
     supabase.table('whatsapp_messages').insert(ai_msg).execute()
 
+    # 6.1 ATUALIZAR CONVERSATION (Last Message)
+    try:
+        supabase.table('whatsapp_conversations').update({
+            "last_message": ai_response_text,
+            "last_message_at": datetime.now().isoformat(),
+            # Não mudamos unread_count pois é mensagem enviada (is_from_me)
+            # ou talvez zeramos? Geralmente se o sistema respondeu, não é mais unread para o sistema.
+            # Mas se o sistema respondeu, o usuário ainda não leu?
+            # A lógica de 'unread' é "não lido pelo ATENDENTE"?
+            # Se a IA respondeu, tecnicamente foi "atendido". Vamos manter a lógica do save_message: +0.
+            # Se for para marcar como lida pelo sistema, poderiamos setar 0.
+            # Por enquanto, só atualizo o texto para aparecer no painel.
+        }).eq('id', chat_id).execute()
+    except Exception as e:
+        print(f"⚠️ Falha ao atualizar last_message da conversa: {e}")
+
     # 7. Enviar via WhatsApp (UazAPI)
     print(f"✉️ Enviando resposta via UazAPI para {clean_phone}...")
     try:
@@ -498,9 +514,15 @@ async def debug_force_reply(phone: str, message: str):
         return {"status": "success", "message": "AI Flow completed without error"}
     except Exception as e:
         import traceback
+        import httpx
+        
+        error_detail = str(e)
+        if isinstance(e, httpx.HTTPStatusError):
+             error_detail = f"HTTP {e.response.status_code}: {e.response.text}"
+             
         return {
             "status": "error",
             "error_type": type(e).__name__,
-            "message": str(e),
+            "message": error_detail,
             "traceback": traceback.format_exc()
         }

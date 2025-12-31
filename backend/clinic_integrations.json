@@ -5,7 +5,13 @@
     "connected_at": "2025-12-25 11:53:19.581947"
   },
   "openai": {
-    "api_key": "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",
-    "updated_at": "2025-12-25 12:03:46.230067"
+    "api_key": "OPENAI_API_KEY_HERE",
+    "updated_at": "2025-12-31 09:48:00.000000"
+  },
+  "ai_persona": {
+    "assistant_name": "Carol",
+    "clinic_name": "Bem-Querer Odontologia",
+    "tone": "Empático, acolhedor e eficiente.",
+    "target_audience": "Mães preocupadas e pacientes ocupados."
   }
 }

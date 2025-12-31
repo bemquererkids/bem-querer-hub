@@ -116,6 +116,10 @@ app.include_router(crm_router, prefix="/api")
 from app.api.productivity import router as productivity_router
 app.include_router(productivity_router, prefix="/api")
 
+# Import and include AI router
+from app.api.ai import router as ai_router
+app.include_router(ai_router, prefix="/api/ai")
+
 @app.get("/")
 async def root():
     return {"status": "ok", "message": "Bem-Querer Hub API", "version": "1.0.0"}

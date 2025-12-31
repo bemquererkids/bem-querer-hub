@@ -1,0 +1,45 @@
+[
+    {
+        "id": "1",
+        "category": "Preços",
+        "keywords": [
+            "clareamento",
+            "valor",
+            "preço",
+            "custa"
+        ],
+        "content": "O clareamento dental custa R$ 800,00 (sessão dentes superiores e inferiores). Inclui moldeira e gel para manutenção em casa."
+    },
+    {
+        "id": "2",
+        "category": "Localização",
+        "keywords": [
+            "endereço",
+            "fica",
+            "onde",
+            "local"
+        ],
+        "content": "Estamos localizados na Rua das Flechas, 123 - Jardim Prudência, São Paulo/SP. Temos estacionamento gratuito no local."
+    },
+    {
+        "id": "3",
+        "category": "Convênios",
+        "keywords": [
+            "convenio",
+            "plano",
+            "amil",
+            "bradesco"
+        ],
+        "content": "Atendemos apenas particular. Porém, emitimos nota fiscal para que você possa solicitar reembolso no seu convênio."
+    },
+    {
+        "id": "4",
+        "category": "Horários",
+        "keywords": [
+            "horario",
+            "funcionamento",
+            "abre"
+        ],
+        "content": "Funcionamos de Segunda a Sexta das 08:00 às 19:00, e aos Sábados das 08:00 às 13:00."
+    }
+]

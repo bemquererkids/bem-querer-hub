@@ -150,3 +150,26 @@ export const productivityService = {
     return response.data;
   }
 };
+
+export const aiService = {
+  getKnowledge: async () => {
+    const response = await api.get('/ai/knowledge');
+    return response.data;
+  },
+  saveKnowledge: async (item: any) => {
+    const response = await api.post('/ai/knowledge', item);
+    return response.data;
+  },
+  deleteKnowledge: async (itemId: string) => {
+    const response = await api.delete(`/ai/knowledge/${itemId}`);
+    return response.data;
+  },
+  getPersona: async () => {
+    const response = await api.get('/ai/persona');
+    return response.data;
+  },
+  updatePersona: async (config: any) => {
+    const response = await api.post('/ai/persona', config);
+    return response.data;
+  }
+};
