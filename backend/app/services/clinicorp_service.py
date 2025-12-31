@@ -117,6 +117,36 @@ class ClinicorpClient:
         
         print(f"[Clinicorp] No subscribers/clinics found in discovery. Response structure: {type(res)}")
         self.discovery_raw = str(res)[:300] # Capture raw for debug
+        
+        # --- FALLBACK: Explicit Business List ---
+        # If discovery is empty, try listing businesses for the client_id directly
+        # This handles cases where user has access (API User) but is not the generic subscriber owner.
+        print(f"[Clinicorp] Attempting fallback: /business/list?subscriber_id={self.client_id}")
+        try:
+             # Force casting subscriber_id to ensure it's passed
+             res_fallback = await self._request("GET", "/business/list", {"subscriber_id": self.client_id})
+             
+             # Support List or Dict wrapper for fallback
+             fallback_list = []
+             if isinstance(res_fallback, list): fallback_list = res_fallback
+             elif isinstance(res_fallback, dict): fallback_list = res_fallback.get("list", res_fallback.get("data", []))
+             
+             if len(fallback_list) > 0:
+                 first = fallback_list[0]
+                 print(f"[Clinicorp] Fallback Success. Business Found: {first.get('BusinessName')}")
+                 self.context = {
+                     "subscriber_id": self.client_id, # We assume client_id IS the subscriber
+                     "business_id": first.get("id")   # Use 'id' from business list
+                 }
+                 return self.context
+             else:
+                 print(f"[Clinicorp] Fallback returned empty list.")
+                 self.discovery_raw += f" | Fallback: {str(res_fallback)[:100]}"
+                 
+        except Exception as e:
+            print(f"[Clinicorp] Fallback failed: {e}")
+            self.discovery_raw += f" | Fallback Error: {str(e)}"
+            
         return {}
 
     async def get_appointments(self, start_date: str, end_date: str) -> List[Dict]:
