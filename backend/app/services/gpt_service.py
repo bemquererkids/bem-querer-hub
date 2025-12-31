@@ -358,40 +358,50 @@ Você é a {{assistant_name}}, assistente virtual da {{clinic_name}}.
             logger.info(f"Tool Execution: consult_knowledge_base('{query}')")
             
             try:
+                # Load Data
                 kb_path = os.path.join(os.path.dirname(__file__), "..", "..", "data", "knowledge_base.json")
                 if not os.path.exists(kb_path):
-                     return "Base de conhecimento vazia ou não encontrada."
+                     return "Base de conhecimento vazia."
                 
                 with open(kb_path, "r", encoding="utf-8") as f:
                     kb_data = json.load(f)
-                
-                # Simple Keyword Search (MVP)
-                # Matches if ANY keyword in the item is present in the query
-                results = []
+
+                from rapidfuzz import process, fuzz
+
+                # Prepare list of contents and keywords for searching
+                candidates = []
                 for item in kb_data:
-                    # 1. Direct Content Match
-                    if query in item["content"].lower():
-                         results.append(item)
-                         continue
-                    
-                    # 2. Keyword Match
-                    keywords = [k.lower() for k in item.get("keywords", [])]
-                    for k in keywords:
-                        if k in query:
-                            results.append(item)
-                            break
-                            
-                if results:
-                    # Deduplicate and Format
-                    # Using ID to dedup if needed, but list logic above might dup if multiple keywords match? 
-                    # Actually valid python logic above breaks after first match per item, so no dupes per item.
-                    
-                    response_snippets = [f"[{r['category']}] {r['content']}" for r in results]
-                    return f"Encontrei na Base de Conhecimento:\n" + "\n".join(response_snippets)
-                else:
-                    return "Não encontrei informações específicas na base de conhecimento sobre isso."
-                    
+                    # Combine category, keywords and a bit of content for search context
+                    search_text = f"{item['category']} {' '.join(item.get('keywords', []))} {item['content'][:50]}"
+                    candidates.append((search_text, item))
+
+                # Fuzzy Search
+                # Limit=3 returns top 3 matches
+                results = process.extract(
+                    query, 
+                    [c[0] for c in candidates], 
+                    scorer=fuzz.WRatio, 
+                    limit=3
+                )
+
+                # Filter by score (e.g., > 60)
+                relevant_items = []
+                for match_text, score, index in results:
+                    if score > 60:
+                        relevant_items.append(candidates[index][1])
+
+                if not relevant_items:
+                    return "Não encontrei informações específicas sobre isso na minha base de conhecimento."
+
+                # Format Response
+                response_text = "Encontrei as seguintes informações:\n"
+                for item in relevant_items:
+                    response_text += f"- [{item['category']}] {item['content']}\n"
+                
+                return response_text
+
             except Exception as e:
+                logger.error(f"Error consulting knowledge base: {e}")
                 return f"Erro ao consultar base de conhecimento: {str(e)}"
 
         return "Ferramenta desconhecida."
