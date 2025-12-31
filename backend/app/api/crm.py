@@ -258,32 +258,37 @@ async def get_dashboard_metrics(
                 print(f"[Clinicorp Metrics] Appointments: {len(appointments)} | Financials: {financials}")
                 
                 # 3. Calculate Metrics
-                # 3. Calculate Metrics (Clinicorp Logic)
+                # 3. Calculate Metrics (Defensive)
                 scheduled_count = 0
                 attended_count = 0
                 noshow_count = 0
                 canceled_count = 0
                 
-                unique_statuses = set()
-                
-                for appt in appointments:
-                    raw_status = str(appt.get("status", appt.get("Status", ""))).lower()
-                    unique_statuses.add(raw_status)
-                    
-                    if "agendado" in raw_status or "confirmado" in raw_status:
-                        scheduled_count += 1
-                    elif "atendido" in raw_status or "finalizado" in raw_status or "completed" in raw_status:
-                        attended_count += 1
-                    elif "faltou" in raw_status or "falta" in raw_status or "missed" in raw_status:
-                        noshow_count += 1
-                    elif "cancelado" in raw_status or "desmarcado" in raw_status:
-                        canceled_count += 1
+                try:
+                    if appointments and isinstance(appointments, list):
+                        for appt in appointments:
+                            if not isinstance(appt, dict): continue
+                            
+                            raw_status = str(appt.get("status", appt.get("Status", ""))).lower()
+                            
+                            if "agendado" in raw_status or "confirmado" in raw_status:
+                                scheduled_count += 1
+                            elif "atendido" in raw_status or "finalizado" in raw_status or "completed" in raw_status:
+                                attended_count += 1
+                            elif "faltou" in raw_status or "falta" in raw_status or "missed" in raw_status:
+                                noshow_count += 1
+                            elif "cancelado" in raw_status or "desmarcado" in raw_status:
+                                canceled_count += 1
+                            else:
+                                scheduled_count += 1 # Default
                     else:
-                        scheduled_count += 1 # Default
+                        print(f"[Clinicorp] Warning: Appointments is not a list: {type(appointments)}")
+                except Exception as e:
+                    print(f"[Clinicorp] Error parsing statuses: {e}")
+                    # Fallback to simple count
+                    scheduled_count = len(appointments) if isinstance(appointments, list) else 0
 
-                print(f"[Clinicorp] Unique Statuses: {unique_statuses}")
-
-                total_leads = len(appointments)
+                total_leads = len(appointments) if isinstance(appointments, list) else 0
                 scheduled = scheduled_count + attended_count + noshow_count
                 attended = attended_count
                 
