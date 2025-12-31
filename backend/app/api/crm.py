@@ -330,16 +330,18 @@ async def get_dashboard_metrics(
                         "qualifyingRate": round(qualifying_rate, 1)
                     },
                     "debug_info": {
+                        "error": None,
                         "period": period,
                         "dates": f"{start_str} to {end_str}",
-                        "appointments_found": len(appointments),
+                        "appointments_found": len(appointments) if isinstance(appointments, list) else 0,
                         "patients_found_check": patients_count,
                         "financials_raw": financials,
                         "client_id_used": client.client_id,
                         # Discovered IDs
                         "subscriber_id": getattr(client, 'context', {}).get('subscriber_id'),
                         "business_id": getattr(client, 'context', {}).get('business_id'),
-                        "discovery_raw": getattr(client, 'discovery_raw', 'N/A')
+                        "discovery_raw": getattr(client, 'discovery_raw', 'N/A'),
+                        "unique_statuses_found": list(unique_statuses) if unique_statuses else []
                     }
                 }
                 
