@@ -299,6 +299,13 @@ async def get_dashboard_metrics(
                         "conversionRate": round(conversion_rate, 1),
                         "noshowRate": round(noshow_rate, 1),
                         "qualifyingRate": round(qualifying_rate, 1)
+                    },
+                    "debug_info": {
+                        "period": period,
+                        "dates": f"{start_str} to {end_str}",
+                        "appointments_found": len(appointments),
+                        "financials_raw": financials,
+                        "client_id_used": client.client_id
                     }
                 }
                 

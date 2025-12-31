@@ -129,6 +129,9 @@ export const DashboardHome: React.FC = () => {
         }
     });
 
+    // Add debug state
+    const [debugInfo, setDebugInfo] = React.useState<any>(null);
+
     // Save source to DB whenever it changes (skip initial load)
     React.useEffect(() => {
         if (isLoadingPref) return;
@@ -154,8 +157,10 @@ export const DashboardHome: React.FC = () => {
             try {
                 const res = await fetch(`${import.meta.env.VITE_API_URL}/api/crm/metrics?period=${period}&source=${source}`);
                 const data = await res.json();
-                if (data && data.funnelData) {
+                if (data) {
                     setMetrics(data);
+                    if (data.debug_info) setDebugInfo(data.debug_info);
+                    else setDebugInfo(null);
                 }
             } catch (error) {
                 console.error("Failed to fetch dashboard metrics", error);
@@ -167,6 +172,14 @@ export const DashboardHome: React.FC = () => {
 
     return (
         <div className="p-8 space-y-8 min-h-full max-w-7xl mx-auto">
+            {source === 'clinicorp' && debugInfo && (
+                <div className="bg-blue-50 border border-blue-200 p-4 rounded text-xs text-blue-800 font-mono mb-4">
+                    <strong>DEBUG MODE (Clinicorp):</strong><br />
+                    Periodo: {debugInfo.dates} ({debugInfo.period})<br />
+                    Encontrados: {debugInfo.appointments_found}<br />
+                    ID Usado: {debugInfo.client_id_used}
+                </div>
+            )}
 
             {/* HEADER */}
             <motion.div
