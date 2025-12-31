@@ -174,29 +174,6 @@ export const DashboardHome: React.FC = () => {
         <div className="p-8 space-y-8 min-h-full max-w-7xl mx-auto">
 
 
-            {source === 'clinicorp' && debugInfo && (
-                <div className={`p-4 rounded text-xs font-mono mb-4 border ${debugInfo.error ? 'bg-red-50 border-red-200 text-red-800' : 'bg-blue-50 border-blue-200 text-blue-800'}`}>
-                    <strong>DEBUG MODE {debugInfo.error ? '(ERRO)' : '(Clinicorp)'}:</strong><br />
-                    {debugInfo.error ? (
-                        <>ERRO: {debugInfo.error}<br /></>
-                    ) : (
-                        <>
-                            Periodo: {debugInfo.dates} ({debugInfo.period})<br />
-                            Agendamentos: {debugInfo.appointments_found}<br />
-                            Check Conexão (Business): {debugInfo.patients_found_check}<br />
-                            STATUS ENCONTRADOS: {JSON.stringify(debugInfo.unique_statuses_found || [])}<br />
-                            <div className="mt-1 pt-1 border-t border-blue-200">
-                                <strong>Discovered IDs:</strong><br />
-                                Subscriber: {debugInfo.subscriber_id || 'N/A'}<br />
-                                Business: {debugInfo.business_id || 'N/A'}<br />
-                                Raw: {debugInfo.discovery_raw}
-                            </div>
-                        </>
-                    )}
-                    ID Usado: {debugInfo.client_id_used}
-                </div>
-            )}
-
             {/* HEADER */}
             <motion.div
                 initial={{ opacity: 0, y: -20 }}
