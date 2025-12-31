@@ -321,14 +321,19 @@ async def get_dashboard_metrics(
                 print(f"Clinicorp Fetch Error: {e}")
                 import traceback
                 traceback.print_exc()
-                # Fallback to empty or error
+                # Fallback to empty or error WITH DEBUG INFO
                 return {
                     "totalLeads": 0, "scheduled": 0, "attended": 0, "sales": 0, "revenue": 0, "ticket": 0,
                     "funnelData": [],
                     "percentages": {
                         "schedulingRate": 0, "attendanceRate": 0, "conversionRate": 0, "noshowRate": 0, "qualifyingRate": 0
                     },
-                    "error": str(e)
+                    "debug_info": {
+                        "error": str(e),
+                        "period": period,
+                        "dates": f"{start_str} to {end_str}",
+                        "client_id_used": getattr(client, 'client_id', 'unknown') if 'client' in locals() else 'init_failed'
+                    }
                 }
 
         # --- WHATSAPP SOURCE (DEFAULT) ---
