@@ -98,20 +98,22 @@ class ClinicorpClient:
         # Expecting a list of clinics
         if isinstance(res, list) and len(res) > 0:
             first_unit = res[0]
-            return {
+            self.context = { # Store for debug visibility
                 "subscriber_id": first_unit.get("SubscriberBussinessUID"),
                 "business_id": first_unit.get("CompanyId")
             }
+            return self.context
         
         # Fallback if structure is different (some APIs wrap in 'data')
         if isinstance(res, dict) and "data" in res:
              data_list = res.get("data", [])
              if data_list and len(data_list) > 0:
                   first_unit = data_list[0]
-                  return {
+                  self.context = {
                     "subscriber_id": first_unit.get("SubscriberBussinessUID"),
                     "business_id": first_unit.get("CompanyId")
                 }
+                  return self.context
         
         print(f"[Clinicorp] No subscribers/clinics found in discovery. Response: {res}")
         return {}

@@ -313,7 +313,10 @@ async def get_dashboard_metrics(
                         "appointments_found": len(appointments),
                         "patients_found_check": patients_count,
                         "financials_raw": financials,
-                        "client_id_used": client.client_id
+                        "client_id_used": client.client_id,
+                        # Discovered IDs
+                        "subscriber_id": getattr(client, 'context', {}).get('subscriber_id'),
+                        "business_id": getattr(client, 'context', {}).get('business_id')
                     }
                 }
                 
