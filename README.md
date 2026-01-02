@@ -55,12 +55,15 @@ sistemabemquerer/
 
 ## 🚀 Deploy em Produção
 
+### Plataforma
+**Railway** - Deploy automático via GitHub
+
 ### URL de Produção
-**Frontend + Backend**: https://bem-querer-hub.vercel.app
+**Frontend + Backend**: Configurado na Railway
 
-### Variáveis de Ambiente (Vercel)
+### Variáveis de Ambiente (Railway)
 
-Configure no painel da Vercel em **Settings → Environment Variables**:
+Configure no painel da Railway em **Variables**:
 
 ```env
 # Supabase
@@ -131,7 +134,7 @@ Acesse: http://localhost:5173
 - **Database**: Supabase (PostgreSQL + Auth + RLS)
 - **AI**: OpenAI GPT-4o + Google Gemini 2.0 Flash
 - **WhatsApp**: UazAPI
-- **Deploy**: Vercel (Serverless Functions)
+- **Deploy**: Railway (Container-based)
 
 ### Fluxo de Agendamento com IA
 
@@ -196,7 +199,7 @@ As credenciais são salvas na tabela `clinic_integrations` do Supabase:
 ## 🆘 Suporte
 
 Para problemas ou dúvidas:
-1. Verifique os logs no painel da Vercel
+1. Verifique os logs no painel da Railway
 2. Consulte a documentação em `/docs`
 3. Revise as variáveis de ambiente
 
