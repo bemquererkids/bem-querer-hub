@@ -1,3 +1,4 @@
+# Railway Build Trigger - Fix Conflicts
 [phases.setup]
 nixPkgs = ["python311"]
 
