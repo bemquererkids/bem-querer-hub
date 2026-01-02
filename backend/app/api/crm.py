@@ -478,7 +478,11 @@ async def list_professionals():
     """List valid professionals from Clinicorp for Booking"""
     try:
         from app.services.clinicorp_service import ClinicorpClient
-        client = ClinicorpClient("bemquerer", {"client_secret": "8b6b218c-b536-4db5-97a1-babffc283eec"})
+        config = {
+            "client_id": "bemquerer",
+            "client_secret": "8b6b218c-b536-4db5-97a1-babffc283eec"
+        }
+        client = ClinicorpClient("bemquerer", config)
         return await client.get_professionals()
     except Exception as e:
         print(f"Error listing professionals: {e}")
@@ -489,7 +493,11 @@ async def check_availability(date: str, professional_id: Optional[str] = None):
     """Check slots for a specific date (YYYY-MM-DD)"""
     try:
         from app.services.clinicorp_service import ClinicorpClient
-        client = ClinicorpClient("bemquerer", {"client_secret": "8b6b218c-b536-4db5-97a1-babffc283eec"})
+        config = {
+            "client_id": "bemquerer",
+            "client_secret": "8b6b218c-b536-4db5-97a1-babffc283eec"
+        }
+        client = ClinicorpClient("bemquerer", config)
         return await client.check_availability(date, professional_id)
     except Exception as e:
         print(f"Error checking availability: {e}")
