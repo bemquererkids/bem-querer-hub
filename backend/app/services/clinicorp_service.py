@@ -161,8 +161,8 @@ class ClinicorpClient:
         # if not self.context or not self.context.get("business_id"):
         #      await self.get_access_context()
         
-        # Hardcoded Bypass for verified ID found in manual check
-        bid = "4606059094278144" # Ewalt Zilse Junior (The one with data)
+        # Business ID correto fornecido pelo usuário
+        bid = "5841644010143744"
         sub = "bemquerer"
         
         print(f"[Clinicorp] Forcing Business ID: {bid} for Subscriber: {sub}")
@@ -224,15 +224,16 @@ class ClinicorpClient:
         Consulta horários disponíveis.
         Endpoint: /appointment/get_avaliable_times_calendar
         """
-        # Hardcoded Verified ID
-        bid = "4606059094278144"
+        # Business ID correto
+        bid = "5841644010143744"
         sub = "bemquerer"
         
         endpoint = f"/appointment/get_avaliable_times_calendar"
         params = {
             "date": date,
             "businessId": bid,
-            "subscriber_id": sub
+            "subscriber_id": sub,
+            "code_link": "90984"  # Código de acesso obrigatório
         }
         
         if professional_id:
@@ -242,15 +243,9 @@ class ClinicorpClient:
             results = await self._request("GET", endpoint, params)
             
             # Additional client-side filtering if API is loose
-            if professional_id:
-                filtered = []
-                target_id = str(professional_id)
-                for slot in results:
-                    # Slot keys might be PascalCase 'ProfessionalId'
-                    slot_prof_id = str(slot.get("ProfessionalId", slot.get("professionalId", "")))
-                    if slot_prof_id == target_id:
-                        filtered.append(slot)
-                return filtered
+            # API filters by professionalId correctly, so we don't need strict client-side filtering
+            # which might cause bugs due to ID type mismatches (int vs str).
+            return results if isinstance(results, list) else []
                 
             return results if isinstance(results, list) else []
         except Exception as e:
@@ -285,8 +280,8 @@ class ClinicorpClient:
         """
         url = "/appointment/create_appointment_by_api"
         
-        # Hardcoded Verified ID
-        bid = 4606059094278144 # Integer or String? Usually Integer in JSON
+        # Business ID correto
+        bid = 5841644010143744  # Integer para JSON
         
         payload = {
             "PatientId": appointment_data.get("patient_id"), # ID numérico (ex: 5589...)
