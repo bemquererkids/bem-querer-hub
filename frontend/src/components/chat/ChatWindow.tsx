@@ -89,6 +89,7 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({ chat, messages: initialM
             }, (payload) => {
                 const newMsg = payload.new;
                 setMessages(prev => {
+                    // Verifica se já existe usando message_id
                     if (prev.some(m => m.id === newMsg.message_id)) return prev;
                     return [...prev, {
                         id: newMsg.message_id,
@@ -237,8 +238,9 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({ chat, messages: initialM
             status: 'sent'
         };
         setMessages(prev => [...prev, userMsg]);
-        setIsTyping(true);
+
         try {
+            setIsTyping(true); // Agora só mostra "digitando" DEPOIS de enviar
             const response = await chatService.sendMessage(chat.id, text);
             const aiMsg: ChatMessage = {
                 id: response.ai_message.id,
