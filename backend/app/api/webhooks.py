@@ -207,12 +207,19 @@ async def receive_whatsapp_message(request: Request, background_tasks: Backgroun
             chat_name = chat_data.get('name') or message_data.get('senderName', '')
             chat_phone = chat_data.get('phone') # Formatted phone if needed
             msg_source = message_data.get('source') # web, android, ios, etc.
+            
+            # Robust RemoteJid Extraction
+            # 1. Try 'chatid' (UazAPI specific)
+            # 2. Try 'sender' (UazAPI specific)
+            # 3. Try 'key.remoteJid' (Standard Baileys)
+            raw_key = message_data.get('key', {})
+            remote_jid = message_data.get('chatid') or message_data.get('sender') or raw_key.get('remoteJid') or ''
 
             data = {
                 'key': {
-                    'remoteJid': message_data.get('chatid', message_data.get('sender', '')),
-                    'fromMe': message_data.get('fromMe', False),
-                    'id': message_data.get('messageid', message_data.get('id', ''))
+                    'remoteJid': remote_jid,
+                    'fromMe': message_data.get('fromMe', raw_key.get('fromMe', False)),
+                    'id': message_data.get('messageid', raw_key.get('id', ''))
                 },
                 'pushName': chat_name, # Prioritize chat.name
                 'messageTimestamp': message_data.get('messageTimestamp', 0) // 1000,  # Convert to seconds
