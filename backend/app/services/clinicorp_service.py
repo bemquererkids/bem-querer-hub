@@ -243,15 +243,9 @@ class ClinicorpClient:
             results = await self._request("GET", endpoint, params)
             
             # Additional client-side filtering if API is loose
-            if professional_id:
-                filtered = []
-                target_id = str(professional_id)
-                for slot in results:
-                    # Slot keys might be PascalCase 'ProfessionalId'
-                    slot_prof_id = str(slot.get("ProfessionalId", slot.get("professionalId", "")))
-                    if slot_prof_id == target_id:
-                        filtered.append(slot)
-                return filtered
+            # API filters by professionalId correctly, so we don't need strict client-side filtering
+            # which might cause bugs due to ID type mismatches (int vs str).
+            return results if isinstance(results, list) else []
                 
             return results if isinstance(results, list) else []
         except Exception as e:
