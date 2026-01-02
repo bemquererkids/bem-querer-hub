@@ -184,6 +184,7 @@ async def receive_whatsapp_message(request: Request, background_tasks: Backgroun
         # Parse payload
         try:
             payload = await request.json()
+            logger.info(f"📥 [WEBHOOK RAW] Payload received: {payload}")  # NEW: Log Raw Payload
         except Exception:
             logger.error("Failed to parse JSON payload")
             return {"status": "error", "message": "Invalid JSON"}
@@ -192,7 +193,32 @@ async def receive_whatsapp_message(request: Request, background_tasks: Backgroun
         event_type = payload.get('EventType', payload.get('event', 'messages'))
         instance_id = payload.get('owner', payload.get('instance', 'main'))
         
+        logger.info(f"Event: {event_type}, Instance: {instance_id}") # NEW: Log Basic Info
+
         # UazAPI sends message directly, not nested in 'data'
+        if 'message' in payload:
+            # ... (Existing logic) ...
+            pass # Just formatting context
+            
+        # ...
+
+async def process_single_message_data(data: dict, instance_id: str, clinic_id: str):
+    """
+    Helper to extract details and queue the lead processor.
+    """
+    logger.info(f"Processing Msg Data: {data.get('key')}") # NEW
+
+    remote_jid = data.get('key', {}).get('remoteJid')
+    if not remote_jid or '@s.whatsapp.net' not in remote_jid:
+        logger.warning(f"⚠️ Skipping message: Invalid RemoteJid '{remote_jid}'") # NEW: Explicit Warning
+        return
+
+    push_name = data.get('pushName', 'Desconhecido')
+    # ...
+    
+    if not text_content:
+        logger.warning(f"⚠️ Skipping message: Empty text content. Type: {message_type}") # NEW: Explicit Warning
+        return
         if 'message' in payload:
             # New UazAPI format
             message_data = payload.get('message', {})
@@ -310,6 +336,7 @@ async def process_single_message_data(data: dict, instance_id: str, clinic_id: s
         media_url = message_info['videoMessage'].get('url')
         
     if not text_content:
+        logger.warning(f"⚠️ Message skipped: No content extracted from {message_info.keys()}")
         return
 
     # Save to WhatsApp tables for chat integration
