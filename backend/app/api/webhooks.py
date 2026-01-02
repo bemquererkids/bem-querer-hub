@@ -184,7 +184,6 @@ async def receive_whatsapp_message(request: Request, background_tasks: Backgroun
         # Parse payload
         try:
             payload = await request.json()
-            logger.info(f"📥 [WEBHOOK RAW] Payload received: {payload}") 
         except Exception:
             logger.error("Failed to parse JSON payload")
             return {"status": "error", "message": "Invalid JSON"}
@@ -193,10 +192,7 @@ async def receive_whatsapp_message(request: Request, background_tasks: Backgroun
         event_type = payload.get('EventType', payload.get('event', 'messages'))
         instance_id = payload.get('owner', payload.get('instance', 'main'))
         
-        logger.info(f"Event: {event_type}, Instance: {instance_id}")
-
         # UazAPI sends message directly, not nested in 'data'
-        data = {}
         if 'message' in payload:
             # New UazAPI format
             message_data = payload.get('message', {})
@@ -207,19 +203,12 @@ async def receive_whatsapp_message(request: Request, background_tasks: Backgroun
             chat_name = chat_data.get('name') or message_data.get('senderName', '')
             chat_phone = chat_data.get('phone') # Formatted phone if needed
             msg_source = message_data.get('source') # web, android, ios, etc.
-            
-            # Robust RemoteJid Extraction
-            # 1. Try 'chatid' (UazAPI specific)
-            # 2. Try 'sender' (UazAPI specific)
-            # 3. Try 'key.remoteJid' (Standard Baileys)
-            raw_key = message_data.get('key', {})
-            remote_jid = message_data.get('chatid') or message_data.get('sender') or raw_key.get('remoteJid') or ''
 
             data = {
                 'key': {
-                    'remoteJid': remote_jid,
-                    'fromMe': message_data.get('fromMe', raw_key.get('fromMe', False)),
-                    'id': message_data.get('messageid', raw_key.get('id', ''))
+                    'remoteJid': message_data.get('chatid', message_data.get('sender', '')),
+                    'fromMe': message_data.get('fromMe', False),
+                    'id': message_data.get('messageid', message_data.get('id', ''))
                 },
                 'pushName': chat_name, # Prioritize chat.name
                 'messageTimestamp': message_data.get('messageTimestamp', 0) // 1000,  # Convert to seconds
@@ -257,16 +246,20 @@ async def receive_whatsapp_message(request: Request, background_tasks: Backgroun
             logger.info(f"📨 Processing {len(messages)} messages for clinic {clinic_id}")
             
             for message_data in messages:
+                logger.info(f"Message data: {message_data.get('key', {})}")
+                
                 # Ignorar mensagens enviadas por MIM (fromMe)
                 if message_data.get('key', {}).get('fromMe'):
                     logger.info("Skipping message fromMe=True")
                     continue
                 
+                logger.info(f"Adding background task for message")
                 background_tasks.add_task(process_single_message_data, message_data, instance_id, clinic_id)
             
+            logger.info(f"✅ {len(messages)} messages processed")
             return {"status": "upsert_processed", "clinic_id": clinic_id}
 
-        return {"status": "event_unhandled", "event": event_type}
+        return {"status": "event_unhandled", "event": event}
 
     except Exception as e:
         logger.error(f"Erro no webhook: {e}")
@@ -276,6 +269,7 @@ async def receive_whatsapp_message(request: Request, background_tasks: Backgroun
             "detail": str(e),
             "traceback": traceback.format_exc()
         }
+
 
 
 async def process_single_message_data(data: dict, instance_id: str, clinic_id: str):
@@ -316,7 +310,6 @@ async def process_single_message_data(data: dict, instance_id: str, clinic_id: s
         media_url = message_info['videoMessage'].get('url')
         
     if not text_content:
-        logger.warning(f"⚠️ Message skipped: No content extracted from {message_info.keys()}")
         return
 
     # Save to WhatsApp tables for chat integration
