@@ -112,5 +112,6 @@ async def get_uazapi_service_for_clinic(clinic_id: str) -> UazAPIService:
          
     return UazAPIService(
         instance_name=config.get("instance_name"),
-        token=config.get("token") or config.get("api_key")
+        token=config.get("token") or config.get("api_key"),
+        base_url=os.getenv("UAZAPI_BASE_URL", "https://bemquerer.uazapi.com")
     )
