@@ -194,57 +194,46 @@ async def receive_meta_webhook(request: Request, background_tasks: BackgroundTas
 async def receive_uazapi_webhook(request: Request, background_tasks: BackgroundTasks):
     """
     UazAPI Webhook - Receives messages from UazAPI
+    Format: {'EventType': 'messages', 'message': {...}, 'chat': {...}}
     """
     try:
         payload = await request.json()
-        logger.info(f"📨 UazAPI Webhook received: {payload.keys()}")
+        logger.info(f"📨 UazAPI Webhook received: EventType={payload.get('EventType')}")
         
-        # Verify if it's a message event
-        event = payload.get("event")
-        # According to docs/debug, event might be 'messages.upsert' or just implicit
+        # Only process message events
+        if payload.get('EventType') != 'messages':
+            logger.info(f"Ignoring non-message event: {payload.get('EventType')}")
+            return {"status": "ignored"}
         
-        # Structure often contains 'data' or 'message'
-        # Adapting to common UazAPI payload
-        message_data = payload.get("data", {}) or payload
-            
-        key = message_data.get("key", {})
-        is_from_me = key.get("fromMe", False)
+        message_data = payload.get('message', {})
+        chat_data = payload.get('chat', {})
         
-        if is_from_me:
+        # Check if message is from me
+        if message_data.get('fromMe', False):
             logger.info("Ignoring message from me")
             return {"status": "ignored"}
-            
-        remote_jid = key.get("remoteJid", "") # 5585999...@s.whatsapp.net
-        if not remote_jid:
-            logger.warning("No remoteJid found")
-            return {"status": "error"}
-            
-        push_name = message_data.get("pushName", "Desconhecido")
-        message_content = message_data.get("message", {})
         
-        # Extract text
-        text_content = ""
-        if "conversation" in message_content:
-            text_content = message_content["conversation"]
-        elif "extendedTextMessage" in message_content:
-            text_content = message_content["extendedTextMessage"].get("text", "")
-        elif "imageMessage" in message_content:
-             text_content = message_content["imageMessage"].get("caption", "[Imagem]")
+        # Extract message details
+        text_content = message_data.get('text') or message_data.get('content', '')
+        sender = message_data.get('sender', '')  # 5511993308484@s.whatsapp.net
+        phone = sender.split('@')[0] if '@' in sender else sender
+        name = chat_data.get('name') or message_data.get('senderName', 'Desconhecido')
         
-        if not text_content:
-            logger.info("Empty or unsupported content")
-            return {"status": "ignored"}
-            
-        # Hardcoded clinic for now (since UazAPI webhook setup often global per instance)
-        # Ideally we'd map instance name to clinic, but let's assume single tenant for MVP
+        if not text_content or not phone:
+            logger.warning(f"Missing text or phone: text={text_content}, phone={phone}")
+            return {"status": "error", "message": "Missing required fields"}
+        
+        # Hardcoded clinic for now
         CLINIC_ID_DEFAULT = "00000000-0000-0000-0000-000000000001"
         
-        # Save and Process
+        logger.info(f"✅ Processing message from {name} ({phone}): {text_content[:50]}")
+        
+        # Save and Process in background
         background_tasks.add_task(
             process_uazapi_message,
             clinic_id=CLINIC_ID_DEFAULT,
-            phone=remote_jid.split("@")[0],
-            name=push_name,
+            phone=phone,
+            name=name,
             message=text_content
         )
         
@@ -252,7 +241,7 @@ async def receive_uazapi_webhook(request: Request, background_tasks: BackgroundT
 
     except Exception as e:
         logger.error(f"UazAPI Webhook Error: {e}", exc_info=True)
-        return {"status": "error"}
+        return {"status": "error", "message": str(e)}
 
 async def process_uazapi_message(clinic_id: str, phone: str, name: str, message: str):
     try:
