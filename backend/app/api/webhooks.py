@@ -530,27 +530,25 @@ async def process_new_lead(
         logger.info(f"✅ Existing patient: {name}")
     
     # 2. Get or create chat
-    chat_res = supabase.table('chats') \
+    chat_res = supabase.table('atendimentos') \
         .select('*') \
-        .eq('patient_id', patient_id) \
+        .eq('paciente_id', patient_id) \
         .execute()
     
     if not chat_res.data:
         new_chat = {
-            "clinic_id": clinic_id,
-            "patient_id": patient_id,
-            "whatsapp_number": clean_phone,
-            "whatsapp_name": name,
-            "status": "open",
-            "intent": "qualifying",
-            "last_message_at": datetime.now().isoformat()
+            "clinica_id": clinic_id,
+            "paciente_id": patient_id,
+            "whatsapp_origem": clean_phone,
+            "etapa_funil": "lead",
+            "ultima_mensagem_em": datetime.now().isoformat()
         }
-        c_res = supabase.table('chats').insert(new_chat).execute()
+        c_res = supabase.table('atendimentos').insert(new_chat).execute()
         chat_id = c_res.data[0]['id']
     else:
         chat_id = chat_res.data[0]['id']
-        supabase.table('chats').update({
-            "last_message_at": datetime.now().isoformat()
+        supabase.table('atendimentos').update({
+            "ultima_mensagem_em": datetime.now().isoformat()
         }).eq('id', chat_id).execute()
     
     # 3. Save user message
