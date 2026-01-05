@@ -558,6 +558,7 @@ async def process_new_lead(
     # 3. Save user message
     new_msg = {
         "conversation_id": conversation_id,
+        "clinic_id": clinic_id,
         "message_id": f"uazapi_{datetime.now().timestamp()}",
         "from_number": clean_phone,
         "to_number": "sistema",
