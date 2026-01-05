@@ -35,6 +35,7 @@ class SendMessageRequest(BaseModel):
 # --- Endpoints ---
 
 @router.get("/list", response_model=List[ChatModel])
+@router.get("/conversations", response_model=List[ChatModel])
 async def list_chats():
     """
     List conversations from whatsapp_conversations table
