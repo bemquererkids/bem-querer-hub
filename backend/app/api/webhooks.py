@@ -504,7 +504,7 @@ async def process_new_lead(
     logger.info(f"🔍 Processing lead: {name} ({clean_phone})")
     
     # 1. Get or create patient
-    patient_res = supabase.table('patients') \
+    patient_res = supabase.table('pacientes') \
         .select('*') \
         .eq('phone', clean_phone) \
         .eq('clinic_id', clinic_id) \
@@ -522,7 +522,7 @@ async def process_new_lead(
             "source": source,
             "created_at": datetime.now().isoformat()
         }
-        res = supabase.table('patients').insert(new_patient).execute()
+        res = supabase.table('pacientes').insert(new_patient).execute()
         patient_id = res.data[0]['id']
         logger.info(f"✅ New patient created: {name} via {source}")
     else:
