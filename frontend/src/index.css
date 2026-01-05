@@ -56,6 +56,22 @@
     --destructive: 0 84.2% 60.2%;
     --destructive-foreground: 0 0% 98%;
 
+    /* WhatsApp Theme Colors */
+    --wa-teal: 169 100% 33%;
+    /* #008069 - Header/Primary */
+    --wa-green: 142 70% 49%;
+    /* #25D366 - Logos/Accents */
+    --wa-light-green: 110 85% 90%;
+    /* #D9FDD3 - User Bubble */
+    --wa-bg: 36 29% 94%;
+    /* #EFEAE2 - Chat Background */
+    --wa-sidebar: 0 0% 100%;
+    /* #FFFFFF - Sidebar Background */
+    --wa-incoming: 0 0% 100%;
+    /* #FFFFFF - Incoming Bubble */
+    --wa-gray: 204 10% 88%;
+    /* #E9EDEF - Body Background */
+
     /* Radius */
     --radius: 0.5rem;
     /* 8px */
@@ -107,6 +123,15 @@
 
     --destructive: 0 62.8% 30.6%;
     --destructive-foreground: 0 0% 98%;
+
+    /* WhatsApp Dark Mode */
+    --wa-teal: 169 100% 25%;
+    --wa-green: 160 55% 40%;
+    --wa-light-green: 160 60% 20%;
+    --wa-bg: 220 20% 6%;
+    --wa-sidebar: 220 20% 10%;
+    --wa-incoming: 220 20% 15%;
+    --wa-gray: 220 20% 8%;
   }
 }
 

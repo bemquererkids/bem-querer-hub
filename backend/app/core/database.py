@@ -4,6 +4,11 @@ Supabase Database Client Configuration
 from supabase import create_client, Client
 from app.core.config import settings
 
+
+# --------------------------------------------------
+# Monkeypatch removed: httpx 0.28.1+ supports 'proxy' natively
+# --------------------------------------------------
+
 class MockSupabaseResponse:
     def __init__(self, data):
         self.data = data

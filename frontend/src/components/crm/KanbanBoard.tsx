@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { WhatsAppModal } from './WhatsAppModal';
 import { Deal, CRMStatus } from '../../types/crm';
-import { crmService } from '../../services/api';
+import { crmService, chatService } from '../../services/api';
 import {
     Users,
     Calendar,
@@ -18,10 +18,21 @@ import {
     Facebook,
     UserCheck,
     Hash,
+    Pencil,
 } from 'lucide-react';
 import { Card, CardContent } from '../ui/card';
 import { Badge } from '../ui/badge';
 import { Button } from '../ui/button';
+import { Input } from '../ui/input';
+import { Label } from '../ui/label';
+import {
+    Dialog,
+    DialogContent,
+    DialogDescription,
+    DialogFooter,
+    DialogHeader,
+    DialogTitle,
+} from "../ui/dialog";
 import {
     DndContext,
     DragEndEvent,
@@ -31,23 +42,14 @@ import {
     useSensor,
     useSensors,
     closestCorners,
+    pointerWithin,
     DragOverEvent,
     useDroppable,
 } from '@dnd-kit/core';
 import { SortableContext, verticalListSortingStrategy, useSortable } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
 
-// --- MOCK DATA FOR DEV/FALLBACK ---
-const MOCK_DEALS: Deal[] = [
-    { id: '1', patientName: 'Roberto Silva', status: 'new', source: 'instagram', campaignId: 'IG-2024-001', lastContact: new Date().toISOString(), phone: '(11) 99999-1111', probability: 'high' },
-    { id: '2', patientName: 'Maria Oliveira', status: 'qualifying', source: 'google', campaignId: 'GGL-ADS-042', lastContact: new Date().toISOString(), phone: '(11) 98888-2222', probability: 'medium' },
-    { id: '3', patientName: 'João Santos', status: 'scheduled', source: 'facebook', campaignId: 'FB-CAMP-789', lastContact: new Date().toISOString(), phone: '(11) 97777-3333', probability: 'high' },
-    { id: '4', patientName: 'Ana Costa', status: 'won', source: 'instagram', campaignId: 'IG-2024-002', lastContact: new Date().toISOString(), phone: '(11) 96666-4444', probability: 'high' },
-    { id: '5', patientName: 'Carlos Pereira', status: 'noshow', source: 'google', campaignId: 'GGL-ADS-043', lastContact: new Date().toISOString(), phone: '(11) 95555-5555', probability: 'low' },
-    { id: '6', patientName: 'Fernanda Lima', status: 'attended', source: 'facebook', campaignId: 'FB-CAMP-790', lastContact: new Date().toISOString(), phone: '(11) 94444-6666', probability: 'medium' },
-];
-
-// Sales Funnel Stages - 5 RAIAS
+// Sales Funnel Stages - 6 RAIAS
 const FUNNEL_STAGES = [
     {
         id: 'lead',
@@ -58,7 +60,18 @@ const FUNNEL_STAGES = [
         textColor: 'text-indigo-700 dark:text-indigo-300',
         iconColor: 'text-indigo-600 dark:text-indigo-400',
         borderColor: 'border-indigo-200 dark:border-indigo-800',
-        statuses: ['new', 'qualifying']
+        statuses: ['new']
+    },
+    {
+        id: 'negotiation',
+        title: 'Em Negociação',
+        icon: MessageCircle,
+        bgLight: 'bg-blue-50 dark:bg-blue-900/20',
+        cardBg: 'bg-blue-50/50 dark:bg-blue-900/10',
+        textColor: 'text-blue-700 dark:text-blue-300',
+        iconColor: 'text-blue-600 dark:text-blue-400',
+        borderColor: 'border-blue-200 dark:border-blue-800',
+        statuses: ['qualifying']
     },
     {
         id: 'scheduled',
@@ -141,6 +154,14 @@ const getSourceInfo = (source: Deal['source']) => {
                 border: 'border-green-200 dark:border-green-800',
                 label: 'Indicação'
             };
+        default:
+            return {
+                icon: Search,
+                color: 'text-zinc-600 dark:text-zinc-400',
+                bg: 'bg-zinc-50 dark:bg-zinc-900/20',
+                border: 'border-zinc-200 dark:border-zinc-800',
+                label: 'Outros'
+            };
     }
 };
 
@@ -148,10 +169,11 @@ interface DealCardProps {
     deal: Deal;
     stage: typeof FUNNEL_STAGES[0];
     onWhatsApp: () => void;
+    onEditValue: () => void;
     isDragging?: boolean;
 }
 
-const DealCard = React.memo<DealCardProps>(({ deal, stage, onWhatsApp, isDragging = false }) => {
+const DealCard = React.memo<DealCardProps>(({ deal, stage, onWhatsApp, onEditValue, isDragging = false }) => {
     const displayDate = new Date(deal.lastContact).toLocaleDateString('pt-BR', { day: '2-digit', month: 'short' });
     const displayTime = new Date(deal.lastContact).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
     const sourceInfo = getSourceInfo(deal.source);
@@ -163,18 +185,22 @@ const DealCard = React.memo<DealCardProps>(({ deal, stage, onWhatsApp, isDraggin
             shadow-sm hover:shadow-md transition-all group
             ${isDragging ? 'opacity-50 rotate-2 scale-105' : ''}
         `}>
-            <CardContent className="p-3">
+            <CardContent className="p-3 overflow-hidden">
                 <div className="flex items-start gap-2 mb-2">
                     <GripVertical className="w-4 h-4 text-zinc-400 dark:text-zinc-500 cursor-grab active:cursor-grabbing flex-shrink-0 mt-0.5" />
                     <div className="flex-1 min-w-0">
                         <div className="flex justify-between items-start mb-2">
                             <div className="flex items-center gap-1.5">
-                                <div className={`p-1 rounded-lg ${stage.bgLight} border ${stage.borderColor}`}>
-                                    <stage.icon className={`w-3.5 h-3.5 ${stage.iconColor}`} />
+                                <div className={`rounded-full ${stage.bgLight} border ${stage.borderColor} overflow-hidden w-9 h-9 flex items-center justify-center shrink-0`}>
+                                    {deal.patientAvatar ? (
+                                        <img src={deal.patientAvatar} alt="A" className="w-full h-full object-cover" />
+                                    ) : (
+                                        <stage.icon className={`w-5 h-5 ${stage.iconColor}`} />
+                                    )}
                                 </div>
-                                <div>
-                                    <h3 className="font-bold text-zinc-900 dark:text-foreground text-sm leading-tight">{deal.patientName}</h3>
-                                    <p className="text-[10px] text-zinc-500 dark:text-muted-foreground">Particular</p>
+                                <div className="min-w-0 flex-1 overflow-hidden">
+                                    <h3 className="font-bold text-zinc-900 dark:text-foreground text-sm leading-tight truncate max-w-full">{deal.patientName}</h3>
+                                    <p className="text-[10px] text-zinc-500 dark:text-muted-foreground truncate">Particular</p>
                                 </div>
                             </div>
                             {deal.probability === 'high' && (
@@ -186,7 +212,7 @@ const DealCard = React.memo<DealCardProps>(({ deal, stage, onWhatsApp, isDraggin
 
                         <div className="space-y-1.5 mb-2.5">
                             {/* Source with logo and campaign ID */}
-                            <div className={`flex items-center gap-1.5 p-1.5 rounded-md ${sourceInfo.bg} border ${sourceInfo.border}`}>
+                            <div className={`flex items-center gap-1.5 p-1.5 rounded-full ${sourceInfo.bg} border ${sourceInfo.border}`}>
                                 <sourceInfo.icon className={`w-3.5 h-3.5 ${sourceInfo.color}`} />
                                 <div className="flex-1 min-w-0">
                                     <p className={`text-[10px] font-semibold ${sourceInfo.color}`}>{sourceInfo.label}</p>
@@ -223,6 +249,14 @@ const DealCard = React.memo<DealCardProps>(({ deal, stage, onWhatsApp, isDraggin
                             </div>
                         </div>
 
+                        {/* Deal Value */}
+                        <div className="flex items-center justify-between text-[11px] font-medium text-zinc-700 dark:text-zinc-300 bg-zinc-50 dark:bg-zinc-800/50 p-1 rounded border border-zinc-100 dark:border-zinc-800">
+                            <span>{new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(deal.value || 0)}</span>
+                            <Button variant="ghost" size="icon" className="h-4 w-4 hover:bg-zinc-200 dark:hover:bg-zinc-700" onClick={(e) => { e.stopPropagation(); onEditValue(); }}>
+                                <Pencil className="w-2.5 h-2.5" />
+                            </Button>
+                        </div>
+
                         <Button
                             onClick={onWhatsApp}
                             className="w-full bg-[#25D366] hover:bg-[#20bd5a] text-white font-semibold h-7 gap-1 shadow-sm text-[11px]"
@@ -254,7 +288,7 @@ const SortableDealCard: React.FC<DealCardProps> = (props) => {
     };
 
     return (
-        <div ref={setNodeRef} style={style} {...attributes} {...listeners}>
+        <div ref={setNodeRef} style={style} {...attributes} {...listeners} id={`deal-${props.deal.id}`}>
             <DealCard {...props} isDragging={isDragging} />
         </div>
     );
@@ -265,13 +299,23 @@ const DroppableColumn: React.FC<{
     stage: typeof FUNNEL_STAGES[0];
     deals: Deal[];
     onWhatsApp: (deal: Deal) => void;
-}> = ({ stage, deals, onWhatsApp }) => {
+    onEditValue: (deal: Deal) => void;
+}> = ({ stage, deals, onWhatsApp, onEditValue }) => {
     const { setNodeRef, isOver } = useDroppable({
         id: stage.id,
+        data: {
+            type: 'column',
+            stage: stage
+        }
     });
 
     return (
-        <div ref={setNodeRef} className="flex flex-col min-h-0 h-full">
+        <div
+            ref={setNodeRef}
+            className="flex flex-col min-h-0 h-full"
+            data-droppable="true"
+            data-stage-id={stage.id}
+        >
             {/* Column Header */}
             <div className={`
                 ${stage.bgLight} border ${stage.borderColor} p-2.5 rounded-lg shadow-sm mb-2
@@ -306,6 +350,7 @@ const DroppableColumn: React.FC<{
                                 deal={deal}
                                 stage={stage}
                                 onWhatsApp={() => onWhatsApp(deal)}
+                                onEditValue={() => onEditValue(deal)}
                             />
                         ))
                     )}
@@ -315,13 +360,18 @@ const DroppableColumn: React.FC<{
     );
 };
 
-export const KanbanBoard: React.FC = () => {
+export const KanbanBoard: React.FC<{ highlightDealId?: string | null }> = ({ highlightDealId }) => {
     const [deals, setDeals] = useState<Deal[]>([]);
     const [loading, setLoading] = useState(true);
     const [selectedDeal, setSelectedDeal] = useState<Deal | null>(null);
     const [showWhatsAppModal, setShowWhatsAppModal] = useState(false);
     const [activeDeal, setActiveDeal] = useState<Deal | null>(null);
     const [activeStage, setActiveStage] = useState<typeof FUNNEL_STAGES[0] | null>(null);
+
+    // Value Editing State
+    const [editValueModalOpen, setEditValueModalOpen] = useState(false);
+    const [tempValue, setTempValue] = useState('');
+    const [editingDeal, setEditingDeal] = useState<Deal | null>(null);
 
     const sensors = useSensors(
         useSensor(PointerSensor, {
@@ -338,21 +388,29 @@ export const KanbanBoard: React.FC = () => {
                 setDeals(data);
             } catch (error) {
                 console.error("Failed to fetch deals", error);
-                setDeals(MOCK_DEALS);
+                setDeals([]);
             } finally {
                 setLoading(false);
             }
         };
 
-        const timeout = setTimeout(() => {
-            setLoading(false);
-            setDeals(MOCK_DEALS);
-        }, 3000);
-
-        fetchDeals().then(() => clearTimeout(timeout));
-
-        return () => clearTimeout(timeout);
+        fetchDeals();
     }, []);
+
+    useEffect(() => {
+        if (highlightDealId && !loading && deals.length > 0) {
+            setTimeout(() => {
+                const element = document.getElementById(`deal-${highlightDealId}`);
+                if (element) {
+                    element.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                    element.classList.add('ring-4', 'ring-cyan-500', 'ring-offset-2');
+                    setTimeout(() => {
+                        element.classList.remove('ring-4', 'ring-cyan-500', 'ring-offset-2');
+                    }, 3000);
+                }
+            }, 500);
+        }
+    }, [highlightDealId, loading, deals]);
 
     const getDealsByStage = useMemo(() => {
         return (statuses: string[]) => deals.filter(deal => statuses.includes(deal.status));
@@ -396,7 +454,7 @@ export const KanbanBoard: React.FC = () => {
         }
     };
 
-    const handleDragEnd = (event: DragEndEvent) => {
+    const handleDragEnd = async (event: DragEndEvent) => {
         const { active, over } = event;
         setActiveDeal(null);
         setActiveStage(null);
@@ -408,32 +466,53 @@ export const KanbanBoard: React.FC = () => {
 
         // Find which stage the card was dropped into
         let targetStage = FUNNEL_STAGES.find(stage => stage.id === overId);
+        console.log('[DRAG] Dropped on ID:', overId, 'Found stage:', targetStage?.title);
 
         // If dropped on a card, find that card's stage
         if (!targetStage) {
             const targetDeal = deals.find(d => d.id === overId);
             if (targetDeal) {
                 targetStage = FUNNEL_STAGES.find(s => s.statuses.includes(targetDeal.status));
+                console.log('[DRAG] Dropped on card, found stage:', targetStage?.title);
             }
         }
 
         if (targetStage) {
             const currentDeal = deals.find(d => d.id === activeId);
             const isMovingToNewStage = currentDeal && !targetStage.statuses.includes(currentDeal.status);
+            console.log('[DRAG] Current status:', currentDeal?.status, 'Target statuses:', targetStage.statuses, 'Is moving?', isMovingToNewStage);
 
-            // Update deal status and timestamp
-            setDeals(prevDeals =>
-                prevDeals.map(deal =>
-                    deal.id === activeId
-                        ? {
-                            ...deal,
-                            status: targetStage!.statuses[0] as CRMStatus,
-                            // Update lastContact to current time when moving to a different stage
-                            lastContact: isMovingToNewStage ? new Date().toISOString() : deal.lastContact
-                        }
-                        : deal
-                )
-            );
+            if (isMovingToNewStage && currentDeal) {
+                const newStatus = targetStage.statuses[0] as CRMStatus;
+
+                // Update deal status and timestamp (optimistic update)
+                setDeals(prevDeals =>
+                    prevDeals.map(deal =>
+                        deal.id === activeId
+                            ? {
+                                ...deal,
+                                status: newStatus,
+                                lastContact: new Date().toISOString()
+                            }
+                            : deal
+                    )
+                );
+
+                // Persist to backend
+                try {
+                    await crmService.updateDealStatus(activeId, targetStage.title);
+                } catch (error) {
+                    console.error('Failed to update deal status:', error);
+                    // Revert on error
+                    setDeals(prevDeals =>
+                        prevDeals.map(deal =>
+                            deal.id === activeId
+                                ? { ...deal, status: currentDeal.status, lastContact: currentDeal.lastContact }
+                                : deal
+                        )
+                    );
+                }
+            }
         }
     };
 
@@ -442,9 +521,43 @@ export const KanbanBoard: React.FC = () => {
         setShowWhatsAppModal(true);
     };
 
-    const handleSendWhatsApp = (message: string) => {
-        console.log("Sending WhatsApp message:", message);
-        setShowWhatsAppModal(false);
+    const handleSendWhatsApp = async (message: string) => {
+        if (!selectedDeal) return;
+        try {
+            console.log("Sending WhatsApp message to", selectedDeal.id);
+            await chatService.sendMessage(selectedDeal.id, message);
+            setShowWhatsAppModal(false);
+            // Optional: Show success toast
+        } catch (error) {
+            console.error("Failed to send message", error);
+            alert("Erro ao enviar mensagem. Verifique a conexão.");
+        }
+    };
+
+    const handleOpenEditValue = (deal: Deal) => {
+        setEditingDeal(deal);
+        setTempValue(deal.value?.toString() || '0');
+        setEditValueModalOpen(true);
+    };
+
+    const handleSaveValue = async () => {
+        if (!editingDeal) return;
+        try {
+            const val = parseFloat(tempValue.replace(',', '.').replace(/^R\$\s?/, '')); // Simple cleanup
+            if (isNaN(val)) {
+                alert("Valor inválido");
+                return;
+            }
+
+            await crmService.updateDealValue(editingDeal.id, val);
+
+            // Optimistic update
+            setDeals(prev => prev.map(d => d.id === editingDeal.id ? { ...d, value: val } : d));
+            setEditValueModalOpen(false);
+        } catch (error) {
+            console.error("Failed to update value", error);
+            alert("Erro ao atualizar valor.");
+        }
     };
 
     if (loading) {
@@ -458,7 +571,7 @@ export const KanbanBoard: React.FC = () => {
     return (
         <DndContext
             sensors={sensors}
-            collisionDetection={closestCorners}
+            collisionDetection={pointerWithin}
             onDragStart={handleDragStart}
             onDragOver={handleDragOver}
             onDragEnd={handleDragEnd}
@@ -477,8 +590,8 @@ export const KanbanBoard: React.FC = () => {
                     </div>
                 </div>
 
-                {/* Kanban Columns - 5 RAIAS */}
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-3 flex-1 min-h-0">
+                {/* Kanban Columns - 6 RAIAS */}
+                <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-6 gap-2 flex-1 min-h-0 overflow-x-auto">
                     {FUNNEL_STAGES.map(stage => {
                         const stageDeals = getDealsByStage(stage.statuses);
                         return (
@@ -487,6 +600,7 @@ export const KanbanBoard: React.FC = () => {
                                 stage={stage}
                                 deals={stageDeals}
                                 onWhatsApp={handleOpenWhatsApp}
+                                onEditValue={handleOpenEditValue}
                             />
                         );
                     })}
@@ -499,6 +613,7 @@ export const KanbanBoard: React.FC = () => {
                             deal={activeDeal}
                             stage={activeStage}
                             onWhatsApp={() => { }}
+                            onEditValue={() => { }}
                             isDragging
                         />
                     ) : null}
@@ -515,6 +630,38 @@ export const KanbanBoard: React.FC = () => {
                     onSend={handleSendWhatsApp}
                 />
             )}
+
+            {/* Edit Value Modal */}
+            <Dialog open={editValueModalOpen} onOpenChange={setEditValueModalOpen}>
+                <DialogContent className="sm:max-w-[425px]">
+                    <DialogHeader>
+                        <DialogTitle>Editar Valor do Negócio</DialogTitle>
+                        <DialogDescription>
+                            Insira o valor estimado para este negócio.
+                        </DialogDescription>
+                    </DialogHeader>
+                    <div className="grid gap-4 py-4">
+                        <div className="grid grid-cols-4 items-center gap-4">
+                            <Label htmlFor="value" className="text-right">
+                                Valor (R$)
+                            </Label>
+                            <Input
+                                id="value"
+                                type="number"
+                                value={tempValue}
+                                onChange={(e) => setTempValue(e.target.value)}
+                                className="col-span-3"
+                                placeholder="0.00"
+                                step="0.01"
+                            />
+                        </div>
+                    </div>
+                    <DialogFooter>
+                        <Button type="button" variant="outline" onClick={() => setEditValueModalOpen(false)}>Cancelar</Button>
+                        <Button type="button" onClick={handleSaveValue}>Salvar</Button>
+                    </DialogFooter>
+                </DialogContent>
+            </Dialog>
         </DndContext>
     );
 };

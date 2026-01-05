@@ -3,7 +3,12 @@ import axios from 'axios';
 import { Deal } from '../types/crm';
 
 // Get API URL from Environment (Vite) or fallback to local/relative
-const API_URL = import.meta.env.VITE_API_URL || (import.meta.env.DEV ? 'http://localhost:8000/api' : '/api');
+// Get API URL from Environment (Vite) or fallback to local/relative
+let envApiUrl = import.meta.env.VITE_API_URL;
+if (envApiUrl && !envApiUrl.endsWith('/api')) {
+  envApiUrl += '/api';
+}
+const API_URL = envApiUrl || (import.meta.env.DEV ? 'http://localhost:8000/api' : '/api');
 
 export const api = axios.create({
   baseURL: API_URL,
@@ -29,20 +34,41 @@ export const crmService = {
   updateDealStatus: async (dealId: string, status: string) => {
     const response = await api.put(`/crm/deals/${dealId}/status`, { status });
     return response.data;
+  },
+  updateDealValue: async (dealId: string, value: number) => {
+    const response = await api.put(`/crm/deals/${dealId}/value`, { value });
+    return response.data;
   }
 };
 
 export const chatService = {
   getChats: async () => {
-    const response = await api.get('/chat/list'); // Assuming this endpoint exists or mock handles it
+    const response = await api.get('/chat/conversations');
     return response.data;
   },
   getMessages: async (chatId: string) => {
-    const response = await api.get(`/chat/${chatId}/messages`);
+    const response = await api.get(`/chat/messages/${chatId}`);
     return response.data;
   },
-  sendMessage: async (chatId: string, message: string) => {
-    const response = await api.post('/chat/message', { chat_id: chatId, message });
+  sendMessage: async (conversationId: string, message: string) => {
+    const response = await api.post('/chat/send', {
+      conversation_id: conversationId,
+      message
+    });
+    return response.data;
+  },
+  markAsRead: async (conversationId: string) => {
+    const response = await api.post(`/chat/read/${conversationId}`);
+    return response.data;
+  },
+  sendMedia: async (conversationId: string, mediaUrl: string, mediaType: 'image' | 'audio' | 'document', caption?: string, filename?: string) => {
+    const response = await api.post('/chat/send-media', {
+      conversation_id: conversationId,
+      media_url: mediaUrl,
+      media_type: mediaType,
+      caption,
+      filename
+    });
     return response.data;
   }
 };
@@ -81,6 +107,69 @@ export const integrationService = {
   },
   getGeminiStatus: async () => {
     const response = await api.get('/integrations/gemini/status');
+    return response.data;
+  }
+};
+
+export const productivityService = {
+  // Notes
+  getNotes: async (conversationId: string) => {
+    const response = await api.get(`/notes/${conversationId}`);
+    return response.data;
+  },
+  createNote: async (conversationId: string, content: string) => {
+    const response = await api.post('/notes', { conversation_id: conversationId, content });
+    return response.data;
+  },
+  deleteNote: async (noteId: string) => {
+    const response = await api.delete(`/notes/${noteId}`);
+    return response.data;
+  },
+
+  // Reminders
+  getReminders: async (conversationId: string) => {
+    const response = await api.get(`/reminders/${conversationId}`);
+    return response.data;
+  },
+  createReminder: async (conversationId: string, title: string, dueAt: string) => {
+    const response = await api.post('/reminders', { conversation_id: conversationId, title, due_at: dueAt });
+    return response.data;
+  },
+  updateReminderStatus: async (reminderId: string, status: string) => {
+    const response = await api.put(`/reminders/${reminderId}/status`, { status });
+    return response.data;
+  },
+
+  // Tags
+  addTag: async (conversationId: string, tag: string) => {
+    const response = await api.post(`/tags/${conversationId}`, { tag });
+    return response.data;
+  },
+  removeTag: async (conversationId: string, tag: string) => {
+    const response = await api.delete(`/tags/${conversationId}`, { data: { tag } });
+    return response.data;
+  }
+};
+
+export const aiService = {
+  getKnowledge: async () => {
+    const response = await api.get('/ai/knowledge');
+    return response.data;
+  },
+  saveKnowledge: async (item: any) => {
+    const response = await api.post('/ai/knowledge', item);
+    return response.data;
+  },
+  deleteKnowledge: async (itemId: string) => {
+    const response = await api.delete(`/ai/knowledge/${itemId}`);
+    return response.data;
+  },
+  getPersona: async () => {
+    const response = await api.get('/ai/persona');
+    return response.data;
+  },
+  updatePersona: async (config: any) => {
+    const response = await api.post('/ai/persona', config);
     return response.data;
   }
 };

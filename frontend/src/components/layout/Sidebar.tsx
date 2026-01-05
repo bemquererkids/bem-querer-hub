@@ -1,6 +1,7 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { useAuth } from '../../context/AuthContext';
+import { supabase } from '../../services/supabase';
 import {
     ChatBubbleLeftRightIcon,
     UserGroupIcon,
@@ -34,10 +35,39 @@ interface SidebarProps {
 export const Sidebar: React.FC<SidebarProps> = ({ currentView, setCurrentView, isMobileMenuOpen, setIsMobileMenuOpen }) => {
     const { user } = useAuth();
     const [isCollapsed, setIsCollapsed] = useState(false);
+    const [unreadCount, setUnreadCount] = useState(0);
+
+    // Fetch Unread Count
+    useEffect(() => {
+        const fetchUnread = async () => {
+            const { count } = await supabase
+                .from('whatsapp_conversations')
+                .select('*', { count: 'exact', head: true })
+                .gt('unread_count', 0);
+            setUnreadCount(count || 0);
+        };
+
+        fetchUnread();
+
+        const subscription = supabase
+            .channel('sidebar_unread_count')
+            .on('postgres_changes', {
+                event: '*',
+                schema: 'public',
+                table: 'whatsapp_conversations'
+            }, () => {
+                fetchUnread();
+            })
+            .subscribe();
+
+        return () => {
+            subscription.unsubscribe();
+        };
+    }, []);
 
     const navItems = [
         { id: 'dashboard' as ViewType, icon: Squares2X2Icon, label: 'Dashboard' },
-        { id: 'chat' as ViewType, icon: ChatBubbleLeftRightIcon, label: 'Chat', badge: '80' },
+        { id: 'chat' as ViewType, icon: ChatBubbleLeftRightIcon, label: 'Chat', badge: unreadCount > 0 ? unreadCount.toString() : undefined },
         { id: 'crm' as ViewType, icon: UserGroupIcon, label: 'CRM' },
         { id: 'followup' as ViewType, icon: CalendarIcon, label: 'Follow-up' },
     ];
@@ -126,9 +156,9 @@ export const Sidebar: React.FC<SidebarProps> = ({ currentView, setCurrentView, i
                 animate={{ width: isCollapsed ? 72 : 240 }}
                 transition={{ duration: 0.2, ease: 'easeInOut' }}
                 className={clsx(
-                    "h-screen bg-white dark:bg-background flex flex-col z-50 relative border-r border-zinc-200 dark:border-border shadow-sm transition-colors duration-300",
-                    // Mobile: fixed position, slide in from left
-                    "fixed lg:relative",
+                    "h-screen bg-white dark:bg-background flex flex-col z-50 border-r border-zinc-200 dark:border-border shadow-sm transition-colors duration-300",
+                    // Mobile: fixed position, slide in from left. Desktop: relative flow.
+                    "fixed inset-y-0 left-0 lg:relative",
                     isMobileMenuOpen ? "translate-x-0" : "-translate-x-full lg:translate-x-0",
                     "transition-transform duration-300 ease-in-out"
                 )}
