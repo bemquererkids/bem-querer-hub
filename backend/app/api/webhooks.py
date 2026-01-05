@@ -554,22 +554,24 @@ async def process_new_lead(
             "unread_count": chat_res.data[0].get('unread_count', 0) + 1
         }).eq('id', conversation_id).execute()
     
+    
     # 3. Save user message
     new_msg = {
-        "clinic_id": clinic_id,
-        "chat_id": chat_id,
+        "conversation_id": conversation_id,
+        "message_id": f"uazapi_{datetime.now().timestamp()}",
+        "from_number": clean_phone,
+        "to_number": "sistema",
         "content": message,
-        "sender_type": "user",
-        "message_type": "text",
-        "created_at": datetime.now().isoformat()
+        "is_from_me": False,
+        "timestamp": datetime.now().isoformat()
     }
-    supabase.table('messages').insert(new_msg).execute()
+    supabase.table('whatsapp_messages').insert(new_msg).execute()
     
     # 4. Get chat history
-    history_res = supabase.table('messages') \
+    history_res = supabase.table('whatsapp_messages') \
         .select('*') \
-        .eq('chat_id', chat_id) \
-        .order('created_at', desc=False) \
+        .eq('conversation_id', conversation_id) \
+        .order('timestamp', desc=False) \
         .limit(10) \
         .execute()
     
