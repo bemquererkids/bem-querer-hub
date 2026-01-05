@@ -185,3 +185,17 @@ async def send_message(request: SendMessageRequest):
     except Exception as e:
         print(f"Send message failed: {e}")
         raise HTTPException(status_code=500, detail=str(e))
+
+@router.post("/read/{chat_id}")
+async def mark_as_read(chat_id: str):
+    """Mark conversation as read"""
+    try:
+        supabase = get_supabase()
+        supabase.table("whatsapp_conversations").update({
+            "unread_count": 0
+        }).eq("id", chat_id).execute()
+        return {"status": "success"}
+    except Exception as e:
+        print(f"Mark as read failed: {e}")
+        return {"status": "error", "message": str(e)}
+
