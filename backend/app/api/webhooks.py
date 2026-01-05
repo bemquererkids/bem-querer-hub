@@ -506,8 +506,8 @@ async def process_new_lead(
     # 1. Get or create patient
     patient_res = supabase.table('pacientes') \
         .select('*') \
-        .eq('phone', clean_phone) \
-        .eq('clinic_id', clinic_id) \
+        .eq('telefone', clean_phone) \
+        .eq('clinica_id', clinic_id) \
         .execute()
     
     if not patient_res.data:
@@ -516,11 +516,11 @@ async def process_new_lead(
         
         # Create new patient
         new_patient = {
-            "clinic_id": clinic_id,
-            "full_name": name,
-            "phone": clean_phone,
-            "source": source,
-            "created_at": datetime.now().isoformat()
+            "clinica_id": clinic_id,
+            "nome_completo": name,
+            "telefone": clean_phone,
+            "origem_campanha": source,
+            "criado_em": datetime.now().isoformat()
         }
         res = supabase.table('pacientes').insert(new_patient).execute()
         patient_id = res.data[0]['id']
