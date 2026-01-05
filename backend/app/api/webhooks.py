@@ -529,27 +529,30 @@ async def process_new_lead(
         patient_id = patient_res.data[0]['id']
         logger.info(f"✅ Existing patient: {name}")
     
-    # 2. Get or create chat
-    chat_res = supabase.table('atendimentos') \
+    
+    # 2. Get or create WhatsApp conversation
+    chat_res = supabase.table('whatsapp_conversations') \
         .select('*') \
-        .eq('paciente_id', patient_id) \
+        .eq('phone_number', clean_phone) \
         .execute()
     
     if not chat_res.data:
         new_chat = {
-            "clinica_id": clinic_id,
-            "paciente_id": patient_id,
-            "whatsapp_origem": clean_phone,
-            "etapa_funil": "lead",
-            "ultima_mensagem_em": datetime.now().isoformat()
+            "phone_number": clean_phone,
+            "contact_name": name,
+            "last_message": message[:100],
+            "last_message_at": datetime.now().isoformat(),
+            "unread_count": 1
         }
-        c_res = supabase.table('atendimentos').insert(new_chat).execute()
-        chat_id = c_res.data[0]['id']
+        c_res = supabase.table('whatsapp_conversations').insert(new_chat).execute()
+        conversation_id = c_res.data[0]['id']
     else:
-        chat_id = chat_res.data[0]['id']
-        supabase.table('atendimentos').update({
-            "ultima_mensagem_em": datetime.now().isoformat()
-        }).eq('id', chat_id).execute()
+        conversation_id = chat_res.data[0]['id']
+        supabase.table('whatsapp_conversations').update({
+            "last_message": message[:100],
+            "last_message_at": datetime.now().isoformat(),
+            "unread_count": chat_res.data[0].get('unread_count', 0) + 1
+        }).eq('id', conversation_id).execute()
     
     # 3. Save user message
     new_msg = {
