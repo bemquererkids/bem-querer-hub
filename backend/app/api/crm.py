@@ -5,7 +5,7 @@ from typing import List, Optional
 from fastapi import APIRouter, Depends, HTTPException
 from app.core.database import get_supabase, Client
 
-router = APIRouter(prefix="/crm", tags=["crm"])
+router = APIRouter(prefix="/api/crm", tags=["crm"])
 
 from datetime import date
 from app.services.clinicorp_service import ClinicorpClient
