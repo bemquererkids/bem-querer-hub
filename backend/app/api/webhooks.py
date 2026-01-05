@@ -589,14 +589,16 @@ async def process_new_lead(
     
     # 6. Save AI message
     ai_msg = {
+        "conversation_id": conversation_id,
         "clinic_id": clinic_id,
-        "chat_id": chat_id,
+        "message_id": f"ai_{datetime.now().timestamp()}",
+        "from_number": "sistema",
+        "to_number": clean_phone,
         "content": ai_response_text,
-        "sender_type": "ai",
-        "message_type": "text",
-        "created_at": datetime.now().isoformat()
+        "is_from_me": True,
+        "timestamp": datetime.now().isoformat()
     }
-    supabase.table('messages').insert(ai_msg).execute()
+    supabase.table('whatsapp_messages').insert(ai_msg).execute()
     
     # 7. Send via Meta API
     # 7. Send Response
