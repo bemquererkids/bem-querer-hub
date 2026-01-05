@@ -16,8 +16,8 @@ INSERT INTO public.clinic_integrations (
 VALUES (
     '00000000-0000-0000-0000-000000000001', -- ID Padrão Bem-Querer
     'whatsapp',
-    'bemquerer',                            -- Instance Name (Validado)
-    'f2b56a94-37e1-4e6d-8921-7da54069d797', -- Token (Validado no Debug)
+    'sistema',                              -- Instance Name (da UAZAPI)
+    '093b971c-f10f-4af1-b0aa-a13c6ad15909', -- Instance Token (da UAZAPI)
     true,
     NOW()
 )
