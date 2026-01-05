@@ -26,7 +26,7 @@ class UazAPIService:
         """
         Send text message
         """
-        endpoint = f"/message/sendText/{self.instance_name}"
+        endpoint = f"/send/text"
         url = self._get_url(endpoint)
         
         # Logic from debug_uaz.py: Pass token in Query Param
