@@ -186,6 +186,99 @@ async def receive_meta_webhook(request: Request, background_tasks: BackgroundTas
         # Return 200 even on error to prevent Meta from retrying
         return {"status": "error", "message": str(e)}
 
+# =====================================================
+# UAZAPI WEBHOOK
+# =====================================================
+
+@router.post("/uazapi")
+async def receive_uazapi_webhook(request: Request, background_tasks: BackgroundTasks):
+    """
+    UazAPI Webhook - Receives messages from UazAPI
+    """
+    try:
+        payload = await request.json()
+        logger.info(f"📨 UazAPI Webhook received: {payload.keys()}")
+        
+        # Verify if it's a message event
+        event = payload.get("event")
+        # According to docs/debug, event might be 'messages.upsert' or just implicit
+        
+        # Structure often contains 'data' or 'message'
+        # Adapting to common UazAPI payload
+        message_data = payload.get("data", {}) or payload
+            
+        key = message_data.get("key", {})
+        is_from_me = key.get("fromMe", False)
+        
+        if is_from_me:
+            logger.info("Ignoring message from me")
+            return {"status": "ignored"}
+            
+        remote_jid = key.get("remoteJid", "") # 5585999...@s.whatsapp.net
+        if not remote_jid:
+            logger.warning("No remoteJid found")
+            return {"status": "error"}
+            
+        push_name = message_data.get("pushName", "Desconhecido")
+        message_content = message_data.get("message", {})
+        
+        # Extract text
+        text_content = ""
+        if "conversation" in message_content:
+            text_content = message_content["conversation"]
+        elif "extendedTextMessage" in message_content:
+            text_content = message_content["extendedTextMessage"].get("text", "")
+        elif "imageMessage" in message_content:
+             text_content = message_content["imageMessage"].get("caption", "[Imagem]")
+        
+        if not text_content:
+            logger.info("Empty or unsupported content")
+            return {"status": "ignored"}
+            
+        # Hardcoded clinic for now (since UazAPI webhook setup often global per instance)
+        # Ideally we'd map instance name to clinic, but let's assume single tenant for MVP
+        CLINIC_ID_DEFAULT = "00000000-0000-0000-0000-000000000001"
+        
+        # Save and Process
+        background_tasks.add_task(
+            process_uazapi_message,
+            clinic_id=CLINIC_ID_DEFAULT,
+            phone=remote_jid.split("@")[0],
+            name=push_name,
+            message=text_content
+        )
+        
+        return {"status": "success"}
+
+    except Exception as e:
+        logger.error(f"UazAPI Webhook Error: {e}", exc_info=True)
+        return {"status": "error"}
+
+async def process_uazapi_message(clinic_id: str, phone: str, name: str, message: str):
+    try:
+        # Save to WhatsApp tables
+        await save_whatsapp_message(
+            clinic_id=clinic_id,
+            phone=phone,
+            contact_name=name,
+            message_id=str(uuid.uuid4()), # Generate ID as UazAPI ID might be complex
+            content=message,
+            message_type="text",
+            is_from_me=False
+        )
+        
+        # Trigger AI
+        await process_new_lead(
+            phone=phone,
+            name=name,
+            message=message,
+            clinic_id=clinic_id,
+            phone_number_id="uazapi" # Flag for source
+        )
+    except Exception as e:
+        logger.error(f"Error processing UazAPI message: {e}")
+
+
 
 async def get_clinic_id_from_phone_number(phone_number_id: str) -> str:
     """
@@ -513,13 +606,19 @@ async def process_new_lead(
     supabase.table('messages').insert(ai_msg).execute()
     
     # 7. Send via Meta API
-    logger.info(f"📤 Sending response via Meta API to {clean_phone}...")
+    # 7. Send Response
+    logger.info(f"📤 Sending response to {clean_phone}...")
     try:
-        meta_service = await get_meta_service_for_clinic(clinic_id)
-        await meta_service.send_message(
-            to=clean_phone,
-            text=ai_response_text
-        )
+        # Determine service based on phone_number_id (or check active config)
+        if phone_number_id == "uazapi":
+            from app.services.uazapi_service import get_uazapi_service_for_clinic
+            service = await get_uazapi_service_for_clinic(clinic_id)
+            service.send_message(to=clean_phone, text=ai_response_text)
+        else:
+            # Default to Meta
+            meta_service = await get_meta_service_for_clinic(clinic_id)
+            await meta_service.send_message(to=clean_phone, text=ai_response_text)
+            
         logger.info(f"✅ Response sent successfully!")
     except Exception as e:
         logger.error(f"❌ Failed to send WhatsApp message: {e}")

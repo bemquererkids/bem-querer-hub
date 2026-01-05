@@ -91,13 +91,7 @@ async def debug_uazapi():
         "results": results
     }
 
-# WhatsApp Status - Versão simplificada
-@main_router.get("/integrations/whatsapp/status")
-async def whatsapp_status():
-    return {
-        "connected": True,  # Mock temporário
-        "message": "Use /api/debug/uazapi para ver detalhes da conexão"
-    }
+# WhatsApp Status - Handled by integration router (removed mock to avoid conflict)
 
 # Clinicorp Status - Check environment variables
 @main_router.get("/integrations/clinicorp/status")
@@ -155,73 +149,9 @@ app.include_router(integration_router)
 from app.api.test_webhook import router as test_router
 app.include_router(test_router)
 
-# Chat endpoints (inline to avoid import issues in Vercel)
-from datetime import datetime
-from typing import List
-from pydantic import BaseModel
-
-class ChatModel(BaseModel):
-    id: str
-    name: str
-    lastMessage: str
-    lastMessageTime: str
-    unreadCount: int
-    tags: List[str]
-    status: str
-
-@main_router.get("/chat/list", response_model=List[ChatModel])
-async def list_chats_router():
-    return [{
-        "id": "chat_demo_001",
-        "name": "Carol - Chat Demo",
-        "lastMessage": "Olá! Sou a Carol, assistente da Bem-Querer. Como posso ajudar?",
-        "lastMessageTime": datetime.now().isoformat(),
-        "unreadCount": 0,
-        "tags": ["demo"],
-        "status": "online"
-    }]
-
-# Also add directly to app as fallback
-@app.get("/api/chat/list", response_model=List[ChatModel])
-async def list_chats_direct():
-    return [{
-        "id": "chat_demo_001",
-        "name": "Carol - Chat Demo",
-        "lastMessage": "Olá! Sou a Carol, assistente da Bem-Querer. Como posso ajudar?",
-        "lastMessageTime": datetime.now().isoformat(),
-        "unreadCount": 0,
-        "tags": ["demo"],
-        "status": "online"
-    }]
-
-class ChatMessageModel(BaseModel):
-    id: str
-    content: str
-    sender: str
-    timestamp: str
-
-@app.get("/api/chat/{chat_id}/messages", response_model=List[ChatMessageModel])
-async def get_messages(chat_id: str):
-    return [{
-        "id": "msg_001",
-        "content": "Olá! Sou a Carol, assistente da Bem-Querer. Como posso ajudar você hoje?",
-        "sender": "agent",
-        "timestamp": datetime.now().isoformat()
-    }]
-
-class SendMessageRequest(BaseModel):
-    chat_id: str
-    message: str
-
-@app.post("/api/chat/message")
-async def send_message(request: SendMessageRequest):
-    # Simple echo response for demo
-    return {
-        "id": f"msg_{datetime.now().timestamp()}",
-        "content": f"Você disse: {request.message}. Esta é uma resposta demo. Configure o GPT para respostas reais.",
-        "sender": "agent",
-        "timestamp": datetime.now().isoformat()
-    }
+# Import real chat router
+from app.api.chats import router as chats_router
+app.include_router(chats_router)
 
 @app.get("/")
 async def root():

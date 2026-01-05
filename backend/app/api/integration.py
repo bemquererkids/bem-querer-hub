@@ -215,10 +215,16 @@ async def gemini_status():
 
 
 
+
 class MetaWhatsAppConfig(BaseModel):
     phone_number_id: str
     waba_id: str
     access_token: str
+
+class UazAPIConfig(BaseModel):
+    instance_name: str
+    token: str
+    base_url: Optional[str] = None
 
 
 @router.post("/whatsapp/connect")
@@ -345,6 +351,68 @@ async def get_whatsapp_status():
             "connected": False,
             "error": str(e)
         }
+
+@router.post("/uazapi/connect")
+async def connect_uazapi(config: UazAPIConfig):
+    """
+    Configure UazAPI credentials
+    """
+    try:
+        if not config.instance_name or not config.token:
+             raise HTTPException(status_code=400, detail="Instance Name and Token are required")
+             
+        # Save to database
+        supabase = get_supabase()
+        
+        data = {
+            "clinica_id": CLINIC_ID_DEFAULT,
+            "type": "whatsapp",
+            "instance_name": config.instance_name,
+            "token": config.token,
+            # Clear Meta fields if switching
+            "phone_number_id": None,
+            "waba_id": None,
+            "access_token": None, 
+            "is_active": True,
+            "updated_at": str(datetime.now())
+        }
+        
+        if config.base_url:
+            # We could store base_url in 'config' json column if we wanted override
+            # For now, relying on env var or default
+            pass
+        
+        supabase.table("clinic_integrations").upsert(
+            data,
+            on_conflict="clinica_id,type"
+        ).execute()
+        
+        return {"success": True, "message": "UazAPI Configured Successfully"}
+        
+    except Exception as e:
+        logger.error(f"UazAPI Config Error: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+@router.get("/uazapi/status")
+async def get_uazapi_status():
+    try:
+        supabase = get_supabase()
+        result = supabase.table('clinic_integrations') \
+            .select('instance_name, token') \
+            .eq('clinica_id', CLINIC_ID_DEFAULT) \
+            .eq('type', 'whatsapp') \
+            .eq('is_active', True) \
+            .execute()
+            
+        if result.data and result.data[0].get('instance_name'):
+            return {
+                "connected": True,
+                "instance_name": result.data[0].get('instance_name')
+            }
+            
+        return {"connected": False}
+    except Exception as e:
+        return {"connected": False, "error": str(e)}
 
 @router.post("/clinicorp/availability")
 async def check_availability(
