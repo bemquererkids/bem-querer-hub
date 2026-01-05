@@ -162,6 +162,10 @@ app.include_router(webhook_debug_router)
 from app.api.chats import router as chats_router
 app.include_router(chats_router)
 
+# Import CRM router
+from app.api.crm import router as crm_router
+app.include_router(crm_router)
+
 @app.get("/")
 async def root():
     return {"status": "ok", "message": "Bem-Querer Hub API", "version": "1.0.0"}
