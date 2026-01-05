@@ -11,8 +11,12 @@ import os
 app = FastAPI(
     title="Bem-Querer Hub API",
     description="Sistema de CRM e WhatsApp para clínicas",
-    version="1.0.0"
+    version="1.1.0"
 )
+
+@app.get("/api/version/check")
+async def version_check():
+    return {"version": "v1.1-uazapi-restore", "timestamp": str(datetime.now())}
 
 # CORS
 app.add_middleware(
