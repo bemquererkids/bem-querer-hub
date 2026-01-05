@@ -154,6 +154,10 @@ app.include_router(integration_router)
 from app.api.test_webhook import router as test_router
 app.include_router(test_router)
 
+# Import and include debug webhook router
+from app.api.webhook_debug import router as webhook_debug_router
+app.include_router(webhook_debug_router)
+
 # Import real chat router
 from app.api.chats import router as chats_router
 app.include_router(chats_router)
