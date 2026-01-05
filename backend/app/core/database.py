@@ -4,6 +4,8 @@ Supabase Database Client Configuration
 from supabase import create_client, Client
 from app.core.config import settings
 
+# Version: 1.1.1 - Fixed proxy argument issue
+
 
 # --------------------------------------------------
 # Monkeypatch removed: httpx 0.28.1+ supports 'proxy' natively
