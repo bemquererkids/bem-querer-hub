@@ -37,10 +37,21 @@ const CLINIC_ID = '00000000-0000-0000-0000-000000000001';
 
 // UX Presets
 const SPECIALTIES = [
-    'Ortodontia', 'Odontopediatria', 'Implantodontia', 'Periodontia',
-    'Endodontia', 'Prótese Dentária', 'Cirurgia Bucomaxilofacial',
-    'Estomatologia', 'Radiologia', 'Clínica Geral',
-    'Harmonização Orofacial', 'DTM e Dor Orofacial', 'Pacientes Especiais (PNE)'
+    'Ortodontia',
+    'Ortopedia Funcional dos Maxilares',
+    'Odontopediatria',
+    'Implantodontia',
+    'Periodontia',
+    'Endodontia',
+    'Prótese Dentária',
+    'Cirurgia Bucomaxilofacial',
+    'Estomatologia',
+    'Radiologia',
+    'Clínica Geral',
+    'Harmonização Orofacial',
+    'DTM e Dor Orofacial',
+    'Pacientes Especiais (PNE)',
+    'Dentística Restauradora'
 ];
 
 const TONE_PRESETS = [
