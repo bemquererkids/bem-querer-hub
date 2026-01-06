@@ -3,6 +3,7 @@ import { QrCodeIcon, CheckCircleIcon, XCircleIcon, ArrowPathIcon } from '@heroic
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '../ui/card';
 import { Button } from '../ui/button';
 import { QRCodeSVG } from 'qrcode.react';
+import { integrationService } from '../../services/api';
 
 interface WhatsAppConnectionProps {
     clinicaId: string;
@@ -27,8 +28,7 @@ export const WhatsAppConnection: React.FC<WhatsAppConnectionProps> = ({ clinicaI
     // Verificar status da conexão
     const checkStatus = async () => {
         try {
-            const response = await fetch('/api/integrations/whatsapp/status');
-            const data = await response.json();
+            const data = await integrationService.getWhatsAppStatus();
             setStatus(data);
 
             // Se conectado, parar polling
@@ -46,18 +46,7 @@ export const WhatsAppConnection: React.FC<WhatsAppConnectionProps> = ({ clinicaI
     const generateQRCode = async () => {
         setLoading(true);
         try {
-            const response = await fetch('/api/integrations/whatsapp/connect', {
-                method: 'POST',
-            });
-
-            const data = await response.json();
-
-            if (!response.ok) {
-                // Extract error message from backend
-                const errorMsg = data.detail || data.error || data.message || 'Erro desconhecido';
-                setStatus({ connected: false, error: errorMsg });
-                return;
-            }
+            const data = await integrationService.connectWhatsApp({} as any);
 
             if (data.already_connected) {
                 // Already connected, refresh status
@@ -71,11 +60,17 @@ export const WhatsAppConnection: React.FC<WhatsAppConnectionProps> = ({ clinicaI
             } else {
                 setStatus({ connected: false, error: 'QR Code não foi retornado pelo servidor' });
             }
-        } catch (error) {
+        } catch (error: any) {
             console.error('Erro ao gerar QR Code:', error);
+            // Extract error message from axios error
+            const errorMsg = error.response?.data?.detail ||
+                error.response?.data?.error ||
+                error.response?.data?.message ||
+                error.message ||
+                'Erro desconhecido';
             setStatus({
                 connected: false,
-                error: `Erro de rede: ${error instanceof Error ? error.message : 'Verifique sua conexão'}`
+                error: `Erro de rede: ${errorMsg}`
             });
         } finally {
             setLoading(false);
