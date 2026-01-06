@@ -138,18 +138,19 @@ async def send_message(request: SendMessageRequest):
         if not phone_number:
             raise HTTPException(status_code=400, detail="Phone number not found in conversation")
         
-        # 2. Send message via UazAPI
-        uazapi = get_uazapi_service()
-        
+        # 2. Send message via UazAPI (non-blocking - log error but continue)
         try:
+            uazapi = get_uazapi_service()
+            logger.info(f"Sending message to {phone_number} via UazAPI")
             await uazapi.send_message(
                 instance="main",  # Not used in v2.0
                 phone=phone_number,
                 message=request.message
             )
+            logger.info(f"Message sent successfully to {phone_number}")
         except Exception as send_error:
-            logger.error(f"Failed to send message via UazAPI: {send_error}")
-            raise HTTPException(status_code=500, detail=f"Falha ao enviar mensagem: {str(send_error)}")
+            # Log error but don't fail - message will still be saved to DB
+            logger.warning(f"Failed to send message via UazAPI (continuing anyway): {send_error}")
         
         # 3. Save message to database
         message_id = str(uuid.uuid4())
@@ -167,6 +168,7 @@ async def send_message(request: SendMessageRequest):
             "created_at": datetime.now().isoformat()
         }
         
+        logger.info(f"Saving message to database: {message_id}")
         supabase.table("whatsapp_messages").insert(message_data).execute()
         
         # 4. Update conversation last_message
