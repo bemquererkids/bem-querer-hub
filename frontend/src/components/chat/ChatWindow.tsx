@@ -79,6 +79,10 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({ chat, messages: initialM
         // Fetch productivity data
         fetchProductivityData();
 
+        console.log('[Realtime] Setting up subscription for chat:', chat.id);
+        console.log('[Realtime] Channel name:', `chat:${chat.id}`);
+        console.log('[Realtime] Filter:', `conversation_id=eq.${chat.id}`);
+
         const subscription = supabase
             .channel(`chat:${chat.id}`)
             .on('postgres_changes', {
@@ -87,6 +91,9 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({ chat, messages: initialM
                 table: 'whatsapp_messages',
                 filter: `conversation_id=eq.${chat.id}`
             }, (payload) => {
+                console.log('🔔 [Realtime] ========== EVENTO RECEBIDO ==========');
+                console.log('[Realtime] Event type:', payload.eventType);
+                console.log('[Realtime] Table:', payload.table);
                 console.log('[Realtime] Nova mensagem recebida:', payload);
                 console.log('[Realtime] Payload.new completo:', JSON.stringify(payload.new, null, 2));
                 const newMsg = payload.new;
