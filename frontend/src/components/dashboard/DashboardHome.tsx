@@ -370,37 +370,43 @@ export const DashboardHome: React.FC = () => {
                     </div>
 
                     <div className="h-[300px] w-full">
-                        <ResponsiveContainer width="100%" height="100%">
-                            <BarChart data={metrics.funnelData} layout="vertical" margin={{ top: 0, right: 0, left: 40, bottom: 0 }}>
-                                <CartesianGrid strokeDasharray="3 3" horizontal={false} stroke="#f4f4f5" className="dark:stroke-zinc-800" />
-                                <XAxis type="number" hide />
-                                <YAxis
-                                    type="category"
-                                    dataKey="name"
-                                    tick={{ fontSize: 12, fill: '#71717a', fontWeight: 500 }}
-                                    width={100}
-                                    axisLine={false}
-                                    tickLine={false}
-                                />
-                                <Tooltip
-                                    cursor={{ fill: 'transparent' }} // Fixed: Use transparent cursor
-                                    contentStyle={{
-                                        borderRadius: '8px',
-                                        border: '1px solid #e4e4e7',
-                                        boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.05)',
-                                        padding: '8px 12px',
-                                        fontSize: '12px',
-                                        backgroundColor: '#fff', // Could be dynamic
-                                        color: '#000'
-                                    }}
-                                />
-                                <Bar dataKey="value" radius={[0, 4, 4, 0]} barSize={32}>
-                                    {metrics.funnelData.map((entry, index) => (
-                                        <Cell key={`cell-${index}`} fill={entry.fill} className="dark:fill-primary" />
-                                    ))}
-                                </Bar>
-                            </BarChart>
-                        </ResponsiveContainer>
+                        {metrics.funnelData && metrics.funnelData.length > 0 ? (
+                            <ResponsiveContainer width="100%" height="100%">
+                                <BarChart data={metrics.funnelData} layout="vertical" margin={{ top: 0, right: 0, left: 40, bottom: 0 }}>
+                                    <CartesianGrid strokeDasharray="3 3" horizontal={false} stroke="#f4f4f5" className="dark:stroke-zinc-800" />
+                                    <XAxis type="number" hide />
+                                    <YAxis
+                                        type="category"
+                                        dataKey="name"
+                                        tick={{ fontSize: 12, fill: '#71717a', fontWeight: 500 }}
+                                        width={100}
+                                        axisLine={false}
+                                        tickLine={false}
+                                    />
+                                    <Tooltip
+                                        cursor={{ fill: 'transparent' }} // Fixed: Use transparent cursor
+                                        contentStyle={{
+                                            borderRadius: '8px',
+                                            border: '1px solid #e4e4e7',
+                                            boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.05)',
+                                            padding: '8px 12px',
+                                            fontSize: '12px',
+                                            backgroundColor: '#fff', // Could be dynamic
+                                            color: '#000'
+                                        }}
+                                    />
+                                    <Bar dataKey="value" radius={[0, 4, 4, 0]} barSize={32}>
+                                        {metrics.funnelData.map((entry, index) => (
+                                            <Cell key={`cell-${index}`} fill={entry.fill} className="dark:fill-primary" />
+                                        ))}
+                                    </Bar>
+                                </BarChart>
+                            </ResponsiveContainer>
+                        ) : (
+                            <div className="flex items-center justify-center h-full text-zinc-400 dark:text-zinc-500">
+                                <p className="text-sm">Carregando dados do funil...</p>
+                            </div>
+                        )}
                     </div>
                 </motion.div>
 
