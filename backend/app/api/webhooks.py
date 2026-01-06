@@ -437,7 +437,11 @@ async def save_whatsapp_message(
             return
 
         # 1. Get or create conversation
-        
+        conversation_res = supabase.table('whatsapp_conversations') \
+            .select('*') \
+            .eq('phone_number', phone) \
+            .eq('clinic_id', clinic_id) \
+            .execute()
         if not conversation_res.data:
             # Create new conversation
             new_conversation = {
