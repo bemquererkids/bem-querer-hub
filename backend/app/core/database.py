@@ -115,10 +115,17 @@ class SupabaseClient:
     @classmethod
     def get_admin_client(cls) -> Client:
         """Get Supabase client with service role key (bypasses RLS)"""
-        # For admin client, we might also want to mock or fail hard
-        # Let's mock it too to be safe for now
-        if not settings.SUPABASE_SERVICE_KEY or "placeholder" in settings.SUPABASE_SERVICE_KEY:
-             return MockSupabaseClient()
+        if not settings.SUPABASE_SERVICE_KEY:
+            raise ValueError(
+                "SUPABASE_SERVICE_KEY is not configured. "
+                "Please set this environment variable with your Supabase service_role key."
+            )
+        
+        if "placeholder" in settings.SUPABASE_SERVICE_KEY:
+            raise ValueError(
+                "SUPABASE_SERVICE_KEY contains 'placeholder'. "
+                "Please configure a real service_role key from Supabase."
+            )
         
         return create_client(
             supabase_url=settings.SUPABASE_URL,

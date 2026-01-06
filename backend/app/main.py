@@ -44,6 +44,17 @@ async def debug_env():
         "UAZAPI_INSTANCE": os.getenv("UAZAPI_INSTANCE", "NOT_SET"),
     }
 
+@main_router.get("/debug/supabase")
+async def debug_supabase():
+    """Endpoint de debug para verificar configuração do Supabase"""
+    from app.core.config import settings
+    return {
+        "SUPABASE_URL": settings.SUPABASE_URL,
+        "SUPABASE_KEY_SET": bool(settings.SUPABASE_KEY and settings.SUPABASE_KEY != "placeholder_key"),
+        "SUPABASE_SERVICE_KEY_SET": bool(settings.SUPABASE_SERVICE_KEY),
+        "IS_USING_MOCK": "placeholder" in (settings.SUPABASE_SERVICE_KEY or "placeholder"),
+    }
+
 # Debug completo da UazAPI
 @main_router.get("/debug/uazapi")
 async def debug_uazapi():
