@@ -235,42 +235,42 @@ export default function AIConfigWizard() {
     ];
 
     return (
-        <div className="container mx-auto p-6 max-w-6xl">
-            <Card>
-                <CardHeader>
-                    <CardTitle className="flex items-center gap-2">
-                        <Sparkles className="w-6 h-6 text-purple-500" />
+        <div className="container mx-auto p-4 max-w-6xl">
+            <Card className="shadow-sm">
+                <CardHeader className="pb-3">
+                    <CardTitle className="flex items-center gap-2 text-xl">
+                        <Sparkles className="w-5 h-5 text-purple-500" />
                         Configuração da Assistente Virtual
                     </CardTitle>
-                    <CardDescription>
+                    <CardDescription className="text-sm">
                         Configure a personalidade e comportamento da sua assistente de IA
                     </CardDescription>
                 </CardHeader>
-                <CardContent>
+                <CardContent className="pt-0">
                     {/* Progress Steps */}
-                    <div className="flex justify-between mb-8">
+                    <div className="flex justify-between mb-6">
                         {steps.map((step, index) => (
                             <div
                                 key={index}
-                                className={`flex flex-col items-center cursor-pointer ${index === currentStep ? 'text-purple-600' : 'text-gray-400'
+                                className={`flex flex-col items-center cursor-pointer transition-all ${index === currentStep ? 'text-purple-600 scale-105' : 'text-gray-400'
                                     }`}
                                 onClick={() => setCurrentStep(index)}
                             >
                                 <div
-                                    className={`w-12 h-12 rounded-full flex items-center justify-center text-2xl mb-2 ${index === currentStep
+                                    className={`w-10 h-10 rounded-full flex items-center justify-center text-xl mb-1 transition-all ${index === currentStep
                                         ? 'bg-purple-100 ring-2 ring-purple-500'
-                                        : 'bg-gray-100'
+                                        : 'bg-gray-100 hover:bg-gray-200'
                                         }`}
                                 >
                                     {step.icon}
                                 </div>
-                                <span className="text-sm font-medium">{step.title}</span>
+                                <span className="text-xs font-medium">{step.title}</span>
                             </div>
                         ))}
                     </div>
 
                     {/* Step Content */}
-                    <div className="min-h-[400px]">
+                    <div className="min-h-[350px] max-h-[450px] overflow-y-auto">
                         {currentStep === 0 && <PersonaStep config={config} setConfig={setConfig} />}
                         {currentStep === 1 && <TeamStep config={config} setConfig={setConfig} />}
                         {currentStep === 2 && <AdminStep config={config} setConfig={setConfig} />}
@@ -330,49 +330,52 @@ function PersonaStep({ config, setConfig }: any) {
     };
 
     return (
-        <div className="space-y-4">
-            <h3 className="text-lg font-semibold">Defina a Persona da Assistente</h3>
+        <div className="space-y-3">
+            <h3 className="text-base font-semibold mb-3">Defina a Persona da Assistente</h3>
 
             <div className="grid grid-cols-2 gap-3">
                 <div>
-                    <Label htmlFor="name">Nome da Assistente</Label>
+                    <Label htmlFor="name" className="text-sm">Nome da Assistente</Label>
                     <Input
                         id="name"
                         value={config.persona.name}
                         onChange={(e) => updatePersona('name', e.target.value)}
-                        placeholder="Ex: Carol, Ana, Sofia..."
+                        placeholder="Ex: Carol, Ana..."
+                        className="h-9 text-sm"
                     />
                 </div>
 
                 <div>
-                    <Label htmlFor="clinic_name">Nome da Clínica</Label>
+                    <Label htmlFor="clinic_name" className="text-sm">Nome da Clínica</Label>
                     <Input
                         id="clinic_name"
                         value={config.persona.clinic_name}
                         onChange={(e) => updatePersona('clinic_name', e.target.value)}
                         placeholder="Ex: Bem-Querer Odontokids"
+                        className="h-9 text-sm"
                     />
                 </div>
 
                 <div>
-                    <Label htmlFor="role">Função/Papel</Label>
+                    <Label htmlFor="role" className="text-sm">Função/Papel</Label>
                     <Input
                         id="role"
                         value={config.persona.role}
                         onChange={(e) => updatePersona('role', e.target.value)}
-                        placeholder="Ex: secretária virtual, assistente"
+                        placeholder="Ex: secretária virtual"
+                        className="h-9 text-sm"
                     />
                 </div>
 
                 <div>
-                    <Label htmlFor="tone">Tom de Voz</Label>
+                    <Label htmlFor="tone" className="text-sm">Tom de Voz</Label>
                     <Select value={config.persona.tone} onValueChange={(value) => updatePersona('tone', value)}>
-                        <SelectTrigger id="tone">
-                            <SelectValue placeholder="Selecione o tom de voz" />
+                        <SelectTrigger id="tone" className="h-9 text-sm">
+                            <SelectValue placeholder="Selecione o tom" />
                         </SelectTrigger>
                         <SelectContent>
                             {TONE_PRESETS.map((tone) => (
-                                <SelectItem key={tone.value} value={tone.value}>
+                                <SelectItem key={tone.value} value={tone.value} className="text-sm">
                                     {tone.label}
                                 </SelectItem>
                             ))}
@@ -382,34 +385,25 @@ function PersonaStep({ config, setConfig }: any) {
             </div>
 
             <div>
-                <Label htmlFor="target_audience">Público-Alvo</Label>
+                <Label htmlFor="target_audience" className="text-sm">Público-Alvo</Label>
                 <Input
                     id="target_audience"
                     value={config.persona.target_audience}
                     onChange={(e) => updatePersona('target_audience', e.target.value)}
                     placeholder="Ex: Mães preocupadas, pacientes ocupados"
+                    className="h-9 text-sm"
                 />
             </div>
 
             <div>
-                <Label htmlFor="objective">Objetivo Principal</Label>
+                <Label htmlFor="objective" className="text-sm">Objetivo Principal</Label>
                 <Textarea
                     id="objective"
                     value={config.persona.objective}
                     onChange={(e) => updatePersona('objective', e.target.value)}
-                    placeholder="Ex: Conduzir conversas naturalmente e direcionar para agendamento"
-                    rows={3}
-                />
-            </div>
-
-            <div>
-                <Label htmlFor="voice_examples">Exemplos de Tom de Voz</Label>
-                <Textarea
-                    id="voice_examples"
-                    value={config.persona.voice_examples}
-                    onChange={(e) => updatePersona('voice_examples', e.target.value)}
-                    placeholder='Ex: Use "pequeno(a)", "mamãe", "papai" quando apropriado. Seja empática e objetiva.'
-                    rows={3}
+                    placeholder="Ex: Conduzir conversas naturalmente..."
+                    rows={2}
+                    className="text-sm resize-none"
                 />
             </div>
         </div>
