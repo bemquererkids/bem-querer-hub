@@ -185,6 +185,10 @@ app.include_router(crm_features_router)
 from app.api.debug_uazapi import router as debug_uazapi_router
 app.include_router(debug_uazapi_router)
 
+# Import test logs router
+from app.api.test_logs import router as test_logs_router
+app.include_router(test_logs_router)
+
 @app.get("/")
 async def root():
     return {"status": "ok", "message": "Bem-Querer Hub API", "version": "1.0.0"}
