@@ -128,7 +128,24 @@ export default function AIConfigWizard() {
         try {
             const response = await axios.get(`${API_URL}/api/ai-config/${CLINIC_ID}`);
             if (response.data.config) {
-                setConfig(response.data.config);
+                // Deep merge to ensure all nested objects exist
+                const loadedConfig = response.data.config;
+                setConfig({
+                    persona: { ...config.persona, ...loadedConfig.persona },
+                    team: loadedConfig.team || [],
+                    admin_info: {
+                        location: { ...config.admin_info.location, ...(loadedConfig.admin_info?.location || {}) },
+                        schedule: { ...config.admin_info.schedule, ...(loadedConfig.admin_info?.schedule || {}) },
+                        pricing: { ...config.admin_info.pricing, ...(loadedConfig.admin_info?.pricing || {}) },
+                        contact: { ...config.admin_info.contact, ...(loadedConfig.admin_info?.contact || {}) }
+                    },
+                    protocols: {
+                        emergency: { ...config.protocols.emergency, ...(loadedConfig.protocols?.emergency || {}) },
+                        scheduling: { ...config.protocols.scheduling, ...(loadedConfig.protocols?.scheduling || {}) },
+                        do_rules: loadedConfig.protocols?.do_rules || [],
+                        dont_rules: loadedConfig.protocols?.dont_rules || []
+                    }
+                });
             }
         } catch (error) {
             console.log('No existing config found, using defaults');
@@ -194,8 +211,8 @@ export default function AIConfigWizard() {
                             >
                                 <div
                                     className={`w-12 h-12 rounded-full flex items-center justify-center text-2xl mb-2 ${index === currentStep
-                                            ? 'bg-purple-100 ring-2 ring-purple-500'
-                                            : 'bg-gray-100'
+                                        ? 'bg-purple-100 ring-2 ring-purple-500'
+                                        : 'bg-gray-100'
                                         }`}
                                 >
                                     {step.icon}
