@@ -574,9 +574,7 @@ function TeamStep({ config, setConfig }: any) {
                                                 );
                                             })}
                                         </div>
-                                        {member.schedule && (
-                                            <p className="text-sm text-gray-600 mt-2">📅 {member.schedule}</p>
-                                        )}
+
                                     </div>
                                 </div>
                             </CardContent>
