@@ -90,6 +90,13 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({ chat, messages: initialM
                 console.log('[Realtime] Nova mensagem recebida:', payload);
                 const newMsg = payload.new;
 
+                // CRITICAL: Ignore messages sent by us (is_from_me: true)
+                // These are already added optimistically in handleSend
+                if (newMsg.is_from_me) {
+                    console.log('[Realtime] Ignorando mensagem própria (já adicionada otimisticamente)');
+                    return;
+                }
+
                 // Use message_id from database as the unique identifier
                 const messageId = newMsg.message_id || newMsg.id;
 
