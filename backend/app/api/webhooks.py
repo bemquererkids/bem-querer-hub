@@ -418,12 +418,17 @@ async def save_whatsapp_message(
     try:
         supabase = get_supabase()
         
-        # 1. Get or create conversation
-        conversation_res = supabase.table('whatsapp_conversations') \
-            .select('*') \
-            .eq('phone_number', phone) \
-            .eq('clinic_id', clinic_id) \
+        # 0. Check for existing message_id to prevent duplicates
+        existing_msg = supabase.table('whatsapp_messages') \
+            .select('id') \
+            .eq('message_id', message_id) \
             .execute()
+            
+        if existing_msg.data:
+            logger.info(f"⏭️ Message {message_id} already exists, skipping save.")
+            return
+
+        # 1. Get or create conversation
         
         if not conversation_res.data:
             # Create new conversation
@@ -555,18 +560,8 @@ async def process_new_lead(
         }).eq('id', conversation_id).execute()
     
     
-    # 3. Save user message
-    new_msg = {
-        "conversation_id": conversation_id,
-        "clinic_id": clinic_id,
-        "message_id": f"uazapi_{datetime.now().timestamp()}",
-        "from_number": clean_phone,
-        "to_number": "sistema",
-        "content": message,
-        "is_from_me": False,
-        "timestamp": datetime.now().isoformat()
-    }
-    supabase.table('whatsapp_messages').insert(new_msg).execute()
+    # 3. Save user message - REMOVED (Saved earlier by save_whatsapp_message)
+    # The webhook already called save_whatsapp_message before calling process_new_lead
     
     # 4. Get chat history
     history_res = supabase.table('whatsapp_messages') \
