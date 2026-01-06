@@ -87,10 +87,15 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({ chat, messages: initialM
                 table: 'whatsapp_messages',
                 filter: `conversation_id=eq.${chat.id}`
             }, (payload) => {
+                console.log('[Realtime] Nova mensagem recebida:', payload);
                 const newMsg = payload.new;
                 setMessages(prev => {
                     // Verifica se já existe usando message_id
-                    if (prev.some(m => m.id === newMsg.message_id)) return prev;
+                    if (prev.some(m => m.id === newMsg.message_id)) {
+                        console.log('[Realtime] Mensagem duplicada, ignorando');
+                        return prev;
+                    }
+                    console.log('[Realtime] Adicionando mensagem ao chat');
                     return [...prev, {
                         id: newMsg.message_id,
                         content: newMsg.content,
@@ -101,9 +106,12 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({ chat, messages: initialM
                     }];
                 });
             })
-            .subscribe();
+            .subscribe((status) => {
+                console.log('[Realtime] Subscription status:', status);
+            });
 
         return () => {
+            console.log('[Realtime] Unsubscribing from chat:', chat.id);
             subscription.unsubscribe();
         };
     }, [chat?.id]);
