@@ -11,6 +11,7 @@ import { FollowUpPage } from './components/crm/FollowUpPage';
 import { LoginPage } from './components/auth/LoginPage';
 import { SignUpPage } from './components/auth/SignUpPage';
 import { SettingsPage } from './pages/SettingsPage';
+import AIConfigWizard from './components/settings/AIConfigWizard';
 import { fadeIn } from './utils/animations';
 import { Sidebar, ViewType } from './components/layout/Sidebar';
 import { Navbar } from './components/layout/Navbar';
@@ -68,6 +69,7 @@ function AppContent() {
                             {currentView === 'crm' && <KanbanBoard highlightDealId={highlightDealId} />}
                             {currentView === 'followup' && <FollowUpPage />}
                             {currentView === 'prompt-config' && <ConfigPromptPage />}
+                            {currentView === 'ai-config' && <AIConfigWizard />}
                             {currentView === 'clinic-config' && <IntegrationsSettings />}
                             {currentView === 'modules-settings' && <ModulesSettingsPage />}
                             {currentView === 'invite-management' && <InviteManagementPage />}

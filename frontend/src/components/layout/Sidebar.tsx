@@ -13,6 +13,7 @@ import {
     BuildingOfficeIcon,
     UserPlusIcon,
     CubeIcon,
+    SparklesIcon,
 } from '@heroicons/react/24/outline';
 import clsx from 'clsx';
 import { Avatar, AvatarImage, AvatarFallback } from '../ui/avatar';
@@ -23,7 +24,7 @@ import {
     TooltipTrigger,
 } from '../ui/tooltip';
 
-export type ViewType = 'dashboard' | 'chat' | 'crm' | 'followup' | 'prompt-config' | 'clinic-config' | 'invite-management' | 'modules-settings' | 'settings';
+export type ViewType = 'dashboard' | 'chat' | 'crm' | 'followup' | 'prompt-config' | 'ai-config' | 'clinic-config' | 'invite-management' | 'modules-settings' | 'settings';
 
 interface SidebarProps {
     currentView: ViewType;
@@ -74,6 +75,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ currentView, setCurrentView, i
 
     const configItems = [
         { id: 'prompt-config' as ViewType, icon: Cog6ToothIcon, label: 'Configurar Prompt' },
+        { id: 'ai-config' as ViewType, icon: SparklesIcon, label: 'Configurar IA' },
         { id: 'clinic-config' as ViewType, icon: BuildingOfficeIcon, label: 'Clínica' },
         { id: 'modules-settings' as ViewType, icon: CubeIcon, label: 'Módulos' },
         { id: 'invite-management' as ViewType, icon: UserPlusIcon, label: 'Gerenciar Acessos' },

@@ -1,0 +1,959 @@
+/**
+ * AI Configuration Wizard - Multi-step form for configuring AI assistant
+ */
+import React, { useState, useEffect } from 'react';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Textarea } from '@/components/ui/textarea';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Plus, Trash2, Eye, Save, ArrowLeft, ArrowRight, Sparkles } from 'lucide-react';
+import axios from 'axios';
+
+const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000';
+const CLINIC_ID = '00000000-0000-0000-0000-000000000001'; // TODO: Get from auth context
+
+interface PersonaConfig {
+    name: string;
+    clinic_name: string;
+    role: string;
+    tone: string;
+    target_audience: string;
+    objective: string;
+    voice_examples: string;
+}
+
+interface TeamMember {
+    name: string;
+    clinicorp_id: string;
+    specialty: string;
+    focus: string;
+    schedule: string;
+    position: string;
+}
+
+interface LocationInfo {
+    address: string;
+    reference: string;
+    parking: string;
+}
+
+interface ScheduleInfo {
+    weekdays: string;
+    saturday: string;
+    sunday: string;
+}
+
+interface PricingInfo {
+    consultation: string;
+    consultation_note: string;
+    insurance: string;
+    payment_methods: string;
+}
+
+interface ContactInfo {
+    phone: string;
+    website: string;
+    instagram: string;
+}
+
+interface AdminInfo {
+    location: LocationInfo;
+    schedule: ScheduleInfo;
+    pricing: PricingInfo;
+    contact: ContactInfo;
+}
+
+interface EmergencyProtocol {
+    triggers: string;
+    steps: string[];
+}
+
+interface SchedulingProtocol {
+    steps: string[];
+}
+
+interface Protocols {
+    emergency: EmergencyProtocol;
+    scheduling: SchedulingProtocol;
+    do_rules: string[];
+    dont_rules: string[];
+}
+
+interface AIConfiguration {
+    persona: PersonaConfig;
+    team: TeamMember[];
+    admin_info: AdminInfo;
+    protocols: Protocols;
+}
+
+export default function AIConfigWizard() {
+    const [currentStep, setCurrentStep] = useState(0);
+    const [loading, setLoading] = useState(false);
+    const [preview, setPreview] = useState('');
+    const [showPreview, setShowPreview] = useState(false);
+
+    const [config, setConfig] = useState<AIConfiguration>({
+        persona: {
+            name: 'Carol',
+            clinic_name: '',
+            role: 'secretária virtual',
+            tone: 'Empática, acolhedora e eficiente',
+            target_audience: 'Mães preocupadas e pacientes ocupados',
+            objective: 'Conduzir conversas naturalmente e direcionar para agendamento',
+            voice_examples: 'Use "pequeno(a)", "mamãe", "papai" quando apropriado. Seja empática e objetiva.'
+        },
+        team: [],
+        admin_info: {
+            location: { address: '', reference: '', parking: '' },
+            schedule: { weekdays: '08h às 19h', saturday: '09h às 16h', sunday: 'Fechado' },
+            pricing: { consultation: '', consultation_note: '', insurance: '', payment_methods: '' },
+            contact: { phone: '', website: '', instagram: '' }
+        },
+        protocols: {
+            emergency: { triggers: '', steps: [] },
+            scheduling: { steps: [] },
+            do_rules: [],
+            dont_rules: []
+        }
+    });
+
+    // Load existing configuration
+    useEffect(() => {
+        loadConfig();
+    }, []);
+
+    const loadConfig = async () => {
+        try {
+            const response = await axios.get(`${API_URL}/api/ai-config/${CLINIC_ID}`);
+            if (response.data.config) {
+                setConfig(response.data.config);
+            }
+        } catch (error) {
+            console.log('No existing config found, using defaults');
+        }
+    };
+
+    const saveConfig = async () => {
+        setLoading(true);
+        try {
+            await axios.post(`${API_URL}/api/ai-config/${CLINIC_ID}`, config);
+            alert('Configuração salva com sucesso!');
+        } catch (error) {
+            console.error('Error saving config:', error);
+            alert('Erro ao salvar configuração');
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    const loadPreview = async () => {
+        setLoading(true);
+        try {
+            const response = await axios.get(`${API_URL}/api/ai-config/${CLINIC_ID}/preview`);
+            setPreview(response.data.prompt);
+            setShowPreview(true);
+        } catch (error) {
+            console.error('Error loading preview:', error);
+            alert('Erro ao gerar preview');
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    const steps = [
+        { title: 'Persona', icon: '🎭' },
+        { title: 'Equipe', icon: '👥' },
+        { title: 'Administrativo', icon: '📋' },
+        { title: 'Protocolos', icon: '🔧' },
+        { title: 'Preview', icon: '👁️' }
+    ];
+
+    return (
+        <div className="container mx-auto p-6 max-w-6xl">
+            <Card>
+                <CardHeader>
+                    <CardTitle className="flex items-center gap-2">
+                        <Sparkles className="w-6 h-6 text-purple-500" />
+                        Configuração da Assistente Virtual
+                    </CardTitle>
+                    <CardDescription>
+                        Configure a personalidade e comportamento da sua assistente de IA
+                    </CardDescription>
+                </CardHeader>
+                <CardContent>
+                    {/* Progress Steps */}
+                    <div className="flex justify-between mb-8">
+                        {steps.map((step, index) => (
+                            <div
+                                key={index}
+                                className={`flex flex-col items-center cursor-pointer ${index === currentStep ? 'text-purple-600' : 'text-gray-400'
+                                    }`}
+                                onClick={() => setCurrentStep(index)}
+                            >
+                                <div
+                                    className={`w-12 h-12 rounded-full flex items-center justify-center text-2xl mb-2 ${index === currentStep
+                                            ? 'bg-purple-100 ring-2 ring-purple-500'
+                                            : 'bg-gray-100'
+                                        }`}
+                                >
+                                    {step.icon}
+                                </div>
+                                <span className="text-sm font-medium">{step.title}</span>
+                            </div>
+                        ))}
+                    </div>
+
+                    {/* Step Content */}
+                    <div className="min-h-[500px]">
+                        {currentStep === 0 && <PersonaStep config={config} setConfig={setConfig} />}
+                        {currentStep === 1 && <TeamStep config={config} setConfig={setConfig} />}
+                        {currentStep === 2 && <AdminStep config={config} setConfig={setConfig} />}
+                        {currentStep === 3 && <ProtocolsStep config={config} setConfig={setConfig} />}
+                        {currentStep === 4 && (
+                            <PreviewStep
+                                config={config}
+                                preview={preview}
+                                showPreview={showPreview}
+                                loadPreview={loadPreview}
+                                loading={loading}
+                            />
+                        )}
+                    </div>
+
+                    {/* Navigation */}
+                    <div className="flex justify-between mt-8 pt-6 border-t">
+                        <Button
+                            variant="outline"
+                            onClick={() => setCurrentStep(Math.max(0, currentStep - 1))}
+                            disabled={currentStep === 0}
+                        >
+                            <ArrowLeft className="w-4 h-4 mr-2" />
+                            Anterior
+                        </Button>
+
+                        <div className="flex gap-2">
+                            {currentStep === steps.length - 1 ? (
+                                <Button onClick={saveConfig} disabled={loading} className="bg-purple-600">
+                                    <Save className="w-4 h-4 mr-2" />
+                                    Salvar Configuração
+                                </Button>
+                            ) : (
+                                <Button
+                                    onClick={() => setCurrentStep(Math.min(steps.length - 1, currentStep + 1))}
+                                    className="bg-purple-600"
+                                >
+                                    Próximo
+                                    <ArrowRight className="w-4 h-4 ml-2" />
+                                </Button>
+                            )}
+                        </div>
+                    </div>
+                </CardContent>
+            </Card>
+        </div>
+    );
+}
+
+// Step 1: Persona Configuration
+function PersonaStep({ config, setConfig }: any) {
+    const updatePersona = (field: string, value: string) => {
+        setConfig({
+            ...config,
+            persona: { ...config.persona, [field]: value }
+        });
+    };
+
+    return (
+        <div className="space-y-6">
+            <h3 className="text-lg font-semibold">Defina a Persona da Assistente</h3>
+
+            <div className="grid grid-cols-2 gap-4">
+                <div>
+                    <Label htmlFor="name">Nome da Assistente</Label>
+                    <Input
+                        id="name"
+                        value={config.persona.name}
+                        onChange={(e) => updatePersona('name', e.target.value)}
+                        placeholder="Ex: Carol, Ana, Sofia..."
+                    />
+                </div>
+
+                <div>
+                    <Label htmlFor="clinic_name">Nome da Clínica</Label>
+                    <Input
+                        id="clinic_name"
+                        value={config.persona.clinic_name}
+                        onChange={(e) => updatePersona('clinic_name', e.target.value)}
+                        placeholder="Ex: Bem-Querer Odontokids"
+                    />
+                </div>
+
+                <div>
+                    <Label htmlFor="role">Função/Papel</Label>
+                    <Input
+                        id="role"
+                        value={config.persona.role}
+                        onChange={(e) => updatePersona('role', e.target.value)}
+                        placeholder="Ex: secretária virtual, assistente"
+                    />
+                </div>
+
+                <div>
+                    <Label htmlFor="tone">Tom de Voz</Label>
+                    <Input
+                        id="tone"
+                        value={config.persona.tone}
+                        onChange={(e) => updatePersona('tone', e.target.value)}
+                        placeholder="Ex: Empática, acolhedora, profissional"
+                    />
+                </div>
+            </div>
+
+            <div>
+                <Label htmlFor="target_audience">Público-Alvo</Label>
+                <Input
+                    id="target_audience"
+                    value={config.persona.target_audience}
+                    onChange={(e) => updatePersona('target_audience', e.target.value)}
+                    placeholder="Ex: Mães preocupadas, pacientes ocupados"
+                />
+            </div>
+
+            <div>
+                <Label htmlFor="objective">Objetivo Principal</Label>
+                <Textarea
+                    id="objective"
+                    value={config.persona.objective}
+                    onChange={(e) => updatePersona('objective', e.target.value)}
+                    placeholder="Ex: Conduzir conversas naturalmente e direcionar para agendamento"
+                    rows={3}
+                />
+            </div>
+
+            <div>
+                <Label htmlFor="voice_examples">Exemplos de Tom de Voz</Label>
+                <Textarea
+                    id="voice_examples"
+                    value={config.persona.voice_examples}
+                    onChange={(e) => updatePersona('voice_examples', e.target.value)}
+                    placeholder='Ex: Use "pequeno(a)", "mamãe", "papai" quando apropriado. Seja empática e objetiva.'
+                    rows={3}
+                />
+            </div>
+        </div>
+    );
+}
+
+// Step 2: Team Configuration
+function TeamStep({ config, setConfig }: any) {
+    const addTeamMember = () => {
+        setConfig({
+            ...config,
+            team: [
+                ...config.team,
+                {
+                    name: '',
+                    clinicorp_id: '',
+                    specialty: '',
+                    focus: '',
+                    schedule: '',
+                    position: ''
+                }
+            ]
+        });
+    };
+
+    const updateTeamMember = (index: number, field: string, value: string) => {
+        const newTeam = [...config.team];
+        newTeam[index] = { ...newTeam[index], [field]: value };
+        setConfig({ ...config, team: newTeam });
+    };
+
+    const removeTeamMember = (index: number) => {
+        setConfig({
+            ...config,
+            team: config.team.filter((_: any, i: number) => i !== index)
+        });
+    };
+
+    return (
+        <div className="space-y-6">
+            <div className="flex justify-between items-center">
+                <h3 className="text-lg font-semibold">Equipe Médica</h3>
+                <Button onClick={addTeamMember} size="sm" className="bg-purple-600">
+                    <Plus className="w-4 h-4 mr-2" />
+                    Adicionar Profissional
+                </Button>
+            </div>
+
+            {config.team.length === 0 ? (
+                <div className="text-center py-12 text-gray-500">
+                    Nenhum profissional adicionado. Clique em "Adicionar Profissional" para começar.
+                </div>
+            ) : (
+                <div className="space-y-4">
+                    {config.team.map((member: TeamMember, index: number) => (
+                        <Card key={index}>
+                            <CardContent className="pt-6">
+                                <div className="flex justify-between items-start mb-4">
+                                    <h4 className="font-medium">Profissional #{index + 1}</h4>
+                                    <Button
+                                        variant="ghost"
+                                        size="sm"
+                                        onClick={() => removeTeamMember(index)}
+                                        className="text-red-500"
+                                    >
+                                        <Trash2 className="w-4 h-4" />
+                                    </Button>
+                                </div>
+
+                                <div className="grid grid-cols-2 gap-4">
+                                    <div>
+                                        <Label>Nome</Label>
+                                        <Input
+                                            value={member.name}
+                                            onChange={(e) => updateTeamMember(index, 'name', e.target.value)}
+                                            placeholder="Ex: Dra. Fernanda Battistini"
+                                        />
+                                    </div>
+
+                                    <div>
+                                        <Label>ID Clinicorp</Label>
+                                        <Input
+                                            value={member.clinicorp_id}
+                                            onChange={(e) => updateTeamMember(index, 'clinicorp_id', e.target.value)}
+                                            placeholder="Ex: 6113706666688512"
+                                        />
+                                    </div>
+
+                                    <div>
+                                        <Label>Especialidade</Label>
+                                        <Input
+                                            value={member.specialty}
+                                            onChange={(e) => updateTeamMember(index, 'specialty', e.target.value)}
+                                            placeholder="Ex: Ortodontia, Odontopediatria"
+                                        />
+                                    </div>
+
+                                    <div>
+                                        <Label>Foco/Área</Label>
+                                        <Input
+                                            value={member.focus}
+                                            onChange={(e) => updateTeamMember(index, 'focus', e.target.value)}
+                                            placeholder="Ex: Aparelhos fixos, Invisalign"
+                                        />
+                                    </div>
+
+                                    <div className="col-span-2">
+                                        <Label>Dias de Atendimento</Label>
+                                        <Input
+                                            value={member.schedule}
+                                            onChange={(e) => updateTeamMember(index, 'schedule', e.target.value)}
+                                            placeholder="Ex: Segunda, Quarta, Sexta e Sábado"
+                                        />
+                                    </div>
+                                </div>
+                            </CardContent>
+                        </Card>
+                    ))}
+                </div>
+            )}
+        </div>
+    );
+}
+
+// Step 3: Administrative Info
+function AdminStep({ config, setConfig }: any) {
+    const updateLocation = (field: string, value: string) => {
+        setConfig({
+            ...config,
+            admin_info: {
+                ...config.admin_info,
+                location: { ...config.admin_info.location, [field]: value }
+            }
+        });
+    };
+
+    const updateSchedule = (field: string, value: string) => {
+        setConfig({
+            ...config,
+            admin_info: {
+                ...config.admin_info,
+                schedule: { ...config.admin_info.schedule, [field]: value }
+            }
+        });
+    };
+
+    const updatePricing = (field: string, value: string) => {
+        setConfig({
+            ...config,
+            admin_info: {
+                ...config.admin_info,
+                pricing: { ...config.admin_info.pricing, [field]: value }
+            }
+        });
+    };
+
+    const updateContact = (field: string, value: string) => {
+        setConfig({
+            ...config,
+            admin_info: {
+                ...config.admin_info,
+                contact: { ...config.admin_info.contact, [field]: value }
+            }
+        });
+    };
+
+    return (
+        <div className="space-y-6">
+            <Tabs defaultValue="location">
+                <TabsList className="grid w-full grid-cols-4">
+                    <TabsTrigger value="location">📍 Localização</TabsTrigger>
+                    <TabsTrigger value="schedule">⏰ Horários</TabsTrigger>
+                    <TabsTrigger value="pricing">💰 Valores</TabsTrigger>
+                    <TabsTrigger value="contact">📞 Contatos</TabsTrigger>
+                </TabsList>
+
+                <TabsContent value="location" className="space-y-4 mt-4">
+                    <div>
+                        <Label>Endereço Completo</Label>
+                        <Input
+                            value={config.admin_info.location.address}
+                            onChange={(e) => updateLocation('address', e.target.value)}
+                            placeholder="Ex: Rua Siqueira Campos, 1068 – Centro – Santo André"
+                        />
+                    </div>
+                    <div>
+                        <Label>Ponto de Referência</Label>
+                        <Input
+                            value={config.admin_info.location.reference}
+                            onChange={(e) => updateLocation('reference', e.target.value)}
+                            placeholder="Ex: Próximo à Padaria Brasileira"
+                        />
+                    </div>
+                    <div>
+                        <Label>Estacionamento</Label>
+                        <Input
+                            value={config.admin_info.location.parking}
+                            onChange={(e) => updateLocation('parking', e.target.value)}
+                            placeholder="Ex: RB Quality Parking (Rua Santo André, 100)"
+                        />
+                    </div>
+                </TabsContent>
+
+                <TabsContent value="schedule" className="space-y-4 mt-4">
+                    <div>
+                        <Label>Segunda a Sexta</Label>
+                        <Input
+                            value={config.admin_info.schedule.weekdays}
+                            onChange={(e) => updateSchedule('weekdays', e.target.value)}
+                            placeholder="Ex: 08h às 19h"
+                        />
+                    </div>
+                    <div>
+                        <Label>Sábado</Label>
+                        <Input
+                            value={config.admin_info.schedule.saturday}
+                            onChange={(e) => updateSchedule('saturday', e.target.value)}
+                            placeholder="Ex: 09h às 16h"
+                        />
+                    </div>
+                    <div>
+                        <Label>Domingo/Feriados</Label>
+                        <Input
+                            value={config.admin_info.schedule.sunday}
+                            onChange={(e) => updateSchedule('sunday', e.target.value)}
+                            placeholder="Ex: Fechado"
+                        />
+                    </div>
+                </TabsContent>
+
+                <TabsContent value="pricing" className="space-y-4 mt-4">
+                    <div>
+                        <Label>Valor da Consulta</Label>
+                        <Input
+                            value={config.admin_info.pricing.consultation}
+                            onChange={(e) => updatePricing('consultation', e.target.value)}
+                            placeholder="Ex: R$ 250,00"
+                        />
+                    </div>
+                    <div>
+                        <Label>Observação sobre Consulta</Label>
+                        <Input
+                            value={config.admin_info.pricing.consultation_note}
+                            onChange={(e) => updatePricing('consultation_note', e.target.value)}
+                            placeholder="Ex: Se o tratamento for realizado no mesmo dia, o valor é abatido"
+                        />
+                    </div>
+                    <div>
+                        <Label>Política de Convênios</Label>
+                        <Input
+                            value={config.admin_info.pricing.insurance}
+                            onChange={(e) => updatePricing('insurance', e.target.value)}
+                            placeholder="Ex: NÃO atendemos diretamente. Emitimos NF para reembolso"
+                        />
+                    </div>
+                    <div>
+                        <Label>Formas de Pagamento</Label>
+                        <Input
+                            value={config.admin_info.pricing.payment_methods}
+                            onChange={(e) => updatePricing('payment_methods', e.target.value)}
+                            placeholder="Ex: À vista (PIX, Dinheiro, Débito) ou Parcelado (Cartão)"
+                        />
+                    </div>
+                </TabsContent>
+
+                <TabsContent value="contact" className="space-y-4 mt-4">
+                    <div>
+                        <Label>WhatsApp/Telefone</Label>
+                        <Input
+                            value={config.admin_info.contact.phone}
+                            onChange={(e) => updateContact('phone', e.target.value)}
+                            placeholder="Ex: (11) 4436-1721"
+                        />
+                    </div>
+                    <div>
+                        <Label>Website</Label>
+                        <Input
+                            value={config.admin_info.contact.website}
+                            onChange={(e) => updateContact('website', e.target.value)}
+                            placeholder="Ex: bemquererodontokids.com.br"
+                        />
+                    </div>
+                    <div>
+                        <Label>Instagram</Label>
+                        <Input
+                            value={config.admin_info.contact.instagram}
+                            onChange={(e) => updateContact('instagram', e.target.value)}
+                            placeholder="Ex: @bemquererodontokids"
+                        />
+                    </div>
+                </TabsContent>
+            </Tabs>
+        </div>
+    );
+}
+
+// Step 4: Protocols
+function ProtocolsStep({ config, setConfig }: any) {
+    const addStep = (type: 'emergency' | 'scheduling', step: string) => {
+        if (!step.trim()) return;
+
+        if (type === 'emergency') {
+            setConfig({
+                ...config,
+                protocols: {
+                    ...config.protocols,
+                    emergency: {
+                        ...config.protocols.emergency,
+                        steps: [...config.protocols.emergency.steps, step]
+                    }
+                }
+            });
+        } else {
+            setConfig({
+                ...config,
+                protocols: {
+                    ...config.protocols,
+                    scheduling: {
+                        ...config.protocols.scheduling,
+                        steps: [...config.protocols.scheduling.steps, step]
+                    }
+                }
+            });
+        }
+    };
+
+    const removeStep = (type: 'emergency' | 'scheduling', index: number) => {
+        if (type === 'emergency') {
+            setConfig({
+                ...config,
+                protocols: {
+                    ...config.protocols,
+                    emergency: {
+                        ...config.protocols.emergency,
+                        steps: config.protocols.emergency.steps.filter((_: any, i: number) => i !== index)
+                    }
+                }
+            });
+        } else {
+            setConfig({
+                ...config,
+                protocols: {
+                    ...config.protocols,
+                    scheduling: {
+                        ...config.protocols.scheduling,
+                        steps: config.protocols.scheduling.steps.filter((_: any, i: number) => i !== index)
+                    }
+                }
+            });
+        }
+    };
+
+    const addRule = (type: 'do' | 'dont', rule: string) => {
+        if (!rule.trim()) return;
+
+        const field = type === 'do' ? 'do_rules' : 'dont_rules';
+        setConfig({
+            ...config,
+            protocols: {
+                ...config.protocols,
+                [field]: [...config.protocols[field], rule]
+            }
+        });
+    };
+
+    const removeRule = (type: 'do' | 'dont', index: number) => {
+        const field = type === 'do' ? 'do_rules' : 'dont_rules';
+        setConfig({
+            ...config,
+            protocols: {
+                ...config.protocols,
+                [field]: config.protocols[field].filter((_: any, i: number) => i !== index)
+            }
+        });
+    };
+
+    const [newEmergencyStep, setNewEmergencyStep] = useState('');
+    const [newSchedulingStep, setNewSchedulingStep] = useState('');
+    const [newDoRule, setNewDoRule] = useState('');
+    const [newDontRule, setNewDontRule] = useState('');
+
+    return (
+        <div className="space-y-6">
+            <Tabs defaultValue="emergency">
+                <TabsList className="grid w-full grid-cols-3">
+                    <TabsTrigger value="emergency">🚨 Emergência</TabsTrigger>
+                    <TabsTrigger value="scheduling">📅 Agendamento</TabsTrigger>
+                    <TabsTrigger value="rules">✅ Regras</TabsTrigger>
+                </TabsList>
+
+                <TabsContent value="emergency" className="space-y-4 mt-4">
+                    <div>
+                        <Label>Gatilhos de Emergência</Label>
+                        <Textarea
+                            value={config.protocols.emergency.triggers}
+                            onChange={(e) =>
+                                setConfig({
+                                    ...config,
+                                    protocols: {
+                                        ...config.protocols,
+                                        emergency: { ...config.protocols.emergency, triggers: e.target.value }
+                                    }
+                                })
+                            }
+                            placeholder="Ex: Trauma, dor aguda, inchaço, sangramento"
+                            rows={2}
+                        />
+                    </div>
+
+                    <div>
+                        <Label>Passos do Protocolo</Label>
+                        <div className="flex gap-2 mb-2">
+                            <Input
+                                value={newEmergencyStep}
+                                onChange={(e) => setNewEmergencyStep(e.target.value)}
+                                placeholder="Ex: Acolher imediatamente"
+                                onKeyPress={(e) => {
+                                    if (e.key === 'Enter') {
+                                        addStep('emergency', newEmergencyStep);
+                                        setNewEmergencyStep('');
+                                    }
+                                }}
+                            />
+                            <Button
+                                onClick={() => {
+                                    addStep('emergency', newEmergencyStep);
+                                    setNewEmergencyStep('');
+                                }}
+                                size="sm"
+                            >
+                                <Plus className="w-4 h-4" />
+                            </Button>
+                        </div>
+                        <div className="space-y-2">
+                            {config.protocols.emergency.steps.map((step: string, index: number) => (
+                                <div key={index} className="flex items-center gap-2 p-2 bg-gray-50 rounded">
+                                    <span className="flex-1">{index + 1}. {step}</span>
+                                    <Button
+                                        variant="ghost"
+                                        size="sm"
+                                        onClick={() => removeStep('emergency', index)}
+                                        className="text-red-500"
+                                    >
+                                        <Trash2 className="w-4 h-4" />
+                                    </Button>
+                                </div>
+                            ))}
+                        </div>
+                    </div>
+                </TabsContent>
+
+                <TabsContent value="scheduling" className="space-y-4 mt-4">
+                    <div>
+                        <Label>Passos do Agendamento</Label>
+                        <div className="flex gap-2 mb-2">
+                            <Input
+                                value={newSchedulingStep}
+                                onChange={(e) => setNewSchedulingStep(e.target.value)}
+                                placeholder="Ex: Coletar nome e idade da criança"
+                                onKeyPress={(e) => {
+                                    if (e.key === 'Enter') {
+                                        addStep('scheduling', newSchedulingStep);
+                                        setNewSchedulingStep('');
+                                    }
+                                }}
+                            />
+                            <Button
+                                onClick={() => {
+                                    addStep('scheduling', newSchedulingStep);
+                                    setNewSchedulingStep('');
+                                }}
+                                size="sm"
+                            >
+                                <Plus className="w-4 h-4" />
+                            </Button>
+                        </div>
+                        <div className="space-y-2">
+                            {config.protocols.scheduling.steps.map((step: string, index: number) => (
+                                <div key={index} className="flex items-center gap-2 p-2 bg-gray-50 rounded">
+                                    <span className="flex-1">{index + 1}. {step}</span>
+                                    <Button
+                                        variant="ghost"
+                                        size="sm"
+                                        onClick={() => removeStep('scheduling', index)}
+                                        className="text-red-500"
+                                    >
+                                        <Trash2 className="w-4 h-4" />
+                                    </Button>
+                                </div>
+                            ))}
+                        </div>
+                    </div>
+                </TabsContent>
+
+                <TabsContent value="rules" className="space-y-4 mt-4">
+                    <div>
+                        <Label className="text-green-600">✅ O que FAZER</Label>
+                        <div className="flex gap-2 mb-2">
+                            <Input
+                                value={newDoRule}
+                                onChange={(e) => setNewDoRule(e.target.value)}
+                                placeholder="Ex: Sempre coletar telefone para contato"
+                                onKeyPress={(e) => {
+                                    if (e.key === 'Enter') {
+                                        addRule('do', newDoRule);
+                                        setNewDoRule('');
+                                    }
+                                }}
+                            />
+                            <Button
+                                onClick={() => {
+                                    addRule('do', newDoRule);
+                                    setNewDoRule('');
+                                }}
+                                size="sm"
+                            >
+                                <Plus className="w-4 h-4" />
+                            </Button>
+                        </div>
+                        <div className="space-y-2">
+                            {config.protocols.do_rules.map((rule: string, index: number) => (
+                                <div key={index} className="flex items-center gap-2 p-2 bg-green-50 rounded">
+                                    <span className="flex-1">✅ {rule}</span>
+                                    <Button
+                                        variant="ghost"
+                                        size="sm"
+                                        onClick={() => removeRule('do', index)}
+                                        className="text-red-500"
+                                    >
+                                        <Trash2 className="w-4 h-4" />
+                                    </Button>
+                                </div>
+                            ))}
+                        </div>
+                    </div>
+
+                    <div>
+                        <Label className="text-red-600">❌ O que NÃO FAZER</Label>
+                        <div className="flex gap-2 mb-2">
+                            <Input
+                                value={newDontRule}
+                                onChange={(e) => setNewDontRule(e.target.value)}
+                                placeholder="Ex: NUNCA inventar horários ou nomes"
+                                onKeyPress={(e) => {
+                                    if (e.key === 'Enter') {
+                                        addRule('dont', newDontRule);
+                                        setNewDontRule('');
+                                    }
+                                }}
+                            />
+                            <Button
+                                onClick={() => {
+                                    addRule('dont', newDontRule);
+                                    setNewDontRule('');
+                                }}
+                                size="sm"
+                            >
+                                <Plus className="w-4 h-4" />
+                            </Button>
+                        </div>
+                        <div className="space-y-2">
+                            {config.protocols.dont_rules.map((rule: string, index: number) => (
+                                <div key={index} className="flex items-center gap-2 p-2 bg-red-50 rounded">
+                                    <span className="flex-1">❌ {rule}</span>
+                                    <Button
+                                        variant="ghost"
+                                        size="sm"
+                                        onClick={() => removeRule('dont', index)}
+                                        className="text-red-500"
+                                    >
+                                        <Trash2 className="w-4 h-4" />
+                                    </Button>
+                                </div>
+                            ))}
+                        </div>
+                    </div>
+                </TabsContent>
+            </Tabs>
+        </div>
+    );
+}
+
+// Step 5: Preview
+function PreviewStep({ config, preview, showPreview, loadPreview, loading }: any) {
+    return (
+        <div className="space-y-6">
+            <div className="text-center">
+                <h3 className="text-lg font-semibold mb-2">Preview do Prompt Gerado</h3>
+                <p className="text-gray-600 mb-4">
+                    Visualize como ficará o prompt da sua assistente virtual
+                </p>
+                <Button onClick={loadPreview} disabled={loading} className="bg-purple-600">
+                    <Eye className="w-4 h-4 mr-2" />
+                    {loading ? 'Gerando...' : 'Gerar Preview'}
+                </Button>
+            </div>
+
+            {showPreview && (
+                <div className="mt-6">
+                    <Card>
+                        <CardContent className="pt-6">
+                            <pre className="whitespace-pre-wrap text-sm bg-gray-50 p-4 rounded max-h-96 overflow-y-auto">
+                                {preview}
+                            </pre>
+                        </CardContent>
+                    </Card>
+                </div>
+            )}
+
+            {!showPreview && (
+                <div className="text-center py-12 text-gray-400">
+                    Clique em "Gerar Preview" para visualizar o prompt completo
+                </div>
+            )}
+        </div>
+    );
+}
