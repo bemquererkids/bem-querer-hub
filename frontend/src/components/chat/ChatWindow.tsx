@@ -102,13 +102,6 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({ chat, messages: initialM
                     conversation_id: newMsg.conversation_id
                 });
 
-                // CRITICAL: Ignore messages sent by us (is_from_me: true)
-                // These are already added optimistically in handleSend
-                if (newMsg.is_from_me) {
-                    console.log('[Realtime] Ignorando mensagem própria (já adicionada otimisticamente)');
-                    return;
-                }
-
                 // Use message_id from database as the unique identifier
                 const messageId = newMsg.message_id || newMsg.id;
                 console.log('[Realtime] messageId final:', messageId);
@@ -118,10 +111,20 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({ chat, messages: initialM
                     console.log('[Realtime] IDs existentes:', prev.map(m => m.id));
 
                     // Check if message already exists using message_id
-                    if (prev.some(m => m.id === messageId)) {
+                    const alreadyExists = prev.some(m => m.id === messageId);
+
+                    if (alreadyExists) {
                         console.log('[Realtime] Mensagem duplicada, ignorando. ID:', messageId);
                         return prev;
                     }
+
+                    // IMPORTANT: Only ignore is_from_me messages if they already exist
+                    // This allows AI responses (is_from_me: true from backend) to appear
+                    // while preventing duplicates from optimistic updates
+                    console.log('[Realtime] Mensagem nova detectada!', {
+                        is_from_me: newMsg.is_from_me,
+                        content: newMsg.content?.substring(0, 50)
+                    });
 
                     const novaMensagem: ChatMessage = {
                         id: messageId,
