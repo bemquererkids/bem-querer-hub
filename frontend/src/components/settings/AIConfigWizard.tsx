@@ -553,7 +553,17 @@ function TeamStep({ config, setConfig }: any) {
                                         <Label className="text-xs">Dias de Atendimento</Label>
                                         <div className="flex gap-2 mt-1 flex-wrap">
                                             {DAYS_OF_WEEK.map((day) => {
-                                                const scheduleArray = member.schedule ? member.schedule.split(',').map((s: string) => s.trim()) : [];
+                                                // Normalize schedule string for display check
+                                                let safeSchedule = member.schedule || '';
+                                                safeSchedule = safeSchedule
+                                                    .replace(/Segunda/g, 'Seg')
+                                                    .replace(/Terça/g, 'Ter')
+                                                    .replace(/Quarta/g, 'Qua')
+                                                    .replace(/Quinta/g, 'Qui')
+                                                    .replace(/Sexta/g, 'Sex')
+                                                    .replace(/Sábado/g, 'Sáb')
+                                                    .replace(/Domingo/g, 'Dom');
+                                                const scheduleArray = safeSchedule.split(',').map((s: string) => s.trim());
                                                 const isChecked = scheduleArray.includes(day.label);
 
                                                 return (
@@ -562,9 +572,26 @@ function TeamStep({ config, setConfig }: any) {
                                                             id={`${index}-${day.id}`}
                                                             checked={isChecked}
                                                             onCheckedChange={(checked) => {
-                                                                const currentDays = scheduleArray.filter((d: string) => d !== day.label);
-                                                                const newDays = checked ? [...currentDays, day.label] : currentDays;
-                                                                updateTeamMember(index, 'schedule', newDays.join(', '));
+                                                                const dayLabel = day.label;
+                                                                // Filter out the current day AND any legacy long names
+                                                                let currentDays = scheduleArray.filter((d: string) =>
+                                                                    d !== dayLabel &&
+                                                                    d !== 'Segunda' && d !== 'Terça' && d !== 'Quarta' &&
+                                                                    d !== 'Quinta' && d !== 'Sexta' && d !== 'Sábado' && d !== 'Domingo'
+                                                                );
+
+                                                                if (checked) {
+                                                                    currentDays.push(dayLabel);
+                                                                }
+
+                                                                // Sort days correctly: Seg -> Ter -> Qua ...
+                                                                const dayOrder = ['Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb', 'Dom'];
+                                                                currentDays.sort((a, b) => dayOrder.indexOf(a) - dayOrder.indexOf(b));
+
+                                                                // Deduplicate just in case
+                                                                currentDays = [...new Set(currentDays)];
+
+                                                                updateTeamMember(index, 'schedule', currentDays.join(', '));
                                                             }}
                                                         />
                                                         <Label htmlFor={`${index}-${day.id}`} className="text-sm cursor-pointer font-normal">
