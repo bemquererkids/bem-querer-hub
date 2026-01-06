@@ -152,6 +152,14 @@ export const ChatLayout: React.FC<{ onNavigateToDeal?: (dealId: string) => void 
                             <p className="text-sm text-slate-500">Carregando mensagens...</p>
                         </div>
                     </div>
+                ) : activeChatId ? (
+                    <ChatWindow
+                        chat={activeChat}
+                        messages={messages}
+                        onSendMessage={handleSendMessage}
+                        onBack={() => setActiveChatId(undefined)}
+                        onNavigateToDeal={onNavigateToDeal}
+                    />
                 ) : (
                     <div className="flex-1 flex items-center justify-center bg-[#efeae2]">
                         <div className="text-center p-8 bg-white/80 rounded-xl shadow-sm backdrop-blur-sm max-w-md">
