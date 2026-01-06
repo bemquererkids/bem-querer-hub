@@ -89,15 +89,19 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({ chat, messages: initialM
             }, (payload) => {
                 console.log('[Realtime] Nova mensagem recebida:', payload);
                 const newMsg = payload.new;
+
+                // Use message_id from database as the unique identifier
+                const messageId = newMsg.message_id || newMsg.id;
+
                 setMessages(prev => {
-                    // Verifica se já existe usando message_id
-                    if (prev.some(m => m.id === newMsg.message_id)) {
-                        console.log('[Realtime] Mensagem duplicada, ignorando');
+                    // Check if message already exists using message_id
+                    if (prev.some(m => m.id === messageId)) {
+                        console.log('[Realtime] Mensagem duplicada, ignorando. ID:', messageId);
                         return prev;
                     }
-                    console.log('[Realtime] Adicionando mensagem ao chat');
+                    console.log('[Realtime] Adicionando mensagem ao chat. ID:', messageId);
                     return [...prev, {
-                        id: newMsg.message_id,
+                        id: messageId,
                         content: newMsg.content,
                         sender: newMsg.is_from_me ? 'agent' : 'user',
                         timestamp: newMsg.created_at,
