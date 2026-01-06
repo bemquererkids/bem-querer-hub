@@ -310,6 +310,7 @@ async def get_dashboard_metrics(
                 attendance_rate = round((attended / scheduled * 100), 1) if scheduled > 0 else 0
                 noshow_rate = round((noshow / scheduled * 100), 1) if scheduled > 0 else 0
                 conversion_rate = round((sales / attended * 100), 1) if attended > 0 else 0
+                qualifying_rate = round((qualifying / total_leads * 100), 1) if total_leads > 0 else 0
                 
                 avg_ticket = round(revenue / sales, 2) if sales > 0 else 0
                 
