@@ -73,7 +73,7 @@ interface PersonaConfig {
 interface TeamMember {
     name: string;
     clinicorp_id: string;
-    specialty: string[];  // Changed to array for multiple specialties
+    specialty: string;
     focus: string;
     schedule: string;
     position: string;
