@@ -79,6 +79,7 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({ chat, messages: initialM
         // Fetch productivity data
         fetchProductivityData();
 
+        // FORCE REBUILD - Railway cache issue
         console.log('[Realtime] Setting up subscription for chat:', chat.id);
         console.log('[Realtime] Channel name:', `chat:${chat.id}`);
         console.log('[Realtime] Filter:', `conversation_id=eq.${chat.id}`);
