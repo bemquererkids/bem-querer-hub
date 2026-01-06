@@ -73,7 +73,7 @@ interface PersonaConfig {
 interface TeamMember {
     name: string;
     clinicorp_id: string;
-    specialty: string;
+    specialty: string[];  // Array for multiple specialties
     focus: string;
     schedule: string;
     position: string;
@@ -420,7 +420,7 @@ function TeamStep({ config, setConfig }: any) {
                 {
                     name: '',
                     clinicorp_id: '',
-                    specialty: '',
+                    specialty: [],
                     focus: '',
                     schedule: '',
                     position: ''
@@ -429,7 +429,7 @@ function TeamStep({ config, setConfig }: any) {
         });
     };
 
-    const updateTeamMember = (index: number, field: string, value: string) => {
+    const updateTeamMember = (index: number, field: string, value: any) => {
         const newTeam = [...config.team];
         newTeam[index] = { ...newTeam[index], [field]: value };
         setConfig({ ...config, team: newTeam });
@@ -493,23 +493,46 @@ function TeamStep({ config, setConfig }: any) {
                                     </div>
 
 
-                                    <div>
-                                        <Label>Especialidade</Label>
+                                    <div className="col-span-2">
+                                        <Label className="text-sm">Especialidades</Label>
                                         <Select
-                                            value={member.specialty}
-                                            onValueChange={(value) => updateTeamMember(index, 'specialty', value)}
+                                            onValueChange={(value) => {
+                                                const currentSpecs = member.specialty || [];
+                                                if (!currentSpecs.includes(value)) {
+                                                    updateTeamMember(index, 'specialty', [...currentSpecs, value]);
+                                                }
+                                            }}
                                         >
-                                            <SelectTrigger>
-                                                <SelectValue placeholder="Selecione a especialidade" />
+                                            <SelectTrigger className="h-9 text-sm">
+                                                <SelectValue placeholder="Adicionar especialidade..." />
                                             </SelectTrigger>
                                             <SelectContent>
-                                                {SPECIALTIES.map((spec) => (
-                                                    <SelectItem key={spec} value={spec}>
+                                                {SPECIALTIES.filter(spec => !member.specialty?.includes(spec)).map((spec) => (
+                                                    <SelectItem key={spec} value={spec} className="text-sm">
                                                         {spec}
                                                     </SelectItem>
                                                 ))}
                                             </SelectContent>
                                         </Select>
+                                        {member.specialty && member.specialty.length > 0 && (
+                                            <div className="flex flex-wrap gap-2 mt-2">
+                                                {member.specialty.map((spec, specIndex) => (
+                                                    <span
+                                                        key={specIndex}
+                                                        className="inline-flex items-center gap-1 px-2 py-1 bg-purple-100 text-purple-700 rounded text-xs"
+                                                    >
+                                                        {spec}
+                                                        <X
+                                                            className="w-3 h-3 cursor-pointer hover:text-purple-900"
+                                                            onClick={() => {
+                                                                const newSpecs = member.specialty.filter((_, i) => i !== specIndex);
+                                                                updateTeamMember(index, 'specialty', newSpecs);
+                                                            }}
+                                                        />
+                                                    </span>
+                                                ))}
+                                            </div>
+                                        )}
                                     </div>
 
                                     <div>
