@@ -305,7 +305,7 @@ export default function AIConfigWizard() {
                             variant="outline"
                             onClick={() => setCurrentStep(Math.max(0, currentStep - 1))}
                             disabled={currentStep === 0}
-                            className="text-zinc-600 dark:text-zinc-400 border-zinc-200 dark:border-zinc-700 hover:bg-zinc-100 dark:hover:bg-zinc-800 dark:hover:text-zinc-200 transition-colors"
+                            className="bg-transparent border-zinc-200 dark:border-zinc-700 text-zinc-600 dark:text-zinc-300 hover:text-zinc-900 dark:hover:text-white hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-colors"
                         >
                             <ArrowLeft className="w-4 h-4 mr-2" />
                             Anterior
@@ -355,36 +355,36 @@ function PersonaStep({ config, setConfig }: any) {
                         value={config.persona.name}
                         onChange={(e) => updatePersona('name', e.target.value)}
                         placeholder="Ex: Carol, Ana..."
-                        className="h-10 mt-1.5 dark:bg-zinc-900/50 dark:border-zinc-700 focus:ring-purple-500/20"
+                        className="h-10 mt-1.5 dark:bg-zinc-900/50 dark:border-zinc-700 dark:text-zinc-100 dark:placeholder:text-zinc-500 focus:ring-purple-500/20"
                     />
                 </div>
 
                 <div>
-                    <Label htmlFor="clinic_name" className="text-sm">Nome da Clínica</Label>
+                    <Label htmlFor="clinic_name" className="text-sm font-medium text-zinc-700 dark:text-zinc-300">Nome da Clínica</Label>
                     <Input
                         id="clinic_name"
                         value={config.persona.clinic_name}
                         onChange={(e) => updatePersona('clinic_name', e.target.value)}
                         placeholder="Ex: Bem-Querer Odontokids"
-                        className="h-9 text-sm"
+                        className="h-10 mt-1.5 dark:bg-zinc-900/50 dark:border-zinc-700 dark:text-zinc-100 dark:placeholder:text-zinc-500 focus:ring-purple-500/20"
                     />
                 </div>
 
                 <div>
-                    <Label htmlFor="role" className="text-sm">Função/Papel</Label>
+                    <Label htmlFor="role" className="text-sm font-medium text-zinc-700 dark:text-zinc-300">Função/Papel</Label>
                     <Input
                         id="role"
                         value={config.persona.role}
                         onChange={(e) => updatePersona('role', e.target.value)}
                         placeholder="Ex: secretária virtual"
-                        className="h-9 text-sm"
+                        className="h-10 mt-1.5 dark:bg-zinc-900/50 dark:border-zinc-700 dark:text-zinc-100 dark:placeholder:text-zinc-500 focus:ring-purple-500/20"
                     />
                 </div>
 
                 <div>
-                    <Label htmlFor="tone" className="text-sm">Tom de Voz</Label>
+                    <Label htmlFor="tone" className="text-sm font-medium text-zinc-700 dark:text-zinc-300">Tom de Voz</Label>
                     <Select value={config.persona.tone} onValueChange={(value) => updatePersona('tone', value)}>
-                        <SelectTrigger id="tone" className="h-9 text-sm">
+                        <SelectTrigger id="tone" className="h-10 mt-1.5 dark:bg-zinc-900/50 dark:border-zinc-700 dark:text-zinc-100 dark:placeholder:text-zinc-500">
                             <SelectValue placeholder="Selecione o tom" />
                         </SelectTrigger>
                         <SelectContent>
@@ -399,25 +399,25 @@ function PersonaStep({ config, setConfig }: any) {
             </div>
 
             <div>
-                <Label htmlFor="target_audience" className="text-sm">Público-Alvo</Label>
+                <Label htmlFor="target_audience" className="text-sm font-medium text-zinc-700 dark:text-zinc-300">Público-Alvo</Label>
                 <Input
                     id="target_audience"
                     value={config.persona.target_audience}
                     onChange={(e) => updatePersona('target_audience', e.target.value)}
                     placeholder="Ex: Mães preocupadas, pacientes ocupados"
-                    className="h-9 text-sm"
+                    className="h-10 mt-1.5 dark:bg-zinc-900/50 dark:border-zinc-700 dark:text-zinc-100 dark:placeholder:text-zinc-500 focus:ring-purple-500/20"
                 />
             </div>
 
             <div>
-                <Label htmlFor="objective" className="text-sm">Objetivo Principal</Label>
+                <Label htmlFor="objective" className="text-sm font-medium text-zinc-700 dark:text-zinc-300">Objetivo Principal</Label>
                 <Textarea
                     id="objective"
                     value={config.persona.objective}
                     onChange={(e) => updatePersona('objective', e.target.value)}
                     placeholder="Ex: Conduzir conversas naturalmente..."
                     rows={2}
-                    className="text-sm resize-none"
+                    className="text-sm resize-none mt-1.5 dark:bg-zinc-900/50 dark:border-zinc-700 dark:text-zinc-100 dark:placeholder:text-zinc-500 focus:ring-purple-500/20"
                 />
             </div>
         </div>
@@ -721,7 +721,7 @@ function AdminStep({ config, setConfig }: any) {
                 <TabsContent value="location" className="space-y-3 mt-3">
                     <div className="grid grid-cols-4 gap-4">
                         <div className="col-span-3">
-                            <Label className="dark:text-gray-300">CEP</Label>
+                            <Label className="font-medium text-zinc-700 dark:text-zinc-300">CEP</Label>
                             <Input
                                 value={config.admin_info.location.address.replace(/\D/g, '').slice(0, 8)}
                                 onChange={(e) => {
@@ -730,7 +730,7 @@ function AdminStep({ config, setConfig }: any) {
                                 }}
                                 placeholder="00000-000"
                                 maxLength={8}
-                                className="dark:bg-gray-900 dark:border-gray-700 dark:text-gray-100"
+                                className="h-10 mt-1 dark:bg-zinc-900/50 dark:border-zinc-700 dark:text-zinc-100 dark:placeholder:text-zinc-500 focus:ring-purple-500/20"
                             />
                         </div>
                         <div className="flex items-end">
@@ -739,7 +739,7 @@ function AdminStep({ config, setConfig }: any) {
                                 disabled={loadingCep}
                                 type="button"
                                 variant="outline"
-                                className="w-full bg-white dark:bg-gray-700 hover:bg-gray-100 dark:hover:bg-gray-600 dark:text-white dark:border-gray-600"
+                                className="w-full bg-white dark:bg-zinc-800 hover:bg-zinc-100 dark:hover:bg-zinc-700 dark:text-zinc-100 dark:border-zinc-700 transition-colors"
                             >
                                 <Search className="w-4 h-4 mr-2" />
                                 {loadingCep ? 'Buscando...' : 'Buscar'}
@@ -748,97 +748,106 @@ function AdminStep({ config, setConfig }: any) {
                     </div>
 
                     <div>
-                        <Label className="dark:text-gray-300">Endereço Completo</Label>
+                        <Label className="font-medium text-zinc-700 dark:text-zinc-300">Endereço Completo</Label>
                         <Input
                             value={config.admin_info.location.address}
                             onChange={(e) => updateLocation('address', e.target.value)}
                             placeholder="Ex: Rua Siqueira Campos, 1068 – Centro – Santo André"
-                            className="dark:bg-gray-900 dark:border-gray-700 dark:text-gray-100"
+                            className="h-10 mt-1 dark:bg-zinc-900/50 dark:border-zinc-700 dark:text-zinc-100 dark:placeholder:text-zinc-500 focus:ring-purple-500/20"
                         />
                     </div>
                     <div>
-                        <Label>Ponto de Referência</Label>
+                        <Label className="font-medium text-zinc-700 dark:text-zinc-300">Ponto de Referência</Label>
                         <Input
                             value={config.admin_info.location.reference}
                             onChange={(e) => updateLocation('reference', e.target.value)}
                             placeholder="Ex: Próximo à Padaria Brasileira"
+                            className="h-10 mt-1 dark:bg-zinc-900/50 dark:border-zinc-700 dark:text-zinc-100 dark:placeholder:text-zinc-500 focus:ring-purple-500/20"
                         />
                     </div>
                     <div>
-                        <Label>Estacionamento</Label>
+                        <Label className="font-medium text-zinc-700 dark:text-zinc-300">Estacionamento</Label>
                         <Input
                             value={config.admin_info.location.parking}
                             onChange={(e) => updateLocation('parking', e.target.value)}
                             placeholder="Ex: RB Quality Parking (Rua Santo André, 100)"
+                            className="h-10 mt-1 dark:bg-zinc-900/50 dark:border-zinc-700 dark:text-zinc-100 dark:placeholder:text-zinc-500 focus:ring-purple-500/20"
                         />
                     </div>
                 </TabsContent>
 
                 <TabsContent value="schedule" className="space-y-3 mt-3">
                     <div>
-                        <Label>Segunda a Sexta</Label>
+                        <Label className="font-medium text-zinc-700 dark:text-zinc-300">Segunda a Sexta</Label>
                         <Input
                             value={config.admin_info.schedule.weekdays}
                             onChange={(e) => updateSchedule('weekdays', e.target.value)}
                             placeholder="Ex: 08h às 19h"
+                            className="h-10 mt-1 dark:bg-zinc-900/50 dark:border-zinc-700 dark:text-zinc-100 dark:placeholder:text-zinc-500 focus:ring-purple-500/20"
                         />
                     </div>
                     <div>
-                        <Label>Sábado</Label>
+                        <Label className="font-medium text-zinc-700 dark:text-zinc-300">Sábado</Label>
                         <Input
                             value={config.admin_info.schedule.saturday}
                             onChange={(e) => updateSchedule('saturday', e.target.value)}
                             placeholder="Ex: 09h às 16h"
+                            className="h-10 mt-1 dark:bg-zinc-900/50 dark:border-zinc-700 dark:text-zinc-100 dark:placeholder:text-zinc-500 focus:ring-purple-500/20"
                         />
                     </div>
                     <div>
-                        <Label>Domingo/Feriados</Label>
+                        <Label className="font-medium text-zinc-700 dark:text-zinc-300">Domingo/Feriados</Label>
                         <Input
                             value={config.admin_info.schedule.sunday}
                             onChange={(e) => updateSchedule('sunday', e.target.value)}
                             placeholder="Ex: Fechado"
+                            className="h-10 mt-1 dark:bg-zinc-900/50 dark:border-zinc-700 dark:text-zinc-100 dark:placeholder:text-zinc-500 focus:ring-purple-500/20"
                         />
                     </div>
                 </TabsContent>
 
                 <TabsContent value="pricing" className="space-y-3 mt-3">
                     <div>
-                        <Label>Valor da Consulta</Label>
+                        <Label className="font-medium text-zinc-700 dark:text-zinc-300">Valor da Consulta</Label>
                         <Input
                             value={config.admin_info.pricing.consultation}
                             onChange={(e) => updatePricing('consultation', e.target.value)}
                             placeholder="Ex: R$ 250,00"
+                            className="h-10 mt-1 dark:bg-zinc-900/50 dark:border-zinc-700 dark:text-zinc-100 dark:placeholder:text-zinc-500 focus:ring-purple-500/20"
                         />
                     </div>
                     <div>
-                        <Label>Observação sobre Consulta</Label>
+                        <Label className="font-medium text-zinc-700 dark:text-zinc-300">Observação sobre Consulta</Label>
                         <Input
                             value={config.admin_info.pricing.consultation_note}
                             onChange={(e) => updatePricing('consultation_note', e.target.value)}
                             placeholder="Ex: Se o tratamento for realizado no mesmo dia, o valor é abatido"
+                            className="h-10 mt-1 dark:bg-zinc-900/50 dark:border-zinc-700 dark:text-zinc-100 dark:placeholder:text-zinc-500 focus:ring-purple-500/20"
                         />
                     </div>
                     <div>
-                        <Label>Política de Convênios</Label>
+                        <Label className="font-medium text-zinc-700 dark:text-zinc-300">Política de Convênios</Label>
                         <Input
                             value={config.admin_info.pricing.insurance}
                             onChange={(e) => updatePricing('insurance', e.target.value)}
                             placeholder="Ex: NÃO atendemos diretamente. Emitimos NF para reembolso"
+                            className="h-10 mt-1 dark:bg-zinc-900/50 dark:border-zinc-700 dark:text-zinc-100 dark:placeholder:text-zinc-500 focus:ring-purple-500/20"
                         />
                     </div>
                     <div>
-                        <Label>Formas de Pagamento</Label>
+                        <Label className="font-medium text-zinc-700 dark:text-zinc-300">Formas de Pagamento</Label>
                         <Input
                             value={config.admin_info.pricing.payment_methods}
                             onChange={(e) => updatePricing('payment_methods', e.target.value)}
                             placeholder="Ex: À vista (PIX, Dinheiro, Débito) ou Parcelado (Cartão)"
+                            className="h-10 mt-1 dark:bg-zinc-900/50 dark:border-zinc-700 dark:text-zinc-100 dark:placeholder:text-zinc-500 focus:ring-purple-500/20"
                         />
                     </div>
                 </TabsContent>
 
                 <TabsContent value="contact" className="space-y-3 mt-3">
                     <div>
-                        <Label>WhatsApp/Telefone</Label>
+                        <Label className="font-medium text-zinc-700 dark:text-zinc-300">WhatsApp/Telefone</Label>
                         <Input
                             value={config.admin_info.contact.phone}
                             onChange={(e) => {
@@ -847,22 +856,25 @@ function AdminStep({ config, setConfig }: any) {
                             }}
                             placeholder="Ex: (11) 98765-4321"
                             maxLength={15}
+                            className="h-10 mt-1 dark:bg-zinc-900/50 dark:border-zinc-700 dark:text-zinc-100 dark:placeholder:text-zinc-500 focus:ring-purple-500/20"
                         />
                     </div>
                     <div>
-                        <Label>Website</Label>
+                        <Label className="font-medium text-zinc-700 dark:text-zinc-300">Website</Label>
                         <Input
                             value={config.admin_info.contact.website}
                             onChange={(e) => updateContact('website', e.target.value)}
                             placeholder="Ex: bemquererodontokids.com.br"
+                            className="h-10 mt-1 dark:bg-zinc-900/50 dark:border-zinc-700 dark:text-zinc-100 dark:placeholder:text-zinc-500 focus:ring-purple-500/20"
                         />
                     </div>
                     <div>
-                        <Label>Instagram</Label>
+                        <Label className="font-medium text-zinc-700 dark:text-zinc-300">Instagram</Label>
                         <Input
                             value={config.admin_info.contact.instagram}
                             onChange={(e) => updateContact('instagram', e.target.value)}
                             placeholder="Ex: @bemquererodontokids"
+                            className="h-10 mt-1 dark:bg-zinc-900/50 dark:border-zinc-700 dark:text-zinc-100 dark:placeholder:text-zinc-500 focus:ring-purple-500/20"
                         />
                     </div>
                 </TabsContent>
@@ -967,7 +979,7 @@ function ProtocolsStep({ config, setConfig }: any) {
 
                 <TabsContent value="emergency" className="space-y-4 mt-4">
                     <div>
-                        <Label>Gatilhos de Emergência</Label>
+                        <Label className="font-medium text-zinc-700 dark:text-zinc-300">Gatilhos de Emergência</Label>
                         <Textarea
                             value={config.protocols.emergency.triggers}
                             onChange={(e) =>
@@ -981,16 +993,18 @@ function ProtocolsStep({ config, setConfig }: any) {
                             }
                             placeholder="Ex: Trauma, dor aguda, inchaço, sangramento"
                             rows={2}
+                            className="mt-1 dark:bg-zinc-900/50 dark:border-zinc-700 dark:text-zinc-100 dark:placeholder:text-zinc-500 focus:ring-purple-500/20"
                         />
                     </div>
 
                     <div>
-                        <Label>Passos do Protocolo</Label>
+                        <Label className="font-medium text-zinc-700 dark:text-zinc-300">Passos do Protocolo</Label>
                         <div className="flex gap-2 mb-2">
                             <Input
                                 value={newEmergencyStep}
                                 onChange={(e) => setNewEmergencyStep(e.target.value)}
                                 placeholder="Ex: Acolher imediatamente"
+                                className="h-10 dark:bg-zinc-900/50 dark:border-zinc-700 dark:text-zinc-100 dark:placeholder:text-zinc-500 focus:ring-purple-500/20"
                                 onKeyPress={(e) => {
                                     if (e.key === 'Enter') {
                                         addStep('emergency', newEmergencyStep);
@@ -1010,8 +1024,8 @@ function ProtocolsStep({ config, setConfig }: any) {
                         </div>
                         <div className="space-y-2">
                             {config.protocols.emergency.steps.map((step: string, index: number) => (
-                                <div key={index} className="flex items-center gap-2 p-2 bg-gray-50 rounded">
-                                    <span className="flex-1">{index + 1}. {step}</span>
+                                <div key={index} className="flex items-center gap-2 p-2 bg-zinc-50 dark:bg-zinc-900/30 border border-zinc-100 dark:border-zinc-800 rounded mb-1 dark:text-zinc-200">
+                                    <span className="flex-1 text-sm">{index + 1}. {step}</span>
                                     <Button
                                         variant="ghost"
                                         size="sm"
@@ -1028,12 +1042,13 @@ function ProtocolsStep({ config, setConfig }: any) {
 
                 <TabsContent value="scheduling" className="space-y-4 mt-4">
                     <div>
-                        <Label>Passos do Agendamento</Label>
+                        <Label className="font-medium text-zinc-700 dark:text-zinc-300">Passos do Agendamento</Label>
                         <div className="flex gap-2 mb-2">
                             <Input
                                 value={newSchedulingStep}
                                 onChange={(e) => setNewSchedulingStep(e.target.value)}
                                 placeholder="Ex: Coletar nome e idade da criança"
+                                className="h-10 dark:bg-zinc-900/50 dark:border-zinc-700 dark:text-zinc-100 dark:placeholder:text-zinc-500 focus:ring-purple-500/20"
                                 onKeyPress={(e) => {
                                     if (e.key === 'Enter') {
                                         addStep('scheduling', newSchedulingStep);
@@ -1053,8 +1068,8 @@ function ProtocolsStep({ config, setConfig }: any) {
                         </div>
                         <div className="space-y-2">
                             {config.protocols.scheduling.steps.map((step: string, index: number) => (
-                                <div key={index} className="flex items-center gap-2 p-2 bg-gray-50 rounded">
-                                    <span className="flex-1">{index + 1}. {step}</span>
+                                <div key={index} className="flex items-center gap-2 p-2 bg-zinc-50 dark:bg-zinc-900/30 border border-zinc-100 dark:border-zinc-800 rounded mb-1 dark:text-zinc-200">
+                                    <span className="flex-1 text-sm">{index + 1}. {step}</span>
                                     <Button
                                         variant="ghost"
                                         size="sm"
@@ -1071,12 +1086,13 @@ function ProtocolsStep({ config, setConfig }: any) {
 
                 <TabsContent value="rules" className="space-y-4 mt-4">
                     <div>
-                        <Label className="text-green-600">✅ O que FAZER</Label>
+                        <Label className="text-green-600 dark:text-green-400 font-medium">✅ O que FAZER</Label>
                         <div className="flex gap-2 mb-2">
                             <Input
                                 value={newDoRule}
                                 onChange={(e) => setNewDoRule(e.target.value)}
                                 placeholder="Ex: Sempre coletar telefone para contato"
+                                className="h-10 dark:bg-zinc-900/50 dark:border-zinc-700 dark:text-zinc-100 dark:placeholder:text-zinc-500 focus:ring-purple-500/20"
                                 onKeyPress={(e) => {
                                     if (e.key === 'Enter') {
                                         addRule('do', newDoRule);
@@ -1096,8 +1112,8 @@ function ProtocolsStep({ config, setConfig }: any) {
                         </div>
                         <div className="space-y-2">
                             {config.protocols.do_rules.map((rule: string, index: number) => (
-                                <div key={index} className="flex items-center gap-2 p-2 bg-green-50 rounded">
-                                    <span className="flex-1">✅ {rule}</span>
+                                <div key={index} className="flex items-center gap-2 p-2 bg-green-50 dark:bg-green-900/20 border border-green-100 dark:border-green-800 rounded mb-1 dark:text-green-100">
+                                    <span className="flex-1 text-sm">✅ {rule}</span>
                                     <Button
                                         variant="ghost"
                                         size="sm"
@@ -1112,12 +1128,13 @@ function ProtocolsStep({ config, setConfig }: any) {
                     </div>
 
                     <div>
-                        <Label className="text-red-600">❌ O que NÃO FAZER</Label>
+                        <Label className="text-red-600 dark:text-red-400 font-medium">❌ O que NÃO FAZER</Label>
                         <div className="flex gap-2 mb-2">
                             <Input
                                 value={newDontRule}
                                 onChange={(e) => setNewDontRule(e.target.value)}
                                 placeholder="Ex: NUNCA inventar horários ou nomes"
+                                className="h-10 dark:bg-zinc-900/50 dark:border-zinc-700 dark:text-zinc-100 dark:placeholder:text-zinc-500 focus:ring-purple-500/20"
                                 onKeyPress={(e) => {
                                     if (e.key === 'Enter') {
                                         addRule('dont', newDontRule);
@@ -1137,8 +1154,8 @@ function ProtocolsStep({ config, setConfig }: any) {
                         </div>
                         <div className="space-y-2">
                             {config.protocols.dont_rules.map((rule: string, index: number) => (
-                                <div key={index} className="flex items-center gap-2 p-2 bg-red-50 rounded">
-                                    <span className="flex-1">❌ {rule}</span>
+                                <div key={index} className="flex items-center gap-2 p-2 bg-red-50 dark:bg-red-900/20 border border-red-100 dark:border-red-800 rounded mb-1 dark:text-red-100">
+                                    <span className="flex-1 text-sm">❌ {rule}</span>
                                     <Button
                                         variant="ghost"
                                         size="sm"
@@ -1162,11 +1179,11 @@ function PreviewStep({ config, preview, showPreview, loadPreview, loading }: any
     return (
         <div className="space-y-4">
             <div className="text-center">
-                <h3 className="text-lg font-semibold mb-2">Preview do Prompt Gerado</h3>
-                <p className="text-gray-600 mb-4">
+                <h3 className="text-lg font-semibold mb-2 dark:text-white">Preview do Prompt Gerado</h3>
+                <p className="text-gray-600 dark:text-gray-400 mb-4">
                     Visualize como ficará o prompt da sua assistente virtual
                 </p>
-                <Button onClick={loadPreview} disabled={loading} className="bg-purple-600">
+                <Button onClick={loadPreview} disabled={loading} className="bg-purple-600 hover:bg-purple-700">
                     <Eye className="w-4 h-4 mr-2" />
                     {loading ? 'Gerando...' : 'Gerar Preview'}
                 </Button>
@@ -1174,9 +1191,9 @@ function PreviewStep({ config, preview, showPreview, loadPreview, loading }: any
 
             {showPreview && (
                 <div className="mt-6">
-                    <Card>
+                    <Card className="bg-gray-50 dark:bg-zinc-950 dark:border-zinc-800">
                         <CardContent className="pt-6">
-                            <pre className="whitespace-pre-wrap text-sm bg-gray-50 p-4 rounded max-h-96 overflow-y-auto">
+                            <pre className="whitespace-pre-wrap text-sm text-zinc-800 dark:text-zinc-300 p-4 rounded max-h-96 overflow-y-auto font-mono scrollbar-thin scrollbar-thumb-zinc-300 dark:scrollbar-thumb-zinc-700">
                                 {preview}
                             </pre>
                         </CardContent>
