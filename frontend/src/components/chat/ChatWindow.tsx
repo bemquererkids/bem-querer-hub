@@ -88,7 +88,19 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({ chat, messages: initialM
                 filter: `conversation_id=eq.${chat.id}`
             }, (payload) => {
                 console.log('[Realtime] Nova mensagem recebida:', payload);
+                console.log('[Realtime] Payload.new completo:', JSON.stringify(payload.new, null, 2));
                 const newMsg = payload.new;
+
+                // Log all fields for debugging
+                console.log('[Realtime] Campos da mensagem:', {
+                    id: newMsg.id,
+                    message_id: newMsg.message_id,
+                    content: newMsg.content,
+                    is_from_me: newMsg.is_from_me,
+                    created_at: newMsg.created_at,
+                    message_type: newMsg.message_type,
+                    conversation_id: newMsg.conversation_id
+                });
 
                 // CRITICAL: Ignore messages sent by us (is_from_me: true)
                 // These are already added optimistically in handleSend
@@ -99,22 +111,32 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({ chat, messages: initialM
 
                 // Use message_id from database as the unique identifier
                 const messageId = newMsg.message_id || newMsg.id;
+                console.log('[Realtime] messageId final:', messageId);
 
                 setMessages(prev => {
+                    console.log('[Realtime] Estado atual de mensagens:', prev.length, 'mensagens');
+                    console.log('[Realtime] IDs existentes:', prev.map(m => m.id));
+
                     // Check if message already exists using message_id
                     if (prev.some(m => m.id === messageId)) {
                         console.log('[Realtime] Mensagem duplicada, ignorando. ID:', messageId);
                         return prev;
                     }
-                    console.log('[Realtime] Adicionando mensagem ao chat. ID:', messageId);
-                    return [...prev, {
+
+                    const novaMensagem: ChatMessage = {
                         id: messageId,
                         content: newMsg.content,
-                        sender: newMsg.is_from_me ? 'agent' : 'user',
+                        sender: (newMsg.is_from_me ? 'agent' : 'user') as 'agent' | 'user',
                         timestamp: newMsg.created_at,
                         type: newMsg.message_type,
                         status: 'read'
-                    }];
+                    };
+
+                    console.log('[Realtime] Adicionando mensagem ao chat:', novaMensagem);
+                    const novoEstado = [...prev, novaMensagem];
+                    console.log('[Realtime] Novo estado terá:', novoEstado.length, 'mensagens');
+
+                    return novoEstado;
                 });
             })
             .subscribe((status) => {

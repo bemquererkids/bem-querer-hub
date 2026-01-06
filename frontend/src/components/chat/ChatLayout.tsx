@@ -82,16 +82,30 @@ export const ChatLayout: React.FC<{ onNavigateToDeal?: (dealId: string) => void 
 
                 // 3. Fetch messages
                 const rawData = await chatService.getMessages(activeChatId);
+                console.log('[ChatLayout] Raw messages from API:', rawData);
+
                 // Transform API data to Frontend Model
-                const formattedMessages: ChatMessage[] = rawData.map((msg: any) => ({
-                    id: msg.id,
-                    content: msg.content,
-                    // Map is_from_me to sender: true = agent (me), false = user
-                    sender: msg.is_from_me ? 'agent' : 'user',
-                    timestamp: msg.created_at,
-                    type: msg.message_type || 'text',
-                    status: 'read'
-                }));
+                // CRITICAL: Backend returns message_id as 'id' field (see chat.py line 112)
+                const formattedMessages: ChatMessage[] = rawData.map((msg: any) => {
+                    console.log('[ChatLayout] Processing message:', {
+                        id: msg.id,
+                        content: msg.content?.substring(0, 30),
+                        is_from_me: msg.is_from_me
+                    });
+
+                    return {
+                        id: msg.id, // Backend já retorna message_id como 'id'
+                        content: msg.content,
+                        // Map is_from_me to sender: true = agent (me), false = user
+                        sender: msg.is_from_me ? 'agent' : 'user',
+                        timestamp: msg.created_at,
+                        type: msg.message_type || 'text',
+                        status: 'read'
+                    };
+                });
+
+                console.log('[ChatLayout] Formatted messages:', formattedMessages.length, 'messages');
+                console.log('[ChatLayout] Message IDs:', formattedMessages.map(m => m.id));
                 setMessages(formattedMessages);
             } catch (error) {
                 console.error("Failed to fetch messages or mark read", error);
