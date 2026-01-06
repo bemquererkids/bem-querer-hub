@@ -82,6 +82,20 @@ const MetricCard = ({ title, value, subtext, icon: Icon, trend, color = 'zinc' }
     );
 };
 
+const CustomTooltip = ({ active, payload, label }: any) => {
+    if (active && payload && payload.length) {
+        return (
+            <div className="bg-white dark:bg-gray-800 p-3 border border-zinc-200 dark:border-gray-700 shadow-lg rounded-lg">
+                <p className="text-sm font-medium text-zinc-900 dark:text-white">{label}</p>
+                <p className="text-sm text-indigo-600 dark:text-indigo-400">
+                    {payload[0].value}
+                </p>
+            </div>
+        );
+    }
+    return null;
+};
+
 export const DashboardHome: React.FC = () => {
     const [period, setPeriod] = React.useState('month'); // week, month, custom
     const [source, setSource] = React.useState('whatsapp'); // Default, will be updated by DB
@@ -209,13 +223,13 @@ export const DashboardHome: React.FC = () => {
                         <div className="flex bg-zinc-100 dark:bg-muted p-1 rounded-lg">
                             <button
                                 onClick={() => setSource('whatsapp')}
-                                className={`px-3 py-1 text-xs font-medium rounded-md transition-all ${source === 'whatsapp' ? 'bg-white dark:bg-card text-indigo-600 shadow-sm' : 'text-zinc-500 hover:text-zinc-900'}`}
+                                className={`px-3 py-1 text-xs font-medium rounded-md transition-all ${source === 'whatsapp' ? 'bg-white dark:bg-gray-700 text-indigo-600 dark:text-indigo-300 shadow-sm' : 'text-zinc-500 dark:text-gray-400 hover:text-zinc-900 dark:hover:text-gray-200'}`}
                             >
                                 WhatsApp (CRM)
                             </button>
                             <button
                                 onClick={() => setSource('clinicorp')}
-                                className={`px-3 py-1 text-xs font-medium rounded-md transition-all ${source === 'clinicorp' ? 'bg-white dark:bg-card text-indigo-600 shadow-sm' : 'text-zinc-500 hover:text-zinc-900'}`}
+                                className={`px-3 py-1 text-xs font-medium rounded-md transition-all ${source === 'clinicorp' ? 'bg-white dark:bg-gray-700 text-indigo-600 dark:text-indigo-300 shadow-sm' : 'text-zinc-500 dark:text-gray-400 hover:text-zinc-900 dark:hover:text-gray-200'}`}
                             >
                                 Clinicorp (Real)
                             </button>
@@ -227,7 +241,9 @@ export const DashboardHome: React.FC = () => {
                     <Button
                         variant="outline"
                         onClick={() => setPeriod('week')}
-                        className={`h-9 text-xs ${period === 'week' ? 'bg-indigo-50 border-indigo-200 text-indigo-700' : 'bg-white border-zinc-200 text-zinc-600'} dark:bg-card dark:border-border dark:text-muted-foreground font-medium hover:bg-zinc-50 dark:hover:bg-accent hover:text-zinc-900 dark:hover:text-foreground shadow-sm`}
+                        className={`h-9 text-xs ${period === 'week'
+                            ? 'bg-indigo-50 border-indigo-200 text-indigo-700 dark:bg-indigo-900/40 dark:border-indigo-700 dark:text-indigo-300'
+                            : 'bg-white border-zinc-200 text-zinc-600 dark:bg-gray-800 dark:border-gray-700 dark:text-gray-400'} font-medium hover:bg-zinc-50 dark:hover:bg-gray-700 shadow-sm`}
                     >
                         <CalendarIcon className="w-4 h-4 mr-2" />
                         Esta Semana
@@ -235,7 +251,9 @@ export const DashboardHome: React.FC = () => {
                     <Button
                         variant="outline"
                         onClick={() => setPeriod('month')}
-                        className={`h-9 text-xs ${period === 'month' ? 'bg-indigo-50 border-indigo-200 text-indigo-700' : 'bg-white border-zinc-200 text-zinc-600'} dark:bg-card dark:border-border dark:text-muted-foreground font-medium hover:bg-zinc-50 dark:hover:bg-accent hover:text-zinc-900 dark:hover:text-foreground shadow-sm`}
+                        className={`h-9 text-xs ${period === 'month'
+                            ? 'bg-indigo-50 border-indigo-200 text-indigo-700 dark:bg-indigo-900/40 dark:border-indigo-700 dark:text-indigo-300'
+                            : 'bg-white border-zinc-200 text-zinc-600 dark:bg-gray-800 dark:border-gray-700 dark:text-gray-400'} font-medium hover:bg-zinc-50 dark:hover:bg-gray-700 shadow-sm`}
                     >
                         <CalendarIcon className="w-4 h-4 mr-2" />
                         Este Mês
@@ -243,14 +261,18 @@ export const DashboardHome: React.FC = () => {
                     <Button
                         variant="outline"
                         onClick={() => setPeriod('last7days')}
-                        className={`h-9 text-xs ${period === 'last7days' ? 'bg-indigo-50 border-indigo-200 text-indigo-700' : 'bg-white border-zinc-200 text-zinc-600'} dark:bg-card dark:border-border dark:text-muted-foreground font-medium hover:bg-zinc-50 dark:hover:bg-accent hover:text-zinc-900 dark:hover:text-foreground shadow-sm`}
+                        className={`h-9 text-xs ${period === 'last7days'
+                            ? 'bg-indigo-50 border-indigo-200 text-indigo-700 dark:bg-indigo-900/40 dark:border-indigo-700 dark:text-indigo-300'
+                            : 'bg-white border-zinc-200 text-zinc-600 dark:bg-gray-800 dark:border-gray-700 dark:text-gray-400'} font-medium hover:bg-zinc-50 dark:hover:bg-gray-700 shadow-sm`}
                     >
                         Últimos 7 dias
                     </Button>
                     <Button
                         variant="outline"
                         onClick={() => setPeriod('last30days')}
-                        className={`h-9 text-xs ${period === 'last30days' ? 'bg-indigo-50 border-indigo-200 text-indigo-700' : 'bg-white border-zinc-200 text-zinc-600'} dark:bg-card dark:border-border dark:text-muted-foreground font-medium hover:bg-zinc-50 dark:hover:bg-accent hover:text-zinc-900 dark:hover:text-foreground shadow-sm`}
+                        className={`h-9 text-xs ${period === 'last30days'
+                            ? 'bg-indigo-50 border-indigo-200 text-indigo-700 dark:bg-indigo-900/40 dark:border-indigo-700 dark:text-indigo-300'
+                            : 'bg-white border-zinc-200 text-zinc-600 dark:bg-gray-800 dark:border-gray-700 dark:text-gray-400'} font-medium hover:bg-zinc-50 dark:hover:bg-gray-700 shadow-sm`}
                     >
                         Últimos 30 dias
                     </Button>
@@ -383,21 +405,10 @@ export const DashboardHome: React.FC = () => {
                                         axisLine={false}
                                         tickLine={false}
                                     />
-                                    <Tooltip
-                                        cursor={{ fill: 'transparent' }} // Fixed: Use transparent cursor
-                                        contentStyle={{
-                                            borderRadius: '8px',
-                                            border: '1px solid #e4e4e7',
-                                            boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.05)',
-                                            padding: '8px 12px',
-                                            fontSize: '12px',
-                                            backgroundColor: '#fff', // Could be dynamic
-                                            color: '#000'
-                                        }}
-                                    />
+                                    <Tooltip content={<CustomTooltip />} cursor={{ fill: 'transparent' }} />
                                     <Bar dataKey="value" radius={[0, 4, 4, 0]} barSize={32}>
                                         {metrics.funnelData.map((entry, index) => (
-                                            <Cell key={`cell-${index}`} fill={entry.fill} className="dark:fill-primary" />
+                                            <Cell key={`cell-${index}`} fill={entry.fill} className="dark:fill-indigo-500" />
                                         ))}
                                     </Bar>
                                 </BarChart>
