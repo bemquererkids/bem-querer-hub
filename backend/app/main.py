@@ -190,6 +190,7 @@ from app.api.test_logs import router as test_logs_router
 app.include_router(test_logs_router)
 
 # Import AI Configuration router
+# Force rebuild - AI Config Wizard
 from app.api.ai_config import router as ai_config_router
 app.include_router(ai_config_router)
 
