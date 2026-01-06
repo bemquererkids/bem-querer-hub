@@ -16,5 +16,5 @@ export interface ChatMessage {
     sender: 'user' | 'agent' | 'system';
     timestamp: string;
     type: 'text' | 'image' | 'audio' | 'document';
-    status?: 'sent' | 'delivered' | 'read';
+    status?: 'sending' | 'sent' | 'delivered' | 'read' | 'failed';
 }

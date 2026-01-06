@@ -226,35 +226,38 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({ chat, messages: initialM
     };
 
     const handleSend = async () => {
-        if (!newMessage.trim()) return;
+        if (!newMessage.trim() || !chat?.id) return;
         const text = newMessage;
         setNewMessage('');
+
+        // Optimistic update - add message immediately to UI
         const userMsg: ChatMessage = {
-            id: Date.now().toString(),
+            id: `temp-${Date.now()}`,
             content: text,
             sender: 'agent',
             timestamp: new Date().toISOString(),
             type: 'text',
-            status: 'sent'
+            status: 'sending'
         };
         setMessages(prev => [...prev, userMsg]);
 
         try {
-            setIsTyping(true); // Agora só mostra "digitando" DEPOIS de enviar
-            const response = await chatService.sendMessage(chat.id, text);
-            const aiMsg: ChatMessage = {
-                id: response.ai_message.id,
-                content: response.ai_message.content,
-                sender: 'user',
-                timestamp: response.ai_message.timestamp,
-                type: 'text',
-                status: 'read'
-            };
-            setMessages(prev => [...prev, aiMsg]);
+            // Send message to backend
+            await chatService.sendMessage(chat.id, text);
+
+            // Update message status to sent
+            setMessages(prev => prev.map(m =>
+                m.id === userMsg.id ? { ...m, status: 'sent' } : m
+            ));
+
+            // AI response will come via Supabase realtime subscription
+            // No need to wait for it here
         } catch (error) {
             console.error("Chat Error", error);
-        } finally {
-            setIsTyping(false);
+            // Mark message as failed
+            setMessages(prev => prev.map(m =>
+                m.id === userMsg.id ? { ...m, status: 'failed' } : m
+            ));
         }
     };
 
