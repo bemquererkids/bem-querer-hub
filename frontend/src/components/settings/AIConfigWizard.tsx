@@ -10,7 +10,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Checkbox } from '@/components/ui/checkbox';
-import { Plus, Trash2, Eye, Save, ArrowLeft, ArrowRight, Sparkles, Search, Check, X } from 'lucide-react';
+import { Plus, Trash2, Eye, Save, ArrowLeft, ArrowRight, Sparkles, Search, Check, X, User, Users, Building, Settings, FileText } from 'lucide-react';
 import axios from 'axios';
 
 // Custom notification helper
@@ -227,11 +227,11 @@ export default function AIConfigWizard() {
     };
 
     const steps = [
-        { title: 'Persona', icon: '🎭' },
-        { title: 'Equipe', icon: '👥' },
-        { title: 'Administrativo', icon: '📋' },
-        { title: 'Protocolos', icon: '🔧' },
-        { title: 'Preview', icon: '👁️' }
+        { title: 'Persona', icon: User },
+        { title: 'Equipe', icon: Users },
+        { title: 'Administrativo', icon: Building },
+        { title: 'Protocolos', icon: Settings },
+        { title: 'Preview', icon: Eye }
     ];
 
     return (
@@ -262,7 +262,7 @@ export default function AIConfigWizard() {
                                         : 'bg-gray-100 hover:bg-gray-200'
                                         }`}
                                 >
-                                    {step.icon}
+                                    <step.icon className="w-5 h-5" />
                                 </div>
                                 <span className="text-xs font-medium">{step.title}</span>
                             </div>
@@ -514,7 +514,7 @@ function TeamStep({ config, setConfig }: any) {
                                                 ))}
                                             </SelectContent>
                                         </Select>
-                                        {member.specialty && member.specialty.length > 0 && (
+                                        {Array.isArray(member.specialty) && member.specialty.length > 0 && (
                                             <div className="flex flex-wrap gap-2 mt-2">
                                                 {member.specialty.map((spec, specIndex) => (
                                                     <span
