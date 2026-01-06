@@ -473,28 +473,40 @@ function TeamStep({ config, setConfig }: any) {
                                     </Button>
                                 </div>
 
-                                <div className="grid grid-cols-2 gap-4">
-                                    <div>
-                                        <Label>Nome</Label>
+                                <div className="grid grid-cols-12 gap-3">
+                                    <div className="col-span-4">
+                                        <Label className="text-xs">Nome</Label>
                                         <Input
                                             value={member.name}
                                             onChange={(e) => updateTeamMember(index, 'name', e.target.value)}
-                                            placeholder="Ex: Dra. Fernanda Battistini"
+                                            placeholder="Dra. Fernanda"
+                                            className="h-8 text-xs"
                                         />
                                     </div>
 
-                                    <div>
-                                        <Label>ID Clinicorp</Label>
+                                    <div className="col-span-4">
+                                        <Label className="text-xs">ID Clinicorp</Label>
                                         <Input
                                             value={member.clinicorp_id}
                                             onChange={(e) => updateTeamMember(index, 'clinicorp_id', e.target.value)}
-                                            placeholder="Ex: 6113706666688512"
+                                            placeholder="611370666..."
+                                            className="h-8 text-xs"
+                                        />
+                                    </div>
+
+                                    <div className="col-span-4">
+                                        <Label className="text-xs">Foco/Área</Label>
+                                        <Input
+                                            value={member.focus}
+                                            onChange={(e) => updateTeamMember(index, 'focus', e.target.value)}
+                                            placeholder="Aparelhos fixos"
+                                            className="h-8 text-xs"
                                         />
                                     </div>
 
 
-                                    <div className="col-span-2">
-                                        <Label className="text-sm">Especialidades</Label>
+                                    <div className="col-span-12">
+                                        <Label className="text-xs">Especialidades</Label>
                                         <Select
                                             onValueChange={(value) => {
                                                 const currentSpecs = member.specialty || [];
@@ -503,7 +515,7 @@ function TeamStep({ config, setConfig }: any) {
                                                 }
                                             }}
                                         >
-                                            <SelectTrigger className="h-9 text-sm">
+                                            <SelectTrigger className="h-8 text-xs">
                                                 <SelectValue placeholder="Adicionar especialidade..." />
                                             </SelectTrigger>
                                             <SelectContent>
@@ -519,7 +531,7 @@ function TeamStep({ config, setConfig }: any) {
                                                 {member.specialty.map((spec, specIndex) => (
                                                     <span
                                                         key={specIndex}
-                                                        className="inline-flex items-center gap-1 px-2 py-1 bg-purple-100 text-purple-700 rounded text-xs"
+                                                        className="inline-flex items-center gap-1 px-1.5 py-0.5 bg-purple-100 text-purple-700 rounded text-xs"
                                                     >
                                                         {spec}
                                                         <X
@@ -535,18 +547,11 @@ function TeamStep({ config, setConfig }: any) {
                                         )}
                                     </div>
 
-                                    <div>
-                                        <Label>Foco/Área</Label>
-                                        <Input
-                                            value={member.focus}
-                                            onChange={(e) => updateTeamMember(index, 'focus', e.target.value)}
-                                            placeholder="Ex: Aparelhos fixos, Invisalign"
-                                        />
-                                    </div>
 
-                                    <div className="col-span-2">
-                                        <Label>Dias de Atendimento</Label>
-                                        <div className="flex gap-3 mt-2 flex-wrap">
+
+                                    <div className="col-span-12">
+                                        <Label className="text-xs">Dias de Atendimento</Label>
+                                        <div className="flex gap-2 mt-1 flex-wrap">
                                             {DAYS_OF_WEEK.map((day) => {
                                                 const scheduleArray = member.schedule ? member.schedule.split(',').map((s: string) => s.trim()) : [];
                                                 const isChecked = scheduleArray.includes(day.label);
