@@ -158,7 +158,25 @@ export const DashboardHome: React.FC = () => {
                 const res = await fetch(`${import.meta.env.VITE_API_URL}/api/crm/metrics?period=${period}&source=${source}`);
                 const data = await res.json();
                 if (data) {
-                    setMetrics(data);
+                    // Merge with defaults to prevent undefined errors
+                    setMetrics({
+                        totalLeads: data.totalLeads ?? 0,
+                        scheduled: data.scheduled ?? 0,
+                        attended: data.attended ?? 0,
+                        noshow: data.noshow ?? 0,
+                        qualifying: data.qualifying ?? 0,
+                        sales: data.sales ?? 0,
+                        revenue: data.revenue ?? 0,
+                        ticket: data.ticket ?? 0,
+                        funnelData: data.funnelData ?? [],
+                        percentages: {
+                            schedulingRate: data.percentages?.schedulingRate ?? 0,
+                            attendanceRate: data.percentages?.attendanceRate ?? 0,
+                            conversionRate: data.percentages?.conversionRate ?? 0,
+                            noshowRate: data.percentages?.noshowRate ?? 0,
+                            qualifyingRate: data.percentages?.qualifyingRate ?? 0
+                        }
+                    });
                     if (data.debug_info) setDebugInfo(data.debug_info);
                     else setDebugInfo(null);
                 }
@@ -242,8 +260,26 @@ export const DashboardHome: React.FC = () => {
                                 try {
                                     const res = await fetch(`${import.meta.env.VITE_API_URL}/api/crm/metrics?period=${period}`);
                                     const data = await res.json();
-                                    if (data && data.funnelData) {
-                                        setMetrics(data);
+                                    if (data) {
+                                        // Merge with defaults to prevent undefined errors
+                                        setMetrics({
+                                            totalLeads: data.totalLeads ?? 0,
+                                            scheduled: data.scheduled ?? 0,
+                                            attended: data.attended ?? 0,
+                                            noshow: data.noshow ?? 0,
+                                            qualifying: data.qualifying ?? 0,
+                                            sales: data.sales ?? 0,
+                                            revenue: data.revenue ?? 0,
+                                            ticket: data.ticket ?? 0,
+                                            funnelData: data.funnelData ?? [],
+                                            percentages: {
+                                                schedulingRate: data.percentages?.schedulingRate ?? 0,
+                                                attendanceRate: data.percentages?.attendanceRate ?? 0,
+                                                conversionRate: data.percentages?.conversionRate ?? 0,
+                                                noshowRate: data.percentages?.noshowRate ?? 0,
+                                                qualifyingRate: data.percentages?.qualifyingRate ?? 0
+                                            }
+                                        });
                                     }
                                 } catch (error) {
                                     console.error("Failed to fetch dashboard metrics", error);
