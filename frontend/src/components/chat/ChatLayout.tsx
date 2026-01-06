@@ -113,11 +113,8 @@ export const ChatLayout: React.FC<{ onNavigateToDeal?: (dealId: string) => void 
         );
     }
 
-    // Show empty state only if there's an error or explicitly no connection
-    // If chats are empty but no error, show empty chat list instead
-    if (error && chats.length === 0) {
-        return <WhatsAppEmptyState />;
-    }
+    // Always show chat interface, even if empty
+    // WhatsAppEmptyState is only shown from settings page
 
     return (
         <div className="h-full w-full flex flex-col md:flex-row overflow-hidden bg-white dark:bg-card border-x border-zinc-200 dark:border-border shadow-sm">
