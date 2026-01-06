@@ -270,7 +270,7 @@ export default function AIConfigWizard() {
                     </div>
 
                     {/* Step Content */}
-                    <div className="min-h-[500px]">
+                    <div className="min-h-[400px]">
                         {currentStep === 0 && <PersonaStep config={config} setConfig={setConfig} />}
                         {currentStep === 1 && <TeamStep config={config} setConfig={setConfig} />}
                         {currentStep === 2 && <AdminStep config={config} setConfig={setConfig} />}
@@ -287,7 +287,7 @@ export default function AIConfigWizard() {
                     </div>
 
                     {/* Navigation */}
-                    <div className="flex justify-between mt-8 pt-6 border-t">
+                    <div className="flex justify-between mt-6 pt-4 border-t">
                         <Button
                             variant="outline"
                             onClick={() => setCurrentStep(Math.max(0, currentStep - 1))}
@@ -330,10 +330,10 @@ function PersonaStep({ config, setConfig }: any) {
     };
 
     return (
-        <div className="space-y-6">
+        <div className="space-y-4">
             <h3 className="text-lg font-semibold">Defina a Persona da Assistente</h3>
 
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-2 gap-3">
                 <div>
                     <Label htmlFor="name">Nome da Assistente</Label>
                     <Input
@@ -449,7 +449,7 @@ function TeamStep({ config, setConfig }: any) {
     };
 
     return (
-        <div className="space-y-6">
+        <div className="space-y-4">
             <div className="flex justify-between items-center">
                 <h3 className="text-lg font-semibold">Equipe Médica</h3>
                 <Button onClick={addTeamMember} size="sm" className="bg-purple-600">
@@ -643,7 +643,7 @@ function AdminStep({ config, setConfig }: any) {
     };
 
     return (
-        <div className="space-y-6">
+        <div className="space-y-4">
             <Tabs defaultValue="location">
                 <TabsList className="grid w-full grid-cols-4">
                     <TabsTrigger value="location">📍 Localização</TabsTrigger>
@@ -652,7 +652,7 @@ function AdminStep({ config, setConfig }: any) {
                     <TabsTrigger value="contact">📞 Contatos</TabsTrigger>
                 </TabsList>
 
-                <TabsContent value="location" className="space-y-4 mt-4">
+                <TabsContent value="location" className="space-y-3 mt-3">
                     <div className="grid grid-cols-4 gap-4">
                         <div className="col-span-3">
                             <Label>CEP</Label>
@@ -706,7 +706,7 @@ function AdminStep({ config, setConfig }: any) {
                     </div>
                 </TabsContent>
 
-                <TabsContent value="schedule" className="space-y-4 mt-4">
+                <TabsContent value="schedule" className="space-y-3 mt-3">
                     <div>
                         <Label>Segunda a Sexta</Label>
                         <Input
@@ -733,7 +733,7 @@ function AdminStep({ config, setConfig }: any) {
                     </div>
                 </TabsContent>
 
-                <TabsContent value="pricing" className="space-y-4 mt-4">
+                <TabsContent value="pricing" className="space-y-3 mt-3">
                     <div>
                         <Label>Valor da Consulta</Label>
                         <Input
@@ -768,7 +768,7 @@ function AdminStep({ config, setConfig }: any) {
                     </div>
                 </TabsContent>
 
-                <TabsContent value="contact" className="space-y-4 mt-4">
+                <TabsContent value="contact" className="space-y-3 mt-3">
                     <div>
                         <Label>WhatsApp/Telefone</Label>
                         <Input
@@ -889,7 +889,7 @@ function ProtocolsStep({ config, setConfig }: any) {
     const [newDontRule, setNewDontRule] = useState('');
 
     return (
-        <div className="space-y-6">
+        <div className="space-y-4">
             <Tabs defaultValue="emergency">
                 <TabsList className="grid w-full grid-cols-3">
                     <TabsTrigger value="emergency">🚨 Emergência</TabsTrigger>
@@ -1092,7 +1092,7 @@ function ProtocolsStep({ config, setConfig }: any) {
 // Step 5: Preview
 function PreviewStep({ config, preview, showPreview, loadPreview, loading }: any) {
     return (
-        <div className="space-y-6">
+        <div className="space-y-4">
             <div className="text-center">
                 <h3 className="text-lg font-semibold mb-2">Preview do Prompt Gerado</h3>
                 <p className="text-gray-600 mb-4">
