@@ -7,6 +7,7 @@ import { supabase } from '../../services/supabase';
 import { ChatContact, ChatMessage } from '../../types/chat';
 import { Card } from '../ui/card';
 import { RefreshCw } from 'lucide-react';
+import { ChatBubbleLeftRightIcon } from '@heroicons/react/24/outline';
 import { formatTime } from '../../utils/formatDate';
 
 export const ChatLayout: React.FC<{ onNavigateToDeal?: (dealId: string) => void }> = ({ onNavigateToDeal }) => {
@@ -112,8 +113,9 @@ export const ChatLayout: React.FC<{ onNavigateToDeal?: (dealId: string) => void 
         );
     }
 
-    // Show empty state if no chats available (WhatsApp not connected)
-    if (chats.length === 0) {
+    // Show empty state only if there's an error or explicitly no connection
+    // If chats are empty but no error, show empty chat list instead
+    if (error && chats.length === 0) {
         return <WhatsAppEmptyState />;
     }
 
@@ -138,13 +140,29 @@ export const ChatLayout: React.FC<{ onNavigateToDeal?: (dealId: string) => void 
                 flex-1 min-w-0 h-full bg-[#efeae2] dark:bg-[#0b141a] relative
                 ${!activeChatId ? 'hidden md:flex' : 'flex flex-col'}
             `}>
-                <ChatWindow
-                    chat={activeChat}
-                    messages={activeChatId ? messages : []}
-                    onSendMessage={handleSendMessage}
-                    onBack={() => setActiveChatId(undefined)}
-                    onNavigateToDeal={onNavigateToDeal}
-                />
+                {chats.length === 0 && !activeChatId ? (
+                    <div className="flex items-center justify-center h-full">
+                        <div className="text-center max-w-md px-6">
+                            <div className="mb-4">
+                                <ChatBubbleLeftRightIcon className="w-16 h-16 mx-auto text-zinc-300 dark:text-zinc-700" />
+                            </div>
+                            <h3 className="text-lg font-semibold text-zinc-900 dark:text-white mb-2">
+                                Nenhuma conversa ainda
+                            </h3>
+                            <p className="text-sm text-zinc-500 dark:text-zinc-400">
+                                Suas conversas do WhatsApp aparecerão aqui quando você receber mensagens.
+                            </p>
+                        </div>
+                    </div>
+                ) : (
+                    <ChatWindow
+                        chat={activeChat}
+                        messages={activeChatId ? messages : []}
+                        onSendMessage={handleSendMessage}
+                        onBack={() => setActiveChatId(undefined)}
+                        onNavigateToDeal={onNavigateToDeal}
+                    />
+                )}
             </div>
         </div>
     );
