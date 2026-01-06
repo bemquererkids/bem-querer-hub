@@ -8,57 +8,11 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Checkbox } from '@/components/ui/checkbox';
-import { Plus, Trash2, Eye, Save, ArrowLeft, ArrowRight, Sparkles, Search, Check, X } from 'lucide-react';
+import { Plus, Trash2, Eye, Save, ArrowLeft, ArrowRight, Sparkles } from 'lucide-react';
 import axios from 'axios';
 
-// Custom notification helper
-const showNotification = (message: string, type: 'success' | 'error' | 'info' = 'info') => {
-    const colors = {
-        success: 'bg-green-500',
-        error: 'bg-red-500',
-        info: 'bg-blue-500'
-    };
-
-    const notification = document.createElement('div');
-    notification.className = `fixed top-4 right-4 ${colors[type]} text-white px-6 py-3 rounded-lg shadow-lg z-50 animate-in slide-in-from-top`;
-    notification.textContent = message;
-    document.body.appendChild(notification);
-
-    setTimeout(() => {
-        notification.classList.add('animate-out', 'fade-out');
-        setTimeout(() => notification.remove(), 300);
-    }, 3000);
-};
-
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000';
-const CLINIC_ID = '00000000-0000-0000-0000-000000000001';
-
-// UX Presets
-const SPECIALTIES = [
-    'Ortodontia', 'Odontopediatria', 'Implantodontia', 'Periodontia',
-    'Endodontia', 'Prótese Dentária', 'Cirurgia Bucomaxilofacial',
-    'Estomatologia', 'Radiologia', 'Clínica Geral',
-    'Harmonização Orofacial', 'DTM e Dor Orofacial', 'Pacientes Especiais (PNE)'
-];
-
-const TONE_PRESETS = [
-    { value: 'Empática, acolhedora e eficiente', label: 'Empática e Acolhedora' },
-    { value: 'Profissional, objetiva e clara', label: 'Profissional e Objetiva' },
-    { value: 'Amigável, descontraída e próxima', label: 'Amigável e Descontraída' },
-    { value: 'Técnica, educativa e informativa', label: 'Técnica e Educativa' }
-];
-
-const DAYS_OF_WEEK = [
-    { id: 'seg', label: 'Seg' },
-    { id: 'ter', label: 'Ter' },
-    { id: 'qua', label: 'Qua' },
-    { id: 'qui', label: 'Qui' },
-    { id: 'sex', label: 'Sex' },
-    { id: 'sab', label: 'Sáb' },
-    { id: 'dom', label: 'Dom' }
-];
+const CLINIC_ID = '00000000-0000-0000-0000-000000000001'; // TODO: Get from auth context
 
 interface PersonaConfig {
     name: string;
@@ -73,7 +27,7 @@ interface PersonaConfig {
 interface TeamMember {
     name: string;
     clinicorp_id: string;
-    specialty: string[];  // Changed to array for multiple specialties
+    specialty: string;
     focus: string;
     schedule: string;
     position: string;
@@ -217,10 +171,9 @@ export default function AIConfigWizard() {
             const response = await axios.get(`${API_URL}/api/ai-config/${CLINIC_ID}/preview`);
             setPreview(response.data.prompt);
             setShowPreview(true);
-            showNotification('✨ Preview gerado com sucesso!', 'success');
         } catch (error) {
             console.error('Error loading preview:', error);
-            showNotification('❌ Erro ao gerar preview', 'error');
+            alert('Erro ao gerar preview');
         } finally {
             setLoading(false);
         }
@@ -366,18 +319,12 @@ function PersonaStep({ config, setConfig }: any) {
 
                 <div>
                     <Label htmlFor="tone">Tom de Voz</Label>
-                    <Select value={config.persona.tone} onValueChange={(value) => updatePersona('tone', value)}>
-                        <SelectTrigger id="tone">
-                            <SelectValue placeholder="Selecione o tom de voz" />
-                        </SelectTrigger>
-                        <SelectContent>
-                            {TONE_PRESETS.map((tone) => (
-                                <SelectItem key={tone.value} value={tone.value}>
-                                    {tone.label}
-                                </SelectItem>
-                            ))}
-                        </SelectContent>
-                    </Select>
+                    <Input
+                        id="tone"
+                        value={config.persona.tone}
+                        onChange={(e) => updatePersona('tone', e.target.value)}
+                        placeholder="Ex: Empática, acolhedora, profissional"
+                    />
                 </div>
             </div>
 
@@ -498,24 +445,13 @@ function TeamStep({ config, setConfig }: any) {
                                         />
                                     </div>
 
-
                                     <div>
                                         <Label>Especialidade</Label>
-                                        <Select
+                                        <Input
                                             value={member.specialty}
-                                            onValueChange={(value) => updateTeamMember(index, 'specialty', value)}
-                                        >
-                                            <SelectTrigger>
-                                                <SelectValue placeholder="Selecione a especialidade" />
-                                            </SelectTrigger>
-                                            <SelectContent>
-                                                {SPECIALTIES.map((spec) => (
-                                                    <SelectItem key={spec} value={spec}>
-                                                        {spec}
-                                                    </SelectItem>
-                                                ))}
-                                            </SelectContent>
-                                        </Select>
+                                            onChange={(e) => updateTeamMember(index, 'specialty', e.target.value)}
+                                            placeholder="Ex: Ortodontia, Odontopediatria"
+                                        />
                                     </div>
 
                                     <div>
@@ -529,32 +465,11 @@ function TeamStep({ config, setConfig }: any) {
 
                                     <div className="col-span-2">
                                         <Label>Dias de Atendimento</Label>
-                                        <div className="flex gap-3 mt-2 flex-wrap">
-                                            {DAYS_OF_WEEK.map((day) => {
-                                                const scheduleArray = member.schedule ? member.schedule.split(',').map((s: string) => s.trim()) : [];
-                                                const isChecked = scheduleArray.includes(day.label);
-
-                                                return (
-                                                    <div key={day.id} className="flex items-center space-x-2">
-                                                        <Checkbox
-                                                            id={`${index}-${day.id}`}
-                                                            checked={isChecked}
-                                                            onCheckedChange={(checked) => {
-                                                                const currentDays = scheduleArray.filter((d: string) => d !== day.label);
-                                                                const newDays = checked ? [...currentDays, day.label] : currentDays;
-                                                                updateTeamMember(index, 'schedule', newDays.join(', '));
-                                                            }}
-                                                        />
-                                                        <Label htmlFor={`${index}-${day.id}`} className="text-sm cursor-pointer font-normal">
-                                                            {day.label}
-                                                        </Label>
-                                                    </div>
-                                                );
-                                            })}
-                                        </div>
-                                        {member.schedule && (
-                                            <p className="text-sm text-gray-600 mt-2">📅 {member.schedule}</p>
-                                        )}
+                                        <Input
+                                            value={member.schedule}
+                                            onChange={(e) => updateTeamMember(index, 'schedule', e.target.value)}
+                                            placeholder="Ex: Segunda, Quarta, Sexta e Sábado"
+                                        />
                                     </div>
                                 </div>
                             </CardContent>
@@ -568,32 +483,6 @@ function TeamStep({ config, setConfig }: any) {
 
 // Step 3: Administrative Info
 function AdminStep({ config, setConfig }: any) {
-    const [loadingCep, setLoadingCep] = useState(false);
-
-    const searchCep = async () => {
-        const cep = config.admin_info.location.address.replace(/\D/g, '');
-        if (cep.length !== 8) {
-            alert('CEP deve ter 8 dígitos');
-            return;
-        }
-
-        setLoadingCep(true);
-        try {
-            const response = await axios.get(`https://viacep.com.br/ws/${cep}/json/`);
-            if (response.data.erro) {
-                alert('CEP não encontrado');
-                return;
-            }
-
-            const fullAddress = `${response.data.logradouro}, ${response.data.bairro} - ${response.data.localidade}/${response.data.uf}`;
-            updateLocation('address', fullAddress);
-        } catch (error) {
-            alert('Erro ao buscar CEP');
-        } finally {
-            setLoadingCep(false);
-        }
-    };
-
     const updateLocation = (field: string, value: string) => {
         setConfig({
             ...config,
@@ -634,14 +523,6 @@ function AdminStep({ config, setConfig }: any) {
         });
     };
 
-    const formatPhone = (value: string) => {
-        const numbers = value.replace(/\D/g, '');
-        if (numbers.length <= 10) {
-            return numbers.replace(/(\d{2})(\d{4})(\d{0,4})/, '($1) $2-$3');
-        }
-        return numbers.replace(/(\d{2})(\d{5})(\d{0,4})/, '($1) $2-$3');
-    };
-
     return (
         <div className="space-y-6">
             <Tabs defaultValue="location">
@@ -653,33 +534,6 @@ function AdminStep({ config, setConfig }: any) {
                 </TabsList>
 
                 <TabsContent value="location" className="space-y-4 mt-4">
-                    <div className="grid grid-cols-4 gap-4">
-                        <div className="col-span-3">
-                            <Label>CEP</Label>
-                            <Input
-                                value={config.admin_info.location.address.replace(/\D/g, '').slice(0, 8)}
-                                onChange={(e) => {
-                                    const cep = e.target.value.replace(/\D/g, '');
-                                    updateLocation('address', cep);
-                                }}
-                                placeholder="00000-000"
-                                maxLength={8}
-                            />
-                        </div>
-                        <div className="flex items-end">
-                            <Button
-                                onClick={searchCep}
-                                disabled={loadingCep}
-                                type="button"
-                                variant="outline"
-                                className="w-full"
-                            >
-                                <Search className="w-4 h-4 mr-2" />
-                                {loadingCep ? 'Buscando...' : 'Buscar'}
-                            </Button>
-                        </div>
-                    </div>
-
                     <div>
                         <Label>Endereço Completo</Label>
                         <Input
@@ -773,12 +627,8 @@ function AdminStep({ config, setConfig }: any) {
                         <Label>WhatsApp/Telefone</Label>
                         <Input
                             value={config.admin_info.contact.phone}
-                            onChange={(e) => {
-                                const formatted = formatPhone(e.target.value);
-                                updateContact('phone', formatted);
-                            }}
-                            placeholder="Ex: (11) 98765-4321"
-                            maxLength={15}
+                            onChange={(e) => updateContact('phone', e.target.value)}
+                            placeholder="Ex: (11) 4436-1721"
                         />
                     </div>
                     <div>
