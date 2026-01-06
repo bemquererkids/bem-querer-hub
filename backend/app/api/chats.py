@@ -61,7 +61,8 @@ async def list_chats():
                     "unreadCount": c.get("unread_count", 0),
                     "tags": c.get("tags") or [],
                     "status": "online",  # We could infer this from elsewhere
-                    "phone": c.get("phone_number")
+                    "phone": c.get("phone_number"),
+                    "avatar": c.get("profile_pic_url") or c.get("avatar")  # Map avatar
                 })
         
         return chats
