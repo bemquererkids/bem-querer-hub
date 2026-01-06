@@ -36,15 +36,44 @@ class GPTService:
         self.client = AsyncOpenAI(api_key=api_key)
         self.model = "gpt-4-turbo-preview" 
 
-        # Load Carol's specialized prompt from Bem-Querer workflow
+        # Dynamic prompt loading - will be loaded per request based on clinic_id
+        self.system_prompt_template = None
+        self.context_config = self._load_context_config()
+    
+    async def _load_ai_config_from_db(self, clinic_id: str) -> str:
+        """
+        Load AI configuration from database and generate prompt
+        Falls back to hardcoded Bem-Querer prompt if not found
+        """
+        try:
+            from app.core.database import get_supabase
+            from app.services.ai_config_service import AIConfigService
+            
+            supabase = get_supabase()
+            
+            # Try to load from database
+            result = supabase.table("ai_configurations") \
+                .select("config") \
+                .eq("clinic_id", clinic_id) \
+                .eq("is_active", True) \
+                .single() \
+                .execute()
+            
+            if result.data:
+                logger.info(f"Loaded AI config from database for clinic {clinic_id}")
+                return AIConfigService.generate_system_prompt(result.data["config"])
+            
+        except Exception as e:
+            logger.warning(f"Failed to load AI config from database: {e}")
+        
+        # Fallback to Bem-Querer hardcoded prompt
         try:
             from app.services.carol_prompt_bemquerer import get_carol_prompt
-            self.system_prompt_template = get_carol_prompt()
+            logger.info("Using fallback Bem-Querer prompt")
+            return get_carol_prompt()
         except ImportError:
-            # Fallback to basic prompt if file not found
             logger.warning("Carol prompt file not found, using basic prompt")
-            self.context_config = self._load_context_config()
-            self.system_prompt_template = self._get_basic_prompt_template()
+            return self._get_basic_prompt_template()
 
     def _load_key_from_json(self) -> Optional[str]:
         # 1. Try Env Var first (Security Best Practice)
@@ -382,14 +411,17 @@ Data Atual: {current_date}
         Process user message with Tool Calling loop
         """
         try:
-            # 1. Prepare Messages
-            # Carol's prompt is already complete, just use it directly
-            system_prompt = self.system_prompt_template
+            # 1. Load AI Configuration dynamically from database
+            clinic_id = context.get("clinic_id", "00000000-0000-0000-0000-000000000001") if context else "00000000-0000-0000-0000-000000000001"
+            system_prompt = await self._load_ai_config_from_db(clinic_id)
             
             messages = [{"role": "system", "content": system_prompt}]
             
             if context:
-                messages.append({"role": "system", "content": f"Contexto do Paciente: {context}"})
+                # Add patient context
+                patient_context = {k: v for k, v in context.items() if k != "clinic_id"}
+                if patient_context:
+                    messages.append({"role": "system", "content": f"Contexto do Paciente: {patient_context}"})
             
             if chat_history:
                 for msg in chat_history[-6:]:
