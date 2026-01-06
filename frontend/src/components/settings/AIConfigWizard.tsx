@@ -247,10 +247,12 @@ export default function AIConfigWizard() {
 
     return (
         <div className="container mx-auto p-4 max-w-6xl">
-            <Card className="shadow-sm dark:bg-gray-800 dark:border-gray-700">
-                <CardHeader className="pb-3 border-b dark:border-gray-700">
-                    <CardTitle className="flex items-center gap-2 text-xl dark:text-white">
-                        <Sparkles className="w-5 h-5 text-purple-500 dark:text-purple-400" />
+            <Card className="shadow-lg border-0 bg-white dark:bg-card dark:border dark:border-border">
+                <CardHeader className="pb-4 border-b border-zinc-100 dark:border-zinc-800 space-y-1">
+                    <CardTitle className="flex items-center gap-2 text-xl text-zinc-900 dark:text-zinc-50 tracking-tight">
+                        <div className="p-2 bg-purple-100 dark:bg-purple-500/20 rounded-lg">
+                            <Sparkles className="w-5 h-5 text-purple-600 dark:text-purple-400" />
+                        </div>
                         Configuração da Assistente Virtual
                     </CardTitle>
                     <CardDescription className="text-sm dark:text-gray-400">
@@ -268,9 +270,9 @@ export default function AIConfigWizard() {
                                 onClick={() => setCurrentStep(index)}
                             >
                                 <div
-                                    className={`w-10 h-10 rounded-full flex items-center justify-center text-xl mb-1 transition-all ${index === currentStep
-                                        ? 'bg-purple-100 ring-2 ring-purple-500 text-purple-700 dark:bg-purple-900 dark:text-purple-100 dark:ring-purple-400'
-                                        : 'bg-gray-100 hover:bg-gray-200 dark:bg-gray-700 dark:hover:bg-gray-600'
+                                    className={`w-10 h-10 rounded-full flex items-center justify-center text-lg mb-2 transition-all duration-300 ${index === currentStep
+                                        ? 'bg-purple-600 text-white shadow-lg shadow-purple-500/30 scale-110 ring-2 ring-purple-600 ring-offset-2 dark:ring-offset-gray-900'
+                                        : 'bg-zinc-100 text-zinc-400 hover:bg-zinc-200 dark:bg-zinc-800 dark:text-zinc-500 dark:hover:bg-zinc-700'
                                         }`}
                                 >
                                     <step.icon className="w-5 h-5" />
@@ -281,7 +283,7 @@ export default function AIConfigWizard() {
                     </div>
 
                     {/* Step Content */}
-                    <div className="min-h-[350px] max-h-[450px] overflow-y-auto">
+                    <div className="min-h-[400px] max-h-[500px] overflow-y-auto pr-2 scrollbar-thin scrollbar-thumb-zinc-200 dark:scrollbar-thumb-zinc-800 scrollbar-track-transparent">
                         {currentStep === 0 && <PersonaStep config={config} setConfig={setConfig} />}
                         {currentStep === 1 && <TeamStep config={config} setConfig={setConfig} />}
                         {currentStep === 2 && <AdminStep config={config} setConfig={setConfig} />}
@@ -303,7 +305,7 @@ export default function AIConfigWizard() {
                             variant="outline"
                             onClick={() => setCurrentStep(Math.max(0, currentStep - 1))}
                             disabled={currentStep === 0}
-                            className="bg-white dark:bg-gray-700 hover:bg-gray-100 dark:hover:bg-gray-600 dark:text-white dark:border-gray-600"
+                            className="text-zinc-600 dark:text-zinc-400 border-zinc-200 dark:border-zinc-700 hover:bg-zinc-100 dark:hover:bg-zinc-800 dark:hover:text-zinc-200 transition-colors"
                         >
                             <ArrowLeft className="w-4 h-4 mr-2" />
                             Anterior
@@ -347,13 +349,13 @@ function PersonaStep({ config, setConfig }: any) {
 
             <div className="grid grid-cols-2 gap-3">
                 <div>
-                    <Label htmlFor="name" className="text-sm dark:text-gray-300">Nome da Assistente</Label>
+                    <Label htmlFor="name" className="text-sm font-medium text-zinc-700 dark:text-zinc-300">Nome da Assistente</Label>
                     <Input
                         id="name"
                         value={config.persona.name}
                         onChange={(e) => updatePersona('name', e.target.value)}
                         placeholder="Ex: Carol, Ana..."
-                        className="h-9 text-sm dark:bg-gray-900 dark:border-gray-700 dark:text-gray-100"
+                        className="h-10 mt-1.5 dark:bg-zinc-900/50 dark:border-zinc-700 focus:ring-purple-500/20"
                     />
                 </div>
 
@@ -471,10 +473,15 @@ function TeamStep({ config, setConfig }: any) {
             ) : (
                 <div className="space-y-4">
                     {config.team.map((member: TeamMember, index: number) => (
-                        <Card key={index} className="dark:bg-gray-800 dark:border-gray-700">
+                        <Card key={index} className="bg-white dark:bg-zinc-900/30 border border-zinc-200 dark:border-zinc-800 shadow-sm transition-all hover:border-zinc-300 dark:hover:border-zinc-700">
                             <CardContent className="pt-6">
-                                <div className="flex justify-between items-start mb-4">
-                                    <h4 className="font-medium dark:text-white">Profissional #{index + 1}</h4>
+                                <div className="flex justify-between items-center mb-4 pb-3 border-b border-dashed border-zinc-200 dark:border-zinc-800">
+                                    <div className="flex items-center gap-2">
+                                        <div className="w-6 h-6 rounded-full bg-purple-100 dark:bg-purple-900/30 flex items-center justify-center text-xs font-bold text-purple-700 dark:text-purple-400">
+                                            {index + 1}
+                                        </div>
+                                        <h4 className="font-medium text-sm text-zinc-900 dark:text-zinc-100">Profissional</h4>
+                                    </div>
                                     <Button
                                         variant="ghost"
                                         size="sm"
@@ -492,7 +499,7 @@ function TeamStep({ config, setConfig }: any) {
                                             value={member.name}
                                             onChange={(e) => updateTeamMember(index, 'name', e.target.value)}
                                             placeholder="Dra. Fernanda"
-                                            className="h-8 text-xs dark:bg-gray-900 dark:border-gray-700 dark:text-gray-100"
+                                            className="h-9 text-xs mt-1 dark:bg-zinc-950/50 dark:border-zinc-800 dark:text-zinc-100 focus:border-purple-500 focus:ring-purple-500/20"
                                         />
                                     </div>
 
@@ -502,7 +509,7 @@ function TeamStep({ config, setConfig }: any) {
                                             value={member.clinicorp_id}
                                             onChange={(e) => updateTeamMember(index, 'clinicorp_id', e.target.value)}
                                             placeholder="611370666..."
-                                            className="h-8 text-xs dark:bg-gray-900 dark:border-gray-700 dark:text-gray-100"
+                                            className="h-9 text-xs mt-1 dark:bg-zinc-950/50 dark:border-zinc-800 dark:text-zinc-100 focus:border-purple-500 focus:ring-purple-500/20"
                                         />
                                     </div>
 
@@ -512,7 +519,7 @@ function TeamStep({ config, setConfig }: any) {
                                             value={member.focus}
                                             onChange={(e) => updateTeamMember(index, 'focus', e.target.value)}
                                             placeholder="Aparelhos fixos"
-                                            className="h-8 text-xs dark:bg-gray-900 dark:border-gray-700 dark:text-gray-100"
+                                            className="h-9 text-xs mt-1 dark:bg-zinc-950/50 dark:border-zinc-800 dark:text-zinc-100 focus:border-purple-500 focus:ring-purple-500/20"
                                         />
                                     </div>
 
@@ -527,7 +534,7 @@ function TeamStep({ config, setConfig }: any) {
                                                 }
                                             }}
                                         >
-                                            <SelectTrigger className="h-8 text-xs dark:bg-gray-900 dark:border-gray-700 dark:text-gray-100">
+                                            <SelectTrigger className="h-9 text-xs mt-1 dark:bg-zinc-950/50 dark:border-zinc-800 dark:text-zinc-100">
                                                 <SelectValue placeholder="Adicionar especialidade..." />
                                             </SelectTrigger>
                                             <SelectContent>
@@ -543,7 +550,7 @@ function TeamStep({ config, setConfig }: any) {
                                                 {member.specialty.map((spec, specIndex) => (
                                                     <span
                                                         key={specIndex}
-                                                        className="inline-flex items-center gap-1 px-1.5 py-0.5 bg-purple-100 text-purple-700 rounded text-xs"
+                                                        className="inline-flex items-center gap-1.5 px-2.5 py-1 bg-purple-50 text-purple-700 dark:bg-purple-500/10 dark:text-purple-300 border border-purple-100 dark:border-purple-500/20 rounded-md text-xs font-medium transition-colors"
                                                     >
                                                         {spec}
                                                         <X
