@@ -600,19 +600,24 @@ async def process_new_lead(
         context={"patient_name": name, "clinic_id": clinic_id}
     )
     ai_response_text = ai_response.get("response", "Desculpe, não entendi.")
+    logger.warning(f"🤖 AI Response generated: {ai_response_text[:100]}...")
     
     # 6. Save AI message
+    ai_message_id = f"ai_{datetime.now().timestamp()}"
     ai_msg = {
         "conversation_id": conversation_id,
         "clinic_id": clinic_id,
-        "message_id": f"ai_{datetime.now().timestamp()}",
+        "message_id": ai_message_id,
         "from_number": "sistema",
         "to_number": clean_phone,
         "content": ai_response_text,
         "is_from_me": True,
         "timestamp": datetime.now().isoformat()
     }
-    supabase.table('whatsapp_messages').insert(ai_msg).execute()
+    
+    logger.warning(f"💾 Saving AI message to DB: message_id={ai_message_id}, is_from_me=True")
+    result = supabase.table('whatsapp_messages').insert(ai_msg).execute()
+    logger.warning(f"✅ AI message saved successfully! DB record: {result.data[0] if result.data else 'No data returned'}")
     
     # 7. Send via Meta API
     # 7. Send Response
