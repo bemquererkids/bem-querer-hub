@@ -9,7 +9,12 @@ from app.core.database import get_supabase
 import logging
 
 logger = logging.getLogger(__name__)
-router = APIRouter(prefix="/ai-config", tags=["AI Configuration"])
+router = APIRouter(prefix="/api/ai-config", tags=["AI Configuration"])
+
+@router.get("/test")
+async def test_endpoint():
+    """Test endpoint to verify router is loaded"""
+    return {"status": "AI Config API is working!", "version": "1.0"}
 
 # Pydantic Models
 class PersonaConfig(BaseModel):
