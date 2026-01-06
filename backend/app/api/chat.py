@@ -96,18 +96,27 @@ async def get_messages(conversation_id: str):
         if not response.data:
             return []
         
-        return [
-            ChatMessage(
-                id=msg["message_id"],
-                content=msg.get("content", ""),
-                is_from_me=msg.get("is_from_me", False),
-                created_at=msg.get("created_at", ""),
-                message_type=msg.get("message_type")
-            )
-            for msg in response.data
-            # Filter out debug logs
-            if msg.get("message_type") != "debug_log"
-        ]
+        # Deduplicate messages by message_id (in case of duplicates in DB)
+        seen_ids = set()
+        unique_messages = []
+        
+        for msg in response.data:
+            # Skip debug logs
+            if msg.get("message_type") == "debug_log":
+                continue
+                
+            msg_id = msg["message_id"]
+            if msg_id not in seen_ids:
+                seen_ids.add(msg_id)
+                unique_messages.append(ChatMessage(
+                    id=msg_id,
+                    content=msg.get("content", ""),
+                    is_from_me=msg.get("is_from_me", False),
+                    created_at=msg.get("created_at", ""),
+                    message_type=msg.get("message_type")
+                ))
+        
+        return unique_messages
         
     except Exception as e:
         logger.error(f"Error fetching messages: {e}")
