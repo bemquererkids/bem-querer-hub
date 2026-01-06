@@ -89,6 +89,24 @@ class UazAPIService:
             logger.error(f"Check connection failed: {e}")
             return False
 
+def get_uazapi_service() -> UazAPIService:
+    """
+    Get UazAPI service instance using environment variables
+    This is a simple helper for endpoints that don't have clinic context
+    """
+    instance_name = os.getenv("UAZAPI_INSTANCE", "main")
+    token = os.getenv("UAZAPI_TOKEN")
+    base_url = os.getenv("UAZAPI_BASE_URL", "https://bemquerer.uazapi.com")
+    
+    if not token:
+        raise ValueError("UAZAPI_TOKEN environment variable not set")
+    
+    return UazAPIService(
+        instance_name=instance_name,
+        token=token,
+        base_url=base_url
+    )
+
 async def get_uazapi_service_for_clinic(clinic_id: str) -> UazAPIService:
     from app.core.database import get_supabase
     
