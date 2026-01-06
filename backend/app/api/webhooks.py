@@ -225,6 +225,8 @@ async def receive_uazapi_webhook(request: Request, background_tasks: BackgroundT
         if not uaz_id:
             # Fallback to a hash of content/timestamp if ID is somehow missing
             uaz_id = f"uazapi_{datetime.now().timestamp()}"
+        
+        logger.info(f"🆔 UazAPI Message ID: {uaz_id}")
 
         if not text_content or not phone:
             logger.warning(f"Missing text or phone: text={text_content}, phone={phone}")
@@ -234,6 +236,7 @@ async def receive_uazapi_webhook(request: Request, background_tasks: BackgroundT
         CLINIC_ID_DEFAULT = "00000000-0000-0000-0000-000000000001"
         
         logger.info(f"✅ Processing message from {name} ({phone}): {text_content[:50]}")
+        logger.info(f"📦 Sending to background task with message_id: {uaz_id}")
         
         # Save and Process in background
         background_tasks.add_task(
@@ -253,7 +256,10 @@ async def receive_uazapi_webhook(request: Request, background_tasks: BackgroundT
 
 async def process_uazapi_message(clinic_id: str, phone: str, name: str, message: str, message_id: str):
     try:
+        logger.info(f"🔄 [process_uazapi_message] Starting for message_id: {message_id}")
+        
         # Save to WhatsApp tables
+        logger.info(f"💾 [process_uazapi_message] Calling save_whatsapp_message...")
         await save_whatsapp_message(
             clinic_id=clinic_id,
             phone=phone,
@@ -263,6 +269,7 @@ async def process_uazapi_message(clinic_id: str, phone: str, name: str, message:
             message_type="text",
             is_from_me=False
         )
+        logger.info(f"✅ [process_uazapi_message] Message saved successfully")
         
         # Trigger AI
         await process_new_lead(
