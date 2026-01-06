@@ -148,7 +148,7 @@ async def send_message(request: SendMessageRequest):
             raise HTTPException(status_code=400, detail="Phone number not found in conversation")
         
         # 2. Send message via UazAPI (non-blocking - log error but continue)
-        try {
+        try:
             uazapi = get_uazapi_service()
             logger.info(f"Sending message to {phone_number} via UazAPI")
             # UazAPIService.send_message is synchronous in the current implementation
