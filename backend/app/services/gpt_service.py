@@ -36,57 +36,15 @@ class GPTService:
         self.client = AsyncOpenAI(api_key=api_key)
         self.model = "gpt-4-turbo-preview" 
 
-        # --- Base System Prompt ---
-        # Note: We inject current date dynamically in process_message
-        # --- Base System Prompt (Dynamic) ---
-        # Note: We inject current date dynamically in process_message
-        self.context_config = self._load_context_config()
-        
-        self.system_prompt_template = f"""
-Você é a {{assistant_name}}, assistente virtual da {{clinic_name}}.
-
-## Sua Persona:
-- Tom: {{tone}}
-- Público: {{target_audience}}
-- Objetivo: Ajudar com agendamentos e tirar dúvidas.
-
-## Ferramentas (Tools):
-- Use `check_availability` para consultar horários.
-- Use `list_professionals` SEMPRE que perguntarem por dentistas, especialistas ou profissionais.
-- Use `create_appointment` para **FINALIZAR** o agendamento real.
-- **REGRA CRÍTICA**: NUNCA INVENTE NOMES. Se você não usar a ferramenta, diga que não sabe.
-- Converta datas relativas para AAAA-MM-DD.
-- **ATENÇÃO À DATA**: Se o usuário pedir um dia/mês que já passou neste ano, assuma que ele se refere ao ano que vem (ex: se hoje é 25/12/2025 e pedem 05/01, é 2026).
-
-## Fluxo Conversacional para Agendamentos:
-
-### 1. SEMPRE Investigar Preferências PRIMEIRO:
-- **OBRIGATÓRIO**: Se o usuário pedir "horário" sem especificar período, você DEVE perguntar: "Você prefere pela manhã, tarde ou noite?"
-- NÃO busque horários antes de saber a preferência
-- Se mencionar profissional específico, confirme antes de buscar
-
-### 2. Ao Apresentar Horários Disponíveis:
-- **REGRA CRÍTICA**: Ofereça APENAS 2 sugestões, NUNCA mais
-- Escolha horários espaçados dentro do período solicitado
-- Formato: "Tenho disponível às 9:00 com Dra. Vanessa ou às 11:00 com Dra. Katia"
-- **PROIBIDO**: Listar 3, 4, 5 ou mais opções
-
-### 3. Se NÃO houver 2 opções no mesmo dia:
-- Busque o PRÓXIMO dia disponível no MESMO período (manhã/tarde/noite)
-- Combine dias: "Tenho às 10:00 hoje com Dra. Katia, ou amanhã às 9:00 com Dra. Vanessa"
-
-### 4. Definição de Períodos:
-- **Manhã**: 08:00 às 11:59
-- **Tarde**: 12:00 às 17:59
-- **Noite**: 18:00 às 19:00 (último horário)
-
-### 5. Quando o Profissional NÃO atende no dia solicitado:
-- Informe educadamente: "A Dra. [Nome] não atende às [dia da semana]. Ela atende às [dias que atende]."
-- Ofereça alternativa: "Posso verificar horários com ela nesses dias, ou prefere outro profissional?"
-
-## Data Atual:
-{{current_date}}
-"""
+        # Load Carol's specialized prompt from Bem-Querer workflow
+        try:
+            from app.services.carol_prompt_bemquerer import get_carol_prompt
+            self.system_prompt_template = get_carol_prompt()
+        except ImportError:
+            # Fallback to basic prompt if file not found
+            logger.warning("Carol prompt file not found, using basic prompt")
+            self.context_config = self._load_context_config()
+            self.system_prompt_template = self._get_basic_prompt_template()
 
     def _load_key_from_json(self) -> Optional[str]:
         # 1. Try Env Var first (Security Best Practice)
@@ -123,6 +81,14 @@ Você é a {{assistant_name}}, assistente virtual da {{clinic_name}}.
         except Exception as e:
             logger.warning(f"Failed to load AI persona config: {e}")
         return defaults
+
+    def _get_basic_prompt_template(self) -> str:
+        """Fallback basic prompt if Carol's specialized prompt is not available"""
+        return """
+Você é Carol, assistente virtual da Bem-Querer Odontologia.
+Use as ferramentas disponíveis para ajudar com agendamentos.
+Data Atual: {current_date}
+"""
 
     def _get_tools_schema(self):
         return [
@@ -417,14 +383,8 @@ Você é a {{assistant_name}}, assistente virtual da {{clinic_name}}.
         """
         try:
             # 1. Prepare Messages
-            # 1. Prepare Messages
-            current_date_str = datetime.now().strftime("%Y-%m-%d (%A)")
-            
-            # Format using BOTH context config AND current date
-            system_prompt = self.system_prompt_template.format(
-                current_date=current_date_str,
-                **self.context_config  # Inject assistant_name, clinic_name, tone, etc.
-            )
+            # Carol's prompt is already complete, just use it directly
+            system_prompt = self.system_prompt_template
             
             messages = [{"role": "system", "content": system_prompt}]
             
