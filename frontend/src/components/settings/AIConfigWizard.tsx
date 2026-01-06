@@ -298,11 +298,12 @@ export default function AIConfigWizard() {
                     </div>
 
                     {/* Navigation */}
-                    <div className="flex justify-between mt-6 pt-4 border-t">
+                    <div className="flex justify-between mt-6 pt-4 border-t dark:border-gray-700">
                         <Button
                             variant="outline"
                             onClick={() => setCurrentStep(Math.max(0, currentStep - 1))}
                             disabled={currentStep === 0}
+                            className="bg-white dark:bg-gray-700 hover:bg-gray-100 dark:hover:bg-gray-600 dark:text-white dark:border-gray-600"
                         >
                             <ArrowLeft className="w-4 h-4 mr-2" />
                             Anterior
@@ -342,17 +343,17 @@ function PersonaStep({ config, setConfig }: any) {
 
     return (
         <div className="space-y-3">
-            <h3 className="text-base font-semibold mb-3">Defina a Persona da Assistente</h3>
+            <h3 className="text-base font-semibold mb-3 dark:text-white">Defina a Persona da Assistente</h3>
 
             <div className="grid grid-cols-2 gap-3">
                 <div>
-                    <Label htmlFor="name" className="text-sm">Nome da Assistente</Label>
+                    <Label htmlFor="name" className="text-sm dark:text-gray-300">Nome da Assistente</Label>
                     <Input
                         id="name"
                         value={config.persona.name}
                         onChange={(e) => updatePersona('name', e.target.value)}
                         placeholder="Ex: Carol, Ana..."
-                        className="h-9 text-sm"
+                        className="h-9 text-sm dark:bg-gray-900 dark:border-gray-700 dark:text-gray-100"
                     />
                 </div>
 
@@ -456,7 +457,7 @@ function TeamStep({ config, setConfig }: any) {
     return (
         <div className="space-y-4">
             <div className="flex justify-between items-center">
-                <h3 className="text-lg font-semibold">Equipe Médica</h3>
+                <h3 className="text-lg font-semibold dark:text-white">Equipe Médica</h3>
                 <Button onClick={addTeamMember} size="sm" className="bg-purple-600">
                     <Plus className="w-4 h-4 mr-2" />
                     Adicionar Profissional
@@ -703,17 +704,17 @@ function AdminStep({ config, setConfig }: any) {
     return (
         <div className="space-y-4">
             <Tabs defaultValue="location">
-                <TabsList className="grid w-full grid-cols-4">
-                    <TabsTrigger value="location">📍 Localização</TabsTrigger>
-                    <TabsTrigger value="schedule">⏰ Horários</TabsTrigger>
-                    <TabsTrigger value="pricing">💰 Valores</TabsTrigger>
-                    <TabsTrigger value="contact">📞 Contatos</TabsTrigger>
+                <TabsList className="grid w-full grid-cols-4 dark:bg-gray-800 dark:text-gray-400">
+                    <TabsTrigger value="location" className="data-[state=active]:bg-purple-600 data-[state=active]:text-white dark:data-[state=active]:bg-purple-700">📍 Localização</TabsTrigger>
+                    <TabsTrigger value="schedule" className="data-[state=active]:bg-purple-600 data-[state=active]:text-white dark:data-[state=active]:bg-purple-700">⏰ Horários</TabsTrigger>
+                    <TabsTrigger value="pricing" className="data-[state=active]:bg-purple-600 data-[state=active]:text-white dark:data-[state=active]:bg-purple-700">💰 Valores</TabsTrigger>
+                    <TabsTrigger value="contact" className="data-[state=active]:bg-purple-600 data-[state=active]:text-white dark:data-[state=active]:bg-purple-700">📞 Contatos</TabsTrigger>
                 </TabsList>
 
                 <TabsContent value="location" className="space-y-3 mt-3">
                     <div className="grid grid-cols-4 gap-4">
                         <div className="col-span-3">
-                            <Label>CEP</Label>
+                            <Label className="dark:text-gray-300">CEP</Label>
                             <Input
                                 value={config.admin_info.location.address.replace(/\D/g, '').slice(0, 8)}
                                 onChange={(e) => {
@@ -722,6 +723,7 @@ function AdminStep({ config, setConfig }: any) {
                                 }}
                                 placeholder="00000-000"
                                 maxLength={8}
+                                className="dark:bg-gray-900 dark:border-gray-700 dark:text-gray-100"
                             />
                         </div>
                         <div className="flex items-end">
@@ -730,7 +732,7 @@ function AdminStep({ config, setConfig }: any) {
                                 disabled={loadingCep}
                                 type="button"
                                 variant="outline"
-                                className="w-full"
+                                className="w-full bg-white dark:bg-gray-700 hover:bg-gray-100 dark:hover:bg-gray-600 dark:text-white dark:border-gray-600"
                             >
                                 <Search className="w-4 h-4 mr-2" />
                                 {loadingCep ? 'Buscando...' : 'Buscar'}
@@ -739,11 +741,12 @@ function AdminStep({ config, setConfig }: any) {
                     </div>
 
                     <div>
-                        <Label>Endereço Completo</Label>
+                        <Label className="dark:text-gray-300">Endereço Completo</Label>
                         <Input
                             value={config.admin_info.location.address}
                             onChange={(e) => updateLocation('address', e.target.value)}
                             placeholder="Ex: Rua Siqueira Campos, 1068 – Centro – Santo André"
+                            className="dark:bg-gray-900 dark:border-gray-700 dark:text-gray-100"
                         />
                     </div>
                     <div>
