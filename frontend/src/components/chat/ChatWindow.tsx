@@ -255,11 +255,12 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({ chat, messages: initialM
 
         try {
             // Send message to backend
-            await chatService.sendMessage(chat.id, text);
+            const response = await chatService.sendMessage(chat.id, text);
 
-            // Update message status to sent
+            // Update message status to sent AND update ID to real DB ID
+            // This is CRITICAL to avoid duplicates since Realtime will use this same ID
             setMessages(prev => prev.map(m =>
-                m.id === userMsg.id ? { ...m, status: 'sent' } : m
+                m.id === userMsg.id ? { ...m, id: response.message_id || m.id, status: 'sent' } : m
             ));
 
             // AI response will come via Supabase realtime subscription

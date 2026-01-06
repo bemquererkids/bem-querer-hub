@@ -15,6 +15,7 @@ export const ChatLayout: React.FC<{ onNavigateToDeal?: (dealId: string) => void 
     const [activeChatId, setActiveChatId] = useState<string | undefined>(undefined);
     const [messages, setMessages] = useState<ChatMessage[]>([]);
     const [loading, setLoading] = useState(true);
+    const [loadingMessages, setLoadingMessages] = useState(false);
     const [error, setError] = useState<string | null>(null);
 
     // Fetch Chat List with timeout
@@ -66,6 +67,10 @@ export const ChatLayout: React.FC<{ onNavigateToDeal?: (dealId: string) => void 
         if (!activeChatId) return;
 
         const handleChatSelection = async () => {
+            // 0. Clear previous messages to avoid visual mix
+            setMessages([]);
+            setLoadingMessages(true);
+
             // 1. Optimistic Update locally
             setChats(prev => prev.map(c =>
                 c.id === activeChatId ? { ...c, unreadCount: 0 } : c
@@ -90,6 +95,8 @@ export const ChatLayout: React.FC<{ onNavigateToDeal?: (dealId: string) => void 
                 setMessages(formattedMessages);
             } catch (error) {
                 console.error("Failed to fetch messages or mark read", error);
+            } finally {
+                setLoadingMessages(false);
             }
         };
 
@@ -135,30 +142,26 @@ export const ChatLayout: React.FC<{ onNavigateToDeal?: (dealId: string) => void 
             {/* CHAT WINDOW AREA */}
             <div className={`
                 flex-1 min-w-0 h-full bg-[#efeae2] dark:bg-[#0b141a] relative
-                ${!activeChatId ? 'hidden md:flex' : 'flex flex-col'}
+                ${activeChatId ? 'flex' : 'hidden md:flex'}
+                flex-col
             `}>
-                {chats.length === 0 && !activeChatId ? (
-                    <div className="flex items-center justify-center h-full">
-                        <div className="text-center max-w-md px-6">
-                            <div className="mb-4">
-                                <ChatBubbleLeftRightIcon className="w-16 h-16 mx-auto text-zinc-300 dark:text-zinc-700" />
-                            </div>
-                            <h3 className="text-lg font-semibold text-zinc-900 dark:text-white mb-2">
-                                Nenhuma conversa ainda
-                            </h3>
-                            <p className="text-sm text-zinc-500 dark:text-zinc-400">
-                                Suas conversas do WhatsApp aparecerão aqui quando você receber mensagens.
-                            </p>
+                {loadingMessages ? (
+                    <div className="flex-1 flex items-center justify-center">
+                        <div className="flex flex-col items-center gap-2">
+                            <RefreshCw className="animate-spin text-cyan-600 w-8 h-8" />
+                            <p className="text-sm text-slate-500">Carregando mensagens...</p>
                         </div>
                     </div>
                 ) : (
-                    <ChatWindow
-                        chat={activeChat}
-                        messages={activeChatId ? messages : []}
-                        onSendMessage={handleSendMessage}
-                        onBack={() => setActiveChatId(undefined)}
-                        onNavigateToDeal={onNavigateToDeal}
-                    />
+                    <div className="flex-1 flex items-center justify-center bg-[#efeae2]">
+                        <div className="text-center p-8 bg-white/80 rounded-xl shadow-sm backdrop-blur-sm max-w-md">
+                            <div className="flex justify-center mb-4">
+                                <ChatBubbleLeftRightIcon className="w-12 h-12 text-cyan-200" />
+                            </div>
+                            <h3 className="text-xl font-bold text-slate-800 mb-2">Selecione uma conversa</h3>
+                            <p className="text-slate-500">Escolha um contato para gerenciar o atendimento em tempo real.</p>
+                        </div>
+                    </div>
                 )}
             </div>
         </div>
