@@ -247,30 +247,30 @@ export default function AIConfigWizard() {
 
     return (
         <div className="container mx-auto p-4 max-w-6xl">
-            <Card className="shadow-sm">
-                <CardHeader className="pb-3">
-                    <CardTitle className="flex items-center gap-2 text-xl">
-                        <Sparkles className="w-5 h-5 text-purple-500" />
+            <Card className="shadow-sm dark:bg-gray-800 dark:border-gray-700">
+                <CardHeader className="pb-3 border-b dark:border-gray-700">
+                    <CardTitle className="flex items-center gap-2 text-xl dark:text-white">
+                        <Sparkles className="w-5 h-5 text-purple-500 dark:text-purple-400" />
                         Configuração da Assistente Virtual
                     </CardTitle>
-                    <CardDescription className="text-sm">
+                    <CardDescription className="text-sm dark:text-gray-400">
                         Configure a personalidade e comportamento da sua assistente de IA
                     </CardDescription>
                 </CardHeader>
-                <CardContent className="pt-0">
+                <CardContent className="pt-6">
                     {/* Progress Steps */}
                     <div className="flex justify-between mb-6">
                         {steps.map((step, index) => (
                             <div
                                 key={index}
-                                className={`flex flex-col items-center cursor-pointer transition-all ${index === currentStep ? 'text-purple-600 scale-105' : 'text-gray-400'
+                                className={`flex flex-col items-center cursor-pointer transition-all ${index === currentStep ? 'text-purple-600 dark:text-purple-400 scale-105' : 'text-gray-400 dark:text-gray-500'
                                     }`}
                                 onClick={() => setCurrentStep(index)}
                             >
                                 <div
                                     className={`w-10 h-10 rounded-full flex items-center justify-center text-xl mb-1 transition-all ${index === currentStep
-                                        ? 'bg-purple-100 ring-2 ring-purple-500'
-                                        : 'bg-gray-100 hover:bg-gray-200'
+                                        ? 'bg-purple-100 ring-2 ring-purple-500 text-purple-700 dark:bg-purple-900 dark:text-purple-100 dark:ring-purple-400'
+                                        : 'bg-gray-100 hover:bg-gray-200 dark:bg-gray-700 dark:hover:bg-gray-600'
                                         }`}
                                 >
                                     <step.icon className="w-5 h-5" />
@@ -470,10 +470,10 @@ function TeamStep({ config, setConfig }: any) {
             ) : (
                 <div className="space-y-4">
                     {config.team.map((member: TeamMember, index: number) => (
-                        <Card key={index}>
+                        <Card key={index} className="dark:bg-gray-800 dark:border-gray-700">
                             <CardContent className="pt-6">
                                 <div className="flex justify-between items-start mb-4">
-                                    <h4 className="font-medium">Profissional #{index + 1}</h4>
+                                    <h4 className="font-medium dark:text-white">Profissional #{index + 1}</h4>
                                     <Button
                                         variant="ghost"
                                         size="sm"
@@ -486,38 +486,38 @@ function TeamStep({ config, setConfig }: any) {
 
                                 <div className="grid grid-cols-12 gap-3">
                                     <div className="col-span-4">
-                                        <Label className="text-xs">Nome</Label>
+                                        <Label className="text-xs dark:text-gray-300">Nome</Label>
                                         <Input
                                             value={member.name}
                                             onChange={(e) => updateTeamMember(index, 'name', e.target.value)}
                                             placeholder="Dra. Fernanda"
-                                            className="h-8 text-xs"
+                                            className="h-8 text-xs dark:bg-gray-900 dark:border-gray-700 dark:text-gray-100"
                                         />
                                     </div>
 
                                     <div className="col-span-4">
-                                        <Label className="text-xs">ID Clinicorp</Label>
+                                        <Label className="text-xs dark:text-gray-300">ID Clinicorp</Label>
                                         <Input
                                             value={member.clinicorp_id}
                                             onChange={(e) => updateTeamMember(index, 'clinicorp_id', e.target.value)}
                                             placeholder="611370666..."
-                                            className="h-8 text-xs"
+                                            className="h-8 text-xs dark:bg-gray-900 dark:border-gray-700 dark:text-gray-100"
                                         />
                                     </div>
 
                                     <div className="col-span-4">
-                                        <Label className="text-xs">Foco/Área</Label>
+                                        <Label className="text-xs dark:text-gray-300">Foco/Área</Label>
                                         <Input
                                             value={member.focus}
                                             onChange={(e) => updateTeamMember(index, 'focus', e.target.value)}
                                             placeholder="Aparelhos fixos"
-                                            className="h-8 text-xs"
+                                            className="h-8 text-xs dark:bg-gray-900 dark:border-gray-700 dark:text-gray-100"
                                         />
                                     </div>
 
 
                                     <div className="col-span-12">
-                                        <Label className="text-xs">Especialidades</Label>
+                                        <Label className="text-xs dark:text-gray-300">Especialidades</Label>
                                         <Select
                                             onValueChange={(value) => {
                                                 const currentSpecs = member.specialty || [];
@@ -526,7 +526,7 @@ function TeamStep({ config, setConfig }: any) {
                                                 }
                                             }}
                                         >
-                                            <SelectTrigger className="h-8 text-xs">
+                                            <SelectTrigger className="h-8 text-xs dark:bg-gray-900 dark:border-gray-700 dark:text-gray-100">
                                                 <SelectValue placeholder="Adicionar especialidade..." />
                                             </SelectTrigger>
                                             <SelectContent>
@@ -561,7 +561,7 @@ function TeamStep({ config, setConfig }: any) {
 
 
                                     <div className="col-span-12">
-                                        <Label className="text-xs">Dias de Atendimento</Label>
+                                        <Label className="text-xs dark:text-gray-300">Dias de Atendimento</Label>
                                         <div className="flex gap-2 mt-1 flex-wrap">
                                             {DAYS_OF_WEEK.map((day) => {
                                                 // Normalize schedule string for display check
@@ -605,7 +605,7 @@ function TeamStep({ config, setConfig }: any) {
                                                                 updateTeamMember(index, 'schedule', currentDays.join(', '));
                                                             }}
                                                         />
-                                                        <Label htmlFor={`${index}-${day.id}`} className="text-sm cursor-pointer font-normal">
+                                                        <Label htmlFor={`${index}-${day.id}`} className="text-sm cursor-pointer font-normal dark:text-gray-300">
                                                             {day.label}
                                                         </Label>
                                                     </div>
