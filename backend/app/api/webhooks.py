@@ -219,6 +219,13 @@ async def receive_uazapi_webhook(request: Request, background_tasks: BackgroundT
         phone = sender.split('@')[0] if '@' in sender else sender
         name = chat_data.get('name') or message_data.get('senderName', 'Desconhecido')
         
+        # Get REAL message ID from UazAPI to prevent ghosting/duplicates
+        # It's usually in key.id or just id
+        uaz_id = message_data.get('id') or (message_data.get('key', {}).get('id'))
+        if not uaz_id:
+            # Fallback to a hash of content/timestamp if ID is somehow missing
+            uaz_id = f"uazapi_{datetime.now().timestamp()}"
+
         if not text_content or not phone:
             logger.warning(f"Missing text or phone: text={text_content}, phone={phone}")
             return {"status": "error", "message": "Missing required fields"}
@@ -234,7 +241,8 @@ async def receive_uazapi_webhook(request: Request, background_tasks: BackgroundT
             clinic_id=CLINIC_ID_DEFAULT,
             phone=phone,
             name=name,
-            message=text_content
+            message=text_content,
+            message_id=uaz_id
         )
         
         return {"status": "success"}
@@ -243,14 +251,14 @@ async def receive_uazapi_webhook(request: Request, background_tasks: BackgroundT
         logger.error(f"UazAPI Webhook Error: {e}", exc_info=True)
         return {"status": "error", "message": str(e)}
 
-async def process_uazapi_message(clinic_id: str, phone: str, name: str, message: str):
+async def process_uazapi_message(clinic_id: str, phone: str, name: str, message: str, message_id: str):
     try:
         # Save to WhatsApp tables
         await save_whatsapp_message(
             clinic_id=clinic_id,
             phone=phone,
             contact_name=name,
-            message_id=str(uuid.uuid4()), # Generate ID as UazAPI ID might be complex
+            message_id=message_id,
             content=message,
             message_type="text",
             is_from_me=False
