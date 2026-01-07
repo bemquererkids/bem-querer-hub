@@ -360,34 +360,34 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({ chat, messages: initialM
 
     if (!chat) {
         return (
-            <div className="flex-1 flex items-center justify-center bg-[#efeae2] h-full">
-                <div className="text-center p-8 bg-white/80 rounded-xl shadow-sm backdrop-blur-sm max-w-md">
-                    <h3 className="text-xl font-bold text-slate-800 mb-2">Bem-vindo ao Bem-Querer Chat</h3>
-                    <p className="text-slate-500">Selecione uma conversa para iniciar o atendimento ou deixe a Carol trabalhar por você.</p>
+            <div className="flex-1 flex items-center justify-center bg-[#efeae2] dark:bg-zinc-950 h-full">
+                <div className="text-center p-8 bg-white/80 dark:bg-zinc-900/80 rounded-xl shadow-sm backdrop-blur-sm max-w-md border dark:border-zinc-800">
+                    <h3 className="text-xl font-bold text-slate-800 dark:text-zinc-100 mb-2">Bem-vindo ao Bem-Querer Chat</h3>
+                    <p className="text-slate-500 dark:text-zinc-400">Selecione uma conversa para iniciar o atendimento ou deixe a Carol trabalhar por você.</p>
                 </div>
             </div>
         );
     }
 
     return (
-        <div className="flex-1 flex h-full overflow-hidden bg-[#efeae2]">
+        <div className="flex-1 flex h-full overflow-hidden bg-[#efeae2] dark:bg-zinc-950">
             {/* Main Chat Area */}
             <div className="flex-1 flex flex-col h-full min-w-0">
                 {/* Header */}
-                <div className="h-16 bg-white border-b border-border flex items-center justify-between px-4 shadow-sm z-10 shrink-0">
+                <div className="h-16 bg-white dark:bg-zinc-900 border-b border-border dark:border-zinc-800 flex items-center justify-between px-4 shadow-sm z-10 shrink-0">
                     <div className="flex items-center gap-3">
                         {onBack && (
-                            <Button variant="ghost" size="icon" className="md:hidden text-slate-500 -ml-2" onClick={onBack}>
+                            <Button variant="ghost" size="icon" className="md:hidden text-slate-500 dark:text-zinc-400 -ml-2" onClick={onBack}>
                                 <ChevronLeft className="w-6 h-6" />
                             </Button>
                         )}
-                        <Avatar className="h-10 w-10 border border-slate-100 cursor-pointer">
+                        <Avatar className="h-10 w-10 border border-slate-100 dark:border-zinc-700 cursor-pointer">
                             <AvatarImage src={chat.avatar || `https://ui-avatars.com/api/?name=${(chat.name || 'Desconhecido').replace(' ', '+')}&background=random`} />
                             <AvatarFallback>{(chat.name || 'U').substring(0, 2).toUpperCase()}</AvatarFallback>
                         </Avatar>
                         <div className="cursor-pointer" title={`Nome: ${chat.name}\nTelefone: ${chat.phoneNumber || 'Não informado'}\nClique para ver detalhes`}>
-                            <h3 className="font-bold text-slate-800 text-sm">{chat.name}</h3>
-                            <p className="text-xs text-slate-500 font-medium">
+                            <h3 className="font-bold text-slate-800 dark:text-zinc-100 text-sm">{chat.name}</h3>
+                            <p className="text-xs text-slate-500 dark:text-zinc-400 font-medium">
                                 {chat.phoneNumber ? formatPhoneNumber(chat.phoneNumber) : 'Carol (IA) Ativa'}
                             </p>
                         </div>
@@ -396,7 +396,7 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({ chat, messages: initialM
                         <Button
                             variant="ghost"
                             size="sm"
-                            className={`hidden md:flex gap-2 ${showProductivity ? 'text-cyan-600 bg-cyan-50' : 'text-slate-600'}`}
+                            className={`hidden md:flex gap-2 ${showProductivity ? 'text-cyan-600 bg-cyan-50 dark:bg-cyan-900/20 dark:text-cyan-400' : 'text-slate-600 dark:text-zinc-400'}`}
                             onClick={() => setShowProductivity(!showProductivity)}
                         >
                             <StickyNote className="w-4 h-4" />
@@ -404,7 +404,7 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({ chat, messages: initialM
                         </Button>
                         <DropdownMenu>
                             <DropdownMenuTrigger asChild>
-                                <Button variant="outline" size="sm" className="mr-2 gap-2 text-slate-600 border-slate-200">
+                                <Button variant="outline" size="sm" className="mr-2 gap-2 text-slate-600 dark:text-zinc-400 border-slate-200 dark:border-zinc-700 dark:bg-zinc-800 dark:hover:bg-zinc-700">
                                     <span className="hidden md:inline">Funil</span>
                                     <ChevronDown className="w-4 h-4" />
                                 </Button>
@@ -429,13 +429,13 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({ chat, messages: initialM
                         const isMe = msg.sender === 'agent';
                         return (
                             <div key={msg.id} className={`flex ${isMe ? 'justify-end' : 'justify-start'}`}>
-                                <div className={`max-w-[70%] px-3 py-1.5 shadow-sm relative text-[14.2px] leading-relaxed ${isMe ? 'bg-[#d9fdd3] text-[#111b21] rounded-lg rounded-tr-none' : 'bg-white text-[#111b21] rounded-lg rounded-tl-none'}`}>
+                                <div className={`max-w-[70%] px-3 py-1.5 shadow-sm relative text-[14.2px] leading-relaxed ${isMe ? 'bg-[#d9fdd3] dark:bg-emerald-900/40 dark:text-zinc-100 text-[#111b21] rounded-lg rounded-tr-none' : 'bg-white dark:bg-zinc-800 dark:text-zinc-100 text-[#111b21] rounded-lg rounded-tl-none'}`}>
                                     <p className="whitespace-pre-wrap">{msg.content}</p>
                                     <div className="flex justify-end items-center gap-1 mt-1 select-none">
-                                        <span className="text-[11px] text-[#667781] min-w-fit">
+                                        <span className="text-[11px] text-[#667781] dark:text-zinc-400 min-w-fit">
                                             {msg.timestamp ? new Date(msg.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : ''}
                                         </span>
-                                        {isMe && <span className={`text-[11px] ${msg.status === 'read' ? 'text-[#53bdeb]' : 'text-[#667781]'}`}>✓✓</span>}
+                                        {isMe && <span className={`text-[11px] ${msg.status === 'read' ? 'text-[#53bdeb] dark:text-cyan-400' : 'text-[#667781] dark:text-zinc-500'}`}>✓✓</span>}
                                     </div>
                                 </div>
                             </div>
@@ -443,24 +443,24 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({ chat, messages: initialM
                     })}
                     {isTyping && (
                         <div className="flex justify-start animate-pulse">
-                            <div className="bg-white rounded-lg p-2 rounded-tl-none shadow-sm flex gap-1 items-center">
-                                <span className="w-1.5 h-1.5 bg-[#667781] rounded-full animate-bounce"></span>
-                                <span className="w-1.5 h-1.5 bg-[#667781] rounded-full animate-bounce delay-100"></span>
-                                <span className="w-1.5 h-1.5 bg-[#667781] rounded-full animate-bounce delay-200"></span>
+                            <div className="bg-white dark:bg-zinc-800 rounded-lg p-2 rounded-tl-none shadow-sm flex gap-1 items-center">
+                                <span className="w-1.5 h-1.5 bg-[#667781] dark:bg-zinc-400 rounded-full animate-bounce"></span>
+                                <span className="w-1.5 h-1.5 bg-[#667781] dark:bg-zinc-400 rounded-full animate-bounce delay-100"></span>
+                                <span className="w-1.5 h-1.5 bg-[#667781] dark:bg-zinc-400 rounded-full animate-bounce delay-200"></span>
                             </div>
                         </div>
                     )}
                 </div>
 
                 {/* Input Area */}
-                <div className="p-4 bg-white border-t border-slate-100 flex items-center gap-2">
+                <div className="p-4 bg-white dark:bg-zinc-900 border-t border-slate-100 dark:border-zinc-800 flex items-center gap-2">
                     <input type="file" ref={fileInputRef} className="hidden" onChange={handleFileSelect} />
-                    <Button variant="ghost" size="icon" className="text-slate-400 hover:text-cyan-600 hover:bg-cyan-50 transition-colors" onClick={() => fileInputRef.current?.click()} disabled={isUploading}>
+                    <Button variant="ghost" size="icon" className="text-slate-400 hover:text-cyan-600 hover:bg-cyan-50 dark:hover:bg-cyan-900/20 transition-colors" onClick={() => fileInputRef.current?.click()} disabled={isUploading}>
                         <Paperclip className="w-5 h-5" />
                     </Button>
                     <div className="flex-1 relative">
-                        <Input value={newMessage} onChange={(e) => setNewMessage(e.target.value)} onKeyDown={(e) => e.key === 'Enter' && handleSend()} placeholder="Digite sua mensagem..." className="pr-10 bg-slate-50 border-slate-200 focus:border-cyan-500 focus:ring-cyan-500/20" />
-                        <Button variant="ghost" size="icon" className={`absolute right-1 top-1 h-8 w-8 transition-colors ${isRecording ? 'text-red-500 hover:text-red-600 bg-red-50' : 'text-slate-400 hover:text-cyan-600'}`} onClick={handleMicClick} disabled={isUploading}>
+                        <Input value={newMessage} onChange={(e) => setNewMessage(e.target.value)} onKeyDown={(e) => e.key === 'Enter' && handleSend()} placeholder="Digite sua mensagem..." className="pr-10 bg-slate-50 dark:bg-zinc-800 border-slate-200 dark:border-zinc-700 dark:text-zinc-100 focus:border-cyan-500 focus:ring-cyan-500/20 dark:placeholder:text-zinc-500" />
+                        <Button variant="ghost" size="icon" className={`absolute right-1 top-1 h-8 w-8 transition-colors ${isRecording ? 'text-red-500 hover:text-red-600 bg-red-50 dark:bg-red-900/20' : 'text-slate-400 hover:text-cyan-600'}`} onClick={handleMicClick} disabled={isUploading}>
                             {isRecording ? <div className="w-3 h-3 rounded-sm bgCurrent" style={{ backgroundColor: 'currentColor' }} /> : <Mic className="w-4 h-4" />}
                         </Button>
                     </div>
@@ -472,12 +472,12 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({ chat, messages: initialM
 
             {/* Productivity Panel (Right Side) */}
             {showProductivity && (
-                <div className="w-80 bg-white border-l border-border h-full flex flex-col shadow-xl animate-in slide-in-from-right duration-300">
-                    <div className="p-4 border-b flex items-center justify-between bg-slate-50">
-                        <h3 className="font-semibold text-slate-800 flex items-center gap-2">
+                <div className="w-80 bg-white dark:bg-zinc-900 border-l border-border dark:border-zinc-800 h-full flex flex-col shadow-xl animate-in slide-in-from-right duration-300">
+                    <div className="p-4 border-b dark:border-zinc-800 flex items-center justify-between bg-slate-50 dark:bg-zinc-900/50">
+                        <h3 className="font-semibold text-slate-800 dark:text-zinc-100 flex items-center gap-2">
                             <Tag className="w-4 h-4" /> Produtividade
                         </h3>
-                        <Button variant="ghost" size="icon" className="h-6 w-6" onClick={() => setShowProductivity(false)}>
+                        <Button variant="ghost" size="icon" className="h-6 w-6 dark:text-zinc-400 dark:hover:text-zinc-100" onClick={() => setShowProductivity(false)}>
                             <X className="w-4 h-4" />
                         </Button>
                     </div>
@@ -495,7 +495,7 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({ chat, messages: initialM
                                         placeholder="Adicionar nota..."
                                         value={newNote}
                                         onChange={(e) => setNewNote(e.target.value)}
-                                        className="text-sm min-h-[80px] resize-none"
+                                        className="text-sm min-h-[80px] resize-none dark:bg-zinc-800 dark:border-zinc-700 dark:text-zinc-100 dark:placeholder:text-zinc-500"
                                     />
                                     <Button size="sm" className="w-full h-8" onClick={handleCreateNote}>
                                         <Plus className="w-3 h-3 mr-1" /> Adicionar Nota
@@ -506,10 +506,10 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({ chat, messages: initialM
                                         <div className="text-center text-slate-400 text-xs py-8">Nenhuma nota ainda.</div>
                                     ) : (
                                         notes.map(note => (
-                                            <div key={note.id} className="bg-yellow-50 border border-yellow-100 p-3 rounded-lg relative group">
-                                                <p className="text-sm text-slate-700 whitespace-pre-wrap">{note.content}</p>
+                                            <div key={note.id} className="bg-yellow-50 dark:bg-yellow-900/10 border border-yellow-100 dark:border-yellow-900/20 p-3 rounded-lg relative group">
+                                                <p className="text-sm text-slate-700 dark:text-yellow-50/80 whitespace-pre-wrap">{note.content}</p>
                                                 <div className="mt-2 flex justify-between items-center">
-                                                    <span className="text-[10px] text-slate-400">
+                                                    <span className="text-[10px] text-slate-400 dark:text-yellow-50/40">
                                                         {new Date(note.created_at).toLocaleDateString()}
                                                     </span>
                                                     <Button variant="ghost" size="icon" className="h-5 w-5 opacity-0 group-hover:opacity-100 transition-opacity text-red-400 hover:text-red-500" onClick={() => handleDeleteNote(note.id)}>
@@ -524,19 +524,19 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({ chat, messages: initialM
 
                             {/* Reminders Tab */}
                             <TabsContent value="reminders" className="flex-1 flex flex-col min-h-0">
-                                <div className="space-y-3 mb-4 border-b pb-4">
+                                <div className="space-y-3 mb-4 border-b dark:border-zinc-800 pb-4">
                                     <Input
                                         placeholder="Título do lembrete"
                                         value={newReminderTitle}
                                         onChange={(e) => setNewReminderTitle(e.target.value)}
-                                        className="h-8 text-sm"
+                                        className="h-8 text-sm dark:bg-zinc-800 dark:border-zinc-700 dark:text-zinc-100"
                                     />
                                     <div className="flex gap-2">
                                         <div className="flex-1">
-                                            <Input type="date" className="h-8 text-xs" value={newReminderDate} onChange={(e) => setNewReminderDate(e.target.value)} />
+                                            <Input type="date" className="h-8 text-xs dark:bg-zinc-800 dark:border-zinc-700 dark:text-zinc-100" value={newReminderDate} onChange={(e) => setNewReminderDate(e.target.value)} />
                                         </div>
                                         <div className="w-24">
-                                            <Input type="time" className="h-8 text-xs" value={newReminderTime} onChange={(e) => setNewReminderTime(e.target.value)} />
+                                            <Input type="time" className="h-8 text-xs dark:bg-zinc-800 dark:border-zinc-700 dark:text-zinc-100" value={newReminderTime} onChange={(e) => setNewReminderTime(e.target.value)} />
                                         </div>
                                     </div>
                                     <Button size="sm" className="w-full h-8" onClick={handleCreateReminder}>
@@ -545,18 +545,18 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({ chat, messages: initialM
                                 </div>
                                 <div className="flex-1 overflow-y-auto space-y-2 pr-1">
                                     {reminders.length === 0 ? (
-                                        <div className="text-center text-slate-400 text-xs py-8">Nenhum lembrete pendente.</div>
+                                        <div className="text-center text-slate-400 dark:text-zinc-500 text-xs py-8">Nenhum lembrete pendente.</div>
                                     ) : (
                                         reminders.map(reminder => (
-                                            <div key={reminder.id} className={`p-3 rounded-lg border flex items-start gap-2 ${reminder.status === 'completed' ? 'bg-slate-50 border-slate-100' : 'bg-white border-slate-200 shadow-sm'}`}>
+                                            <div key={reminder.id} className={`p-3 rounded-lg border flex items-start gap-2 ${reminder.status === 'completed' ? 'bg-slate-50 dark:bg-zinc-900 border-slate-100 dark:border-zinc-800' : 'bg-white dark:bg-zinc-800 border-slate-200 dark:border-zinc-700 shadow-sm'}`}>
                                                 <button
-                                                    className={`mt-0.5 w-4 h-4 rounded border flex items-center justify-center transition-colors ${reminder.status === 'completed' ? 'bg-green-500 border-green-500 text-white' : 'border-slate-300 hover:border-green-500'}`}
+                                                    className={`mt-0.5 w-4 h-4 rounded border flex items-center justify-center transition-colors ${reminder.status === 'completed' ? 'bg-green-500 border-green-500 text-white' : 'border-slate-300 dark:border-zinc-600 hover:border-green-500 dark:hover:border-green-500'}`}
                                                     onClick={() => handleToggleReminderStatus(reminder.id, reminder.status)}
                                                 >
                                                     {reminder.status === 'completed' && <CheckCircle2 className="w-3 h-3" />}
                                                 </button>
                                                 <div className="flex-1 min-w-0">
-                                                    <p className={`text-sm font-medium leading-none ${reminder.status === 'completed' ? 'text-slate-400 line-through' : 'text-slate-800'}`}>
+                                                    <p className={`text-sm font-medium leading-none ${reminder.status === 'completed' ? 'text-slate-400 line-through' : 'text-slate-800 dark:text-zinc-100'}`}>
                                                         {reminder.title}
                                                     </p>
                                                     <div className="flex items-center gap-1 mt-1.5 text-xs text-slate-500">

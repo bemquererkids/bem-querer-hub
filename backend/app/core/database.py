@@ -100,14 +100,8 @@ class SupabaseClient:
                     supabase_url=settings.SUPABASE_URL,
                     supabase_key=settings.SUPABASE_KEY
                 )
-            except TypeError as te:
-                # Handle specific 'proxy' argument error if it comes from internal libs
-                print(f"⚠️ TypeError in Supabase Init: {te}")
-                # Fallback or retry logic if needed, but for now let's fail loud so we know
-                raise te
             except Exception as e:
                 print(f"❌ Failed to connect to Supabase: {e}")
-                # return MockSupabaseClient() # DISABLE MOCK to fix real issue
                 raise e
                 
         return cls._instance
