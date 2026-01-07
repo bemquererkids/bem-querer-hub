@@ -29,8 +29,12 @@ async def get_deals(
         from app.core.database import SupabaseClient
         admin_supabase = SupabaseClient.get_admin_client()
         
-        # Get conversations
-        conv_res = admin_supabase.table("whatsapp_conversations").select("*").execute()
+        # Get conversations (Filter out test data)
+        conv_res = admin_supabase.table("whatsapp_conversations") \
+            .select("*") \
+            .not_.ilike("contact_name", "Paciente Teste%") \
+            .not_.ilike("contact_name", "Paciente Seed%") \
+            .execute()
         conversations = conv_res.data if conv_res.data else []
         print(f"CRM Debug: Found {len(conversations)} conversations.")
         
@@ -374,8 +378,11 @@ async def get_dashboard_metrics(
 
         # --- WHATSAPP SOURCE (DEFAULT) ---
         
-        # Fetch conversations filtered by date
-        query = admin_supabase.table("whatsapp_conversations").select("id, tags, deal_value, created_at")
+        # Fetch conversations filtered by date (and exclude test data)
+        query = admin_supabase.table("whatsapp_conversations") \
+            .select("id, tags, deal_value, created_at") \
+            .not_.ilike("contact_name", "Paciente Teste%") \
+            .not_.ilike("contact_name", "Paciente Seed%")
         
         if period == "custom" and start_date and end_date:
             query = query.gte("created_at", start_date).lte("created_at", end_date)

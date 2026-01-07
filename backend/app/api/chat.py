@@ -52,6 +52,8 @@ async def get_conversations():
         
         response = supabase.table("whatsapp_conversations") \
             .select("*") \
+            .not_.ilike("contact_name", "Paciente Teste%") \
+            .not_.ilike("contact_name", "Paciente Seed%") \
             .order("last_message_at", desc=True) \
             .limit(50) \
             .execute()
