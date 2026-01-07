@@ -56,6 +56,22 @@ async def debug_supabase():
     }
 
 # Debug completo da UazAPI
+@main_router.get("/debug/db-inspect")
+async def debug_db_inspect():
+    """Inspeciona as primeiras 5 linhas da tabela whatsapp_conversations"""
+    try:
+        from app.core.database import get_supabase
+        supabase = get_supabase()
+        res = supabase.table("whatsapp_conversations").select("*").limit(5).execute()
+        return {
+            "status": "success",
+            "count_returned": len(res.data) if res.data else 0,
+            "sample_data": res.data
+        }
+    except Exception as e:
+        return {"status": "error", "message": str(e)}
+
+# Debug completo da UazAPI
 @main_router.get("/debug/uazapi")
 async def debug_uazapi():
     """Endpoint de debug para testar conexão com UazAPI"""
