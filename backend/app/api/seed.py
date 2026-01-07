@@ -76,7 +76,8 @@ async def clean_seed_data():
     """
     Remove todos os dados de teste (Paciente Seed % e Paciente Teste %) do banco.
     """
-    supabase = get_supabase()
+    from app.core.database import SupabaseClient
+    supabase = SupabaseClient.get_admin_client()
     try:
         deleted_count = 0
         
