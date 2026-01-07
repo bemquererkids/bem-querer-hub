@@ -198,5 +198,9 @@ app.include_router(ai_config_router)
 async def root():
     return {"status": "ok", "message": "Bem-Querer Hub API", "version": "1.0.0"}
 
+# Import Seed Router (Validar dados CRM em Produção)
+from app.api.seed import router as seed_router
+app.include_router(seed_router)
+
 
 
