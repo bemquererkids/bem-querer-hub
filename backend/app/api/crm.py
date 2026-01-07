@@ -400,15 +400,29 @@ async def get_dashboard_metrics(
         sales = 0
         revenue = 0.0
         
+        # Load Monthly Target
+        from app.api.integration import db_load_config
+        pref = db_load_config("dashboard_pref")
+        monthly_goal = float(pref.get("monthly_goal", 50000)) # Default 50k
+
         for chat in raw_chats:
             tags = chat.get('tags') or []
+            # Normalize tags to lower case for comparison
+            tags_lower = [t.lower() for t in tags]
             val = float(chat.get('deal_value') or 0)
 
-            if 'crm:scheduled' in tags: scheduled += 1
-            if 'crm:attended' in tags: attended += 1
-            if 'crm:noshow' in tags: noshow += 1
-            if 'crm:qualifying' in tags: qualifying += 1
-            if 'crm:won' in tags: 
+            # Flexible logic for messy production data
+            is_scheduled = any(x in tags_lower for x in ['crm:scheduled', 'crm:agendado', 'agendado'])
+            is_attended = any(x in tags_lower for x in ['crm:attended', 'crm:compareceu', 'compareceu'])
+            is_noshow = any(x in tags_lower for x in ['crm:noshow', 'crm:faltou', 'faltou'])
+            is_qualifying = any(x in tags_lower for x in ['crm:qualifying', 'crm:em negociação', 'crm:negociacao', 'em negociação'])
+            is_won = any(x in tags_lower for x in ['crm:won', 'crm:venda', 'venda', 'venda realizada'])
+
+            if is_scheduled: scheduled += 1
+            if is_attended: attended += 1
+            if is_noshow: noshow += 1
+            if is_qualifying: qualifying += 1
+            if is_won: 
                 sales += 1
                 revenue += val
             
@@ -438,6 +452,7 @@ async def get_dashboard_metrics(
             "sales": sales,
             "revenue": revenue,
             "ticket": avg_ticket,
+            "monthlyGoal": monthly_goal,  # Added Goal
             "funnelData": funnel_data,
             "percentages": {
                 "schedulingRate": round(scheduling_rate, 1),
@@ -458,6 +473,7 @@ async def get_dashboard_metrics(
 
 class DashboardPreferences(BaseModel):
     default_source: str = "whatsapp" # whatsapp, clinicorp
+    monthly_goal: float = 50000.0
 
 @router.get("/preferences")
 async def get_dashboard_preferences():
@@ -465,7 +481,8 @@ async def get_dashboard_preferences():
     from app.api.integration import db_load_config
     config = db_load_config("dashboard_pref")
     return {
-        "default_source": config.get("default_source", "whatsapp")
+        "default_source": config.get("default_source", "whatsapp"),
+        "monthly_goal": config.get("monthly_goal", 50000.0)
     }
 
 @router.post("/preferences")
@@ -473,7 +490,10 @@ async def save_dashboard_preferences(pref: DashboardPreferences):
     """Save dashboard preferences"""
     from app.api.integration import db_save_config
     try:
-        db_save_config("dashboard_pref", {"default_source": pref.default_source})
+        db_save_config("dashboard_pref", {
+            "default_source": pref.default_source,
+            "monthly_goal": pref.monthly_goal
+        })
         return {"status": "success", "saved": pref}
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
