@@ -70,3 +70,35 @@ async def run_seed_crm():
         if "conversation_id" in str(e):
              return {"status": "error", "message": "Erro de schema: conversation_id faltando?"}
         return {"status": "error", "message": str(e)}
+
+@router.get("/clean")
+async def clean_seed_data():
+    """
+    Remove todos os dados de teste (Paciente Seed % e Paciente Teste %) do banco.
+    """
+    supabase = get_supabase()
+    try:
+        deleted_count = 0
+        
+        # 1. Remove "Paciente Seed%" (criado via API)
+        res1 = supabase.table("whatsapp_conversations") \
+            .delete() \
+            .ilike("contact_name", "Paciente Seed%") \
+            .execute()
+        deleted_count += len(res1.data) if res1.data else 0
+        
+        # 2. Remove "Paciente Teste%" (criado via Script Local)
+        res2 = supabase.table("whatsapp_conversations") \
+            .delete() \
+            .ilike("contact_name", "Paciente Teste%") \
+            .execute()
+        deleted_count += len(res2.data) if res2.data else 0
+            
+        return {
+            "status": "success", 
+            "deleted_total": deleted_count, 
+            "message": f"Limpeza concluída. {deleted_count} registros de teste removidos."
+        }
+    except Exception as e:
+        return {"status": "error", "message": str(e)}
+
