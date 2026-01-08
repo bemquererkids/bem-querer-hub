@@ -31,30 +31,35 @@
 
 ---
 
-## 🚧 Estado Atual
-- O sistema está com a **identidade visual estável** e consistente entre Dashboard e Configurações.
-- O foco imediato foi garantir que a experiência de configuração da IA fosse agradável e legível.
+## 🚧 Estado Atual (Foco: CRM & Sincronização)
+- **CRM Kanban**: Interface modernizada, responsiva e com edição de valores.
+- **Integração UazAPI**:
+  - Implementada sincronização bidirecional de Status (CRM -> UazAPI).
+  - Implementado Webhook para receber atualizações do UazAPI (Tags/Status) e refletir no Kanban.
+  - Ajustada autenticação para suportar múltiplos formatos de headers (Token/ApiKey).
+- **Backend CRM**: Rotas `/api/crm` refinadas para lidar com mapeamento de status e tags (ex: 'crm:scheduled' <-> 'Agendado').
 
 ---
 
-## 📋 Próximos Passos Sugeridos
+## 📋 Próximos Passos
 
-### Prioridade Alta (Validação Final)
-1.  **Teste de Usuário:** Navegar pelo sistema (Wizard -> Chat -> Dashboard) e verificar a fluidez.
-2.  **Feedback de Salvamento:** Refinar as notificações de UI (Toast) se necessário (atualmente funcionais).
+### 1. Sincronização & Estabilidade (Em Andamento)
+- [x] **Apagar Mensagens (Revoke)**: Implementado "Apagar para Todos" no chat.
+  - Sincroniza com WhatsApp (apaga no celular do cliente e do atendente).
+  - Funciona para novas mensagens (que possuem ID real do WhatsApp).
+- [ ] **Validar Webhook de CRM**: Testar se alterações de tags feitas diretamente no WhatsApp/UazAPI atualizam o Kanban automaticamente.
 
-### Prioridade Média (Melhorias)
-- [x] **Conexão de Métricas Reais**: Dashboard exibe dados reais do banco (Agendados, Comparecimentos, Vendas).
-- [x] **Filtros de Dados de Teste**: Dados de seed/teste ocultados automaticamente em produção.
-- [x] **Compatibilidade de Tags**: Backend aceita tags em Português (crm:Venda, crm:Agendado) e Inglês.
-- [x] **UX Improvements**: Ajuste de delay de digitação (Typing...) para 2.5s na UazAPI.
-- [x] **Kanban UI/UX**: Layout compacto para notebook, sem scroll horizontal, ícones oficiais e máscara de telefone.
-- [ ] **Validação Final**: Usuário confirmar visualização correta de Faturamento (depende de input manual no Kanban).
-- [ ] **Feedback de Salvamento**: Melhorar as notificações de "Sucesso/Erro" ao salvar configurações (atualmente `alert` simples ou toast básico).
+### 2. Funcionalidades CRM
+- [ ] **Histórico no Card**: Ao clicar no card do Kanban, exibir mini-histórico das últimas mensagens.
+- [ ] **Atribuição de Responsável**: Permitir definir qual atendente é dono do Lead.
+
+### 3. Finalização
+- [ ] **Deploy de Produção**: Validar variáveis de ambiente finais no servidor de produção.
 
 ---
 
 ## 📂 Arquivos Críticos Recentes
-- `frontend/src/components/settings/AIConfigWizard.tsx` (Lógica e UI do Wizard)
-- `frontend/src/components/dashboard/DashboardHome.tsx` (Visual do Dashboard)
-- `frontend/src/components/theme-provider.tsx` (Contexto de Tema)
+- `backend/app/services/uazapi_service.py` (Lógica de envio/sincronização)
+- `backend/app/api/webhooks.py` (Recepção de eventos UazAPI)
+- `backend/app/api/crm.py` (Regras de negócio do Kanban)
+- `frontend/src/components/crm/KanbanBoard.tsx` (Interface do Kanban)

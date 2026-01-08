@@ -213,8 +213,14 @@ async def receive_uazapi_webhook(request: Request, background_tasks: BackgroundT
             # TODO: Emit to WebSocket here
             return {"status": "success"}
 
+        # --- CRM / LEAD UPDATE HANDLING ---
+        if event_type in ['lead_update', 'chat_update', 'customer_update']:
+            logger.info(f"🔄 UazAPI CRM Event received: {event_type}")
+            background_tasks.add_task(process_uazapi_crm_event, payload)
+            return {"status": "success"}
+            
         if event_type != 'messages':
-            logger.info(f"Ignoring non-message event: {event_type}")
+            logger.info(f"Ignoring non-message event: {event_type} | Payload: {str(payload)[:100]}")
             return {"status": "ignored"}
         
         message_data = payload.get('message', {})
@@ -265,6 +271,60 @@ async def receive_uazapi_webhook(request: Request, background_tasks: BackgroundT
     except Exception as e:
         logger.error(f"UazAPI Webhook Error: {e}", exc_info=True)
         return {"status": "error", "message": str(e)}
+
+async def process_uazapi_crm_event(payload: dict):
+    """
+    Handle incoming CRM updates from UazAPI (Status changes, Tags, etc.)
+    """
+    try:
+        data = payload.get('data') or payload
+        chat_id = data.get('chatId') or data.get('id') # JID
+        status = data.get('status') or data.get('lead_status')
+        name = data.get('name') or data.get('lead_name')
+        
+        if not chat_id:
+            logger.warning(f"CRM Event missing chat_id: {payload}")
+            return
+
+        phone = chat_id.split('@')[0]
+        
+        logger.info(f"🔄 Processing CRM Update for {phone}: Status={status}, Name={name}")
+        
+        supabase = get_supabase()
+        
+        # 1. Update Conversation
+        update_data = {}
+        if status:
+            # Map external status to internal tags
+            # e.g. "Agendado" -> "crm:scheduled"
+            status_map = {
+                'lead': 'crm:new', 
+                'agendado': 'crm:scheduled',
+                'venda': 'crm:won',
+                'atendido': 'crm:attended',
+                'perdido': 'crm:lost'
+            }
+            internal_tag = status_map.get(status.lower())
+            
+            if internal_tag:
+                 # Fetch current tags
+                 res = supabase.table('whatsapp_conversations').select('tags').eq('phone_number', phone).execute()
+                 if res.data:
+                     current_tags = res.data[0].get('tags') or []
+                     # Remove conflicting CRM tags
+                     current_tags = [t for t in current_tags if not t.startswith('crm:')]
+                     current_tags.append(internal_tag)
+                     update_data['tags'] = current_tags
+        
+        if name:
+            update_data['contact_name'] = name
+            
+        if update_data:
+            supabase.table('whatsapp_conversations').update(update_data).eq('phone_number', phone).execute()
+            logger.info(f"✅ Conversation updated from UazAPI CRM: {update_data}")
+            
+    except Exception as e:
+        logger.error(f"Error processing CRM event: {e}")
 
 async def process_uazapi_message(clinic_id: str, phone: str, name: str, message: str, message_id: str):
     try:

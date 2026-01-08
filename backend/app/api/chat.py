@@ -150,21 +150,34 @@ async def send_message(request: SendMessageRequest):
             raise HTTPException(status_code=400, detail="Phone number not found in conversation")
         
         # 2. Send message via UazAPI (non-blocking - log error but continue)
+        real_wa_id = None
         try:
             uazapi = get_uazapi_service()
             logger.info(f"Sending message to {phone_number} via UazAPI")
             # UazAPIService.send_message is synchronous in the current implementation
-            uazapi.send_message(
+            res = uazapi.send_message(
                 to=phone_number,
                 text=request.message
             )
             logger.info(f"Message sent successfully to {phone_number}")
+            
+            # Try to extract real ID
+            if res and isinstance(res, dict):
+                 if 'key' in res and 'id' in res['key']:
+                     real_wa_id = res['key']['id']
+                 elif 'id' in res:
+                     real_wa_id = res.get('id')
+                 elif 'messageId' in res:
+                     real_wa_id = res.get('messageId')
+                     
         except Exception as send_error:
             # Log error but don't fail - message will still be saved to DB
             logger.warning(f"Failed to send message via UazAPI (continuing anyway): {send_error}")
         
         # 3. Save message to database
-        message_id = str(uuid.uuid4())
+        # Use Real ID if available, otherwise UUID
+        message_id = real_wa_id if real_wa_id else str(uuid.uuid4())
+        
         clinic_id = conversation.get("clinic_id", "00000000-0000-0000-0000-000000000001")
         
         message_data = {
@@ -307,4 +320,59 @@ async def send_media(request: SendMediaRequest):
         
     except Exception as e:
         logger.error(f"Error sending media: {e}", exc_info=True)
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.delete("/messages/{message_id}")
+async def delete_message(message_id: str):
+    """
+    Delete a message (Revoke for everyone if sent by us, or just delete from DB)
+    """
+    try:
+        supabase = SupabaseClient.get_admin_client()
+        
+        # 1. Get message details to verify ownership and get phone number
+        msg_res = supabase.table("whatsapp_messages") \
+            .select("*, whatsapp_conversations(phone_number)") \
+            .eq("message_id", message_id) \
+            .single() \
+            .execute()
+            
+        if not msg_res.data:
+            # Try finding by 'id' if 'message_id' failed (legacy support)
+            msg_res = supabase.table("whatsapp_messages") \
+                .select("*, whatsapp_conversations(phone_number)") \
+                .eq("id", message_id) \
+                .single() \
+                .execute()
+                
+        if not msg_res.data:
+            raise HTTPException(status_code=404, detail="Message not found")
+            
+        message = msg_res.data
+        is_from_me = message.get("is_from_me")
+        # Extract phone safely
+        phone = None
+        if message.get("whatsapp_conversations"):
+             phone = message.get("whatsapp_conversations", {}).get("phone_number")
+        if not phone:
+             phone = message.get("to_number") if is_from_me else message.get("from_number")
+        
+        # 2. If message is from us, try to revoke on WhatsApp
+        # We assume the ID stored in DB is the correct ID to revoke
+        if is_from_me and phone:
+            try:
+                uaz = get_uazapi_service()
+                logger.info(f"Attempting to revoke message {message_id} on WhatsApp...")
+                uaz.delete_message(phone, message_id)
+            except Exception as e:
+                logger.warning(f"Failed to revoke on WhatsApp: {e}")
+
+        # 3. Delete from Database
+        supabase.table("whatsapp_messages").delete().eq("message_id", message_id).execute()
+        
+        return {"success": True}
+
+    except Exception as e:
+        logger.error(f"Error deleting message: {e}")
         raise HTTPException(status_code=500, detail=str(e))

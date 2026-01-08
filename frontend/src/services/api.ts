@@ -70,6 +70,10 @@ export const chatService = {
       filename
     });
     return response.data;
+  },
+  deleteMessage: async (messageId: string) => {
+    const response = await api.delete(`/chat/messages/${messageId}`);
+    return response.data;
   }
 };
 

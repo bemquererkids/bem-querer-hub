@@ -358,6 +358,17 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({ chat, messages: initialM
         }
     };
 
+    const handleDeleteMessage = async (messageId: string) => {
+        if (!confirm('Deseja apagar esta mensagem? (Se enviada por você, será apagada para todos)')) return;
+        try {
+            await chatService.deleteMessage(messageId);
+            setMessages(prev => prev.filter(m => m.id !== messageId));
+        } catch (error) {
+            console.error("Failed to delete message", error);
+            alert("Erro ao apagar mensagem.");
+        }
+    };
+
     if (!chat) {
         return (
             <div className="flex-1 flex items-center justify-center bg-[#efeae2] dark:bg-zinc-950 h-full">
@@ -428,14 +439,33 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({ chat, messages: initialM
                     {messages.map((msg) => {
                         const isMe = msg.sender === 'agent';
                         return (
-                            <div key={msg.id} className={`flex ${isMe ? 'justify-end' : 'justify-start'}`}>
+                            <div key={msg.id} className={`flex ${isMe ? 'justify-end' : 'justify-start'} group/msg relative`}>
                                 <div className={`max-w-[70%] px-3 py-1.5 shadow-sm relative text-[14.2px] leading-relaxed ${isMe ? 'bg-[#d9fdd3] dark:bg-emerald-900/40 dark:text-zinc-100 text-[#111b21] rounded-lg rounded-tr-none' : 'bg-white dark:bg-zinc-800 dark:text-zinc-100 text-[#111b21] rounded-lg rounded-tl-none'}`}>
-                                    <p className="whitespace-pre-wrap">{msg.content}</p>
+                                    <p className="whitespace-pre-wrap pr-4">{msg.content}</p>
                                     <div className="flex justify-end items-center gap-1 mt-1 select-none">
                                         <span className="text-[11px] text-[#667781] dark:text-zinc-400 min-w-fit">
                                             {msg.timestamp ? new Date(msg.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : ''}
                                         </span>
                                         {isMe && <span className={`text-[11px] ${msg.status === 'read' ? 'text-[#53bdeb] dark:text-cyan-400' : 'text-[#667781] dark:text-zinc-500'}`}>✓✓</span>}
+                                    </div>
+
+                                    {/* Message Options Dropdown */}
+                                    <div className={`absolute top-0 right-0 p-1 opacity-0 group-hover/msg:opacity-100 transition-opacity`}>
+                                        <DropdownMenu>
+                                            <DropdownMenuTrigger asChild>
+                                                <button className="text-slate-400 hover:text-slate-600 dark:text-slate-500 dark:hover:text-slate-300 bg-white/50 dark:bg-black/20 rounded-full p-0.5">
+                                                    <ChevronDown className="w-3 h-3" />
+                                                </button>
+                                            </DropdownMenuTrigger>
+                                            <DropdownMenuContent align={isMe ? "end" : "start"}>
+                                                <DropdownMenuItem onClick={() => navigator.clipboard.writeText(msg.content)} className="text-xs">
+                                                    Copiar
+                                                </DropdownMenuItem>
+                                                <DropdownMenuItem onClick={() => handleDeleteMessage(msg.id)} className="text-xs text-red-500 focus:text-red-500">
+                                                    Apagar {isMe ? '(Para todos)' : '(Para mim)'}
+                                                </DropdownMenuItem>
+                                            </DropdownMenuContent>
+                                        </DropdownMenu>
                                     </div>
                                 </div>
                             </div>

@@ -118,9 +118,16 @@ class UazAPIService:
             # Also try to sync as tag, just in case
             # payload["lead_tags"] = [status] 
             
+        headers = {
+            "Authorization": f"Bearer {self.token}",
+            "token": self.token,
+            "apikey": self.token,
+            "Content-Type": "application/json"
+        }
+        
         try:
             # logger.info(f"🔄 Syncing Lead {phone} to UazAPI: {payload}")
-            response = requests.post(url, json=payload, params=params, timeout=10)
+            response = requests.post(url, json=payload, params=params, headers=headers, timeout=10)
             if response.status_code != 200:
                 logger.warning(f"Failed to sync lead to UazAPI: {response.text}")
             return response.json() if response.status_code == 200 else {}
@@ -136,8 +143,47 @@ class UazAPIService:
         # Strategy: Use editLead to add tags as it handles string names better in internal CRM
         return self.update_lead(phone, status=tag) 
         
-        # Legacy/Alternative logic if needed:
-        # endpoint = "/chat/labels" ... requires label ID usually
+    def delete_message(self, phone: str, message_id: str) -> bool:
+        """
+        Revoke/Delete a message for everyone.
+        Endpoint: /message/delete (POST)
+        Payload: { "id": "...", "remoteJid": "..." }
+        """
+        endpoint = "/message/delete"
+        url = self._get_url(endpoint)
+        
+        # Ensure JID
+        clean_phone = self.normalize_phone(phone)
+        if "@" not in clean_phone:
+            jid = f"{clean_phone}@s.whatsapp.net"
+        else:
+            jid = clean_phone
+            
+        payload = {
+            "id": message_id,
+            "remoteJid": jid
+        }
+        
+        headers = {
+            "apikey": self.token,
+            "token": self.token,
+            "Authorization": f"Bearer {self.token}",
+            "Content-Type": "application/json"
+        }
+        
+        try:
+            logger.info(f"🗑️ Revoking message {message_id} for {phone}")
+            response = requests.post(url, json=payload, headers=headers, timeout=10)
+            
+            if response.status_code == 200:
+                logger.info("✅ Message revoked successfully")
+                return True
+            else:
+                logger.warning(f"❌ Failed to revoke message: {response.text}")
+                return False
+        except Exception as e:
+            logger.error(f"Error revoking message: {e}")
+            return False
 
 
 def get_uazapi_service() -> UazAPIService:
