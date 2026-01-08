@@ -69,7 +69,7 @@ async def get_conversations():
                 lastMessage=conv.get("last_message") or "",
                 lastMessageTime=conv.get("last_message_at") or "",
                 unreadCount=conv.get("unread_count", 0),
-                tags=[],
+                tags=conv.get("tags") or [],
                 avatar=conv.get("avatar") or f"https://ui-avatars.com/api/?name={conv.get('contact_name', 'U')}&background=random"
             )
             for conv in response.data
