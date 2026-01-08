@@ -48,6 +48,7 @@
 - [x] **Filtros de Dados de Teste**: Dados de seed/teste ocultados automaticamente em produção.
 - [x] **Compatibilidade de Tags**: Backend aceita tags em Português (crm:Venda, crm:Agendado) e Inglês.
 - [x] **UX Improvements**: Ajuste de delay de digitação (Typing...) para 2.5s na UazAPI.
+- [x] **Kanban UI/UX**: Layout compacto para notebook, sem scroll horizontal, ícones oficiais e máscara de telefone.
 - [ ] **Validação Final**: Usuário confirmar visualização correta de Faturamento (depende de input manual no Kanban).
 - [ ] **Feedback de Salvamento**: Melhorar as notificações de "Sucesso/Erro" ao salvar configurações (atualmente `alert` simples ou toast básico).
 

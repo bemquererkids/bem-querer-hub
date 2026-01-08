@@ -89,6 +89,55 @@ class UazAPIService:
             logger.error(f"Check connection failed: {e}")
             return False
 
+    def update_lead(self, phone: str, name: str = None, status: str = None) -> Dict[str, Any]:
+        """
+        Update Lead info in UazAPI Internal CRM
+        Doc: https://docs.uazapi.com/tag/CRM
+        """
+        endpoint = "/chat/editLead"
+        url = self._get_url(endpoint)
+        params = {"token": self.token}
+        
+        payload = {
+            "number": self.normalize_phone(phone),
+        }
+        
+        if name:
+            payload["lead_name"] = name
+        if status:
+            # Map our internal status to a friendly name if needed, or pass direct
+            payload["lead_status"] = status
+            
+        try:
+            logger.info(f"🔄 Syncing Lead {phone} to UazAPI: {payload}")
+            response = requests.post(url, json=payload, params=params, timeout=10)
+            # Don't raise for status sync errors to avoid breaking main flow
+            if response.status_code != 200:
+                logger.warning(f"Failed to sync lead to UazAPI: {response.text}")
+            return response.json() if response.status_code == 200 else {}
+        except Exception as e:
+            logger.error(f"Error syncing lead to UazAPI: {e}")
+            return {}
+
+    def add_tag(self, phone: str, tag: str) -> Dict[str, Any]:
+        """
+        Add a tag to a chat
+        """
+        endpoint = "/chat/tag/add"
+        url = self._get_url(endpoint)
+        params = {"token": self.token}
+        
+        payload = {
+            "number": self.normalize_phone(phone),
+            "tag": tag
+        }
+        
+        try:
+            requests.post(url, json=payload, params=params, timeout=5)
+        except Exception as e:
+            logger.error(f"Error adding tag to UazAPI: {e}")
+            return {}
+
 def get_uazapi_service() -> UazAPIService:
     """
     Get UazAPI service instance using environment variables

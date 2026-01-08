@@ -182,6 +182,28 @@ async def update_deal_status(
         update_res = admin_supabase.table("whatsapp_conversations").update({"tags": updated_tags}).eq("id", deal_id).execute()
         print(f"Update Result: {len(update_res.data)} rows affected")
         
+        # --- SYNC WITH UAZAPI CRM ---
+        try:
+            # We need the phone number to sync with UazAPI
+            chat_data = res.data[0]
+            phone = chat_data.get("phone_number") or chat_data.get("jid", "").split("@")[0]
+            contact_name = chat_data.get("contact_name")
+            
+            if phone:
+                from app.services.uazapi_service import get_uazapi_service
+                uaz = get_uazapi_service()
+                
+                # Update Status column in UazAPI
+                uaz.update_lead(phone, name=contact_name, status=request.status)
+                
+                # Add status tag (e.g. "Agendado")
+                uaz.add_tag(phone, request.status)
+                print(f"✅ Synced deal {deal_id} (Phone: {phone}) to UazAPI CRM")
+                
+        except Exception as sync_err:
+            print(f"⚠️ UazAPI Sync Warning: {sync_err}")
+            # Do not fail the request if external sync fails
+            
     except Exception as e:
         print(f"Error updating Supabase: {e}")
         raise HTTPException(status_code=500, detail=str(e))
