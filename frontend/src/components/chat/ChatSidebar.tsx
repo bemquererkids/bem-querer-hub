@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { ChatContact } from '../../types/chat';
 import { supabase } from '../../services/supabase';
+import { chatService } from '../../services/api';
 import {
     Search, Filter, MoreVertical, MessageCircle, ChevronDown, Archive,
     BellOff, PinOff, Mail, Heart, Ban, Trash2
@@ -87,6 +88,19 @@ export const ChatSidebar: React.FC<ChatSidebarProps> = ({ chats, activeChatId, o
         console.log(`Action: ${action} on chat ${chatId}`);
 
         try {
+            if (action === 'delete') {
+                if (!confirm("Tem certeza que deseja apagar esta conversa? Isso apagará o histórico no sistema e tentará apagar no WhatsApp.")) return;
+                try {
+                    await chatService.deleteChat(chatId);
+                    // Force refresh or let Realtime handle it. 
+                    // Assuming parent component listens to Supabase changes.
+                } catch (delError) {
+                    console.error("Delete call failed", delError);
+                    alert("Erro ao apagar conversa. Tente novamente.");
+                    return;
+                }
+            }
+
             if (action === 'mark_unread') {
                 const { error } = await supabase
                     .from('whatsapp_conversations')
@@ -98,6 +112,7 @@ export const ChatSidebar: React.FC<ChatSidebarProps> = ({ chats, activeChatId, o
             }
         } catch (error) {
             console.error("Action failed", error);
+            alert("Ação falhou: " + error);
         }
     };
 

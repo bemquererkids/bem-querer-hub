@@ -376,3 +376,44 @@ async def delete_message(message_id: str):
     except Exception as e:
         logger.error(f"Error deleting message: {e}")
         raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.delete("/conversations/{conversation_id}")
+async def delete_conversation(conversation_id: str):
+    """
+    Delete a conversation (Locally and on WhatsApp potentially)
+    """
+    try:
+        supabase = SupabaseClient.get_admin_client()
+        
+        # 1. Get conversation to find phone number
+        conv_res = supabase.table("whatsapp_conversations") \
+            .select("*") \
+            .eq("id", conversation_id) \
+            .single() \
+            .execute()
+        
+        if not conv_res.data:
+            raise HTTPException(status_code=404, detail="Conversation not found")
+        
+        phone = conv_res.data.get("phone_number")
+        
+        # 2. Try to delete on WhatsApp (Clears chat history on device)
+        if phone:
+            try:
+                uaz = get_uazapi_service()
+                # delete_chat needs to be implemented in UazAPIService or use direct request
+                uaz.delete_chat(phone) 
+            except Exception as e:
+                logger.warning(f"Failed to delete chat on WhatsApp (continuing locally): {e}")
+
+        # 3. Delete from Database
+        # Manually delete messages first to be safe
+        supabase.table("whatsapp_messages").delete().eq("conversation_id", conversation_id).execute()
+        supabase.table("whatsapp_conversations").delete().eq("id", conversation_id).execute()
+        
+        return {"success": True}
+        
+    except Exception as e:
+        logger.error(f"Error deleting conversation: {e}")
+        raise HTTPException(status_code=500, detail=str(e))

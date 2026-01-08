@@ -227,9 +227,12 @@ async def receive_uazapi_webhook(request: Request, background_tasks: BackgroundT
         chat_data = payload.get('chat', {})
         
         # Check if message is from me
-        if message_data.get('fromMe', False):
-            logger.info("Ignoring message from me")
-            return {"status": "ignored"}
+        # if message_data.get('fromMe', False):
+        #    logger.info("Ignoring message from me (Legacy Check - Disabled for Sync)")
+        #    # return {"status": "ignored"}
+        
+        # NOTE: We enabled 'fromMe' handling to sync messages sent via Phone.
+        # Duplicates are handled in save_whatsapp_message by checking message_id.
         
         # Extract message details
         text_content = message_data.get('text') or message_data.get('content', '')
@@ -257,13 +260,16 @@ async def receive_uazapi_webhook(request: Request, background_tasks: BackgroundT
         logger.warning(f"📦 Sending to background task with message_id: {uaz_id}")
         
         # Save and Process in background
+        is_from_me = message_data.get('fromMe', False)
+        
         background_tasks.add_task(
             process_uazapi_message,
             clinic_id=CLINIC_ID_DEFAULT,
             phone=phone,
             name=name,
             message=text_content,
-            message_id=uaz_id
+            message_id=uaz_id,
+            is_from_me=is_from_me
         )
         
         return {"status": "success"}
@@ -326,9 +332,9 @@ async def process_uazapi_crm_event(payload: dict):
     except Exception as e:
         logger.error(f"Error processing CRM event: {e}")
 
-async def process_uazapi_message(clinic_id: str, phone: str, name: str, message: str, message_id: str):
+async def process_uazapi_message(clinic_id: str, phone: str, name: str, message: str, message_id: str, is_from_me: bool = False):
     try:
-        logger.warning(f"🔄 [process_uazapi_message] Starting for message_id: {message_id}")
+        logger.warning(f"🔄 [process_uazapi_message] Starting for message_id: {message_id} (Me: {is_from_me})")
         
         # Save to WhatsApp tables
         logger.warning(f"💾 [process_uazapi_message] Calling save_whatsapp_message...")
@@ -339,18 +345,19 @@ async def process_uazapi_message(clinic_id: str, phone: str, name: str, message:
             message_id=message_id,
             content=message,
             message_type="text",
-            is_from_me=False
+            is_from_me=is_from_me
         )
         logger.warning(f"✅ [process_uazapi_message] Message saved successfully")
         
-        # Trigger AI
-        await process_new_lead(
-            phone=phone,
-            name=name,
-            message=message,
-            clinic_id=clinic_id,
-            phone_number_id="uazapi" # Flag for source
-        )
+        # Trigger AI ONLY if it's NOT from me
+        if not is_from_me:
+            await process_new_lead(
+                phone=phone,
+                name=name,
+                message=message,
+                clinic_id=clinic_id,
+                phone_number_id="uazapi" # Flag for source
+            )
     except Exception as e:
         logger.error(f"Error processing UazAPI message: {e}")
 
