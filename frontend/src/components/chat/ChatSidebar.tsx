@@ -3,8 +3,7 @@ import { ChatContact } from '../../types/chat';
 import { supabase } from '../../services/supabase';
 import {
     Search, Filter, MoreVertical, MessageCircle, ChevronDown, Archive,
-    BellOff, PinOff, Mail, Heart, Ban, Trash2,
-    Calendar, CheckCircle2, XCircle, TrendingUp, Clock, User
+    BellOff, PinOff, Mail, Heart, Ban, Trash2
 } from 'lucide-react';
 import { Input } from '../ui/input';
 import {
@@ -15,6 +14,50 @@ import {
     DropdownMenuTrigger,
 } from "../ui/dropdown-menu";
 import clsx from 'clsx';
+
+// --- Phosphor Icons (Light Weight: 12px stroke on 256px viewbox) ---
+const PhUserLight = ({ className }: { className?: string }) => (
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256" className={className} fill="none" stroke="currentColor" strokeWidth="16" strokeLinecap="round" strokeLinejoin="round">
+        <circle cx="128" cy="96" r="64" strokeWidth="12" />
+        <path d="M30.989,215.99064a112.03731,112.03731,0,0,1,194.02311.002" strokeWidth="12" />
+    </svg>
+);
+const PhTrendUpLight = ({ className }: { className?: string }) => (
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256" className={className} fill="none" stroke="currentColor" strokeWidth="16" strokeLinecap="round" strokeLinejoin="round">
+        <polyline points="232 56 136 152 96 112 24 184" strokeWidth="12" />
+        <polyline points="232 120 232 56 168 56" strokeWidth="12" />
+    </svg>
+);
+const PhCalendarCheckLight = ({ className }: { className?: string }) => (
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256" className={className} fill="none" stroke="currentColor" strokeWidth="16" strokeLinecap="round" strokeLinejoin="round">
+        <rect x="40" y="40" width="176" height="176" rx="8" strokeWidth="12" />
+        <line x1="176" y1="24" x2="176" y2="56" strokeWidth="12" />
+        <line x1="80" y1="24" x2="80" y2="56" strokeWidth="12" />
+        <line x1="40" y1="88" x2="216" y2="88" strokeWidth="12" />
+        <polyline points="84 140 108 164 172 100" strokeWidth="12" />
+    </svg>
+);
+const PhCheckCircleLight = ({ className }: { className?: string }) => (
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256" className={className} fill="none" stroke="currentColor" strokeWidth="16" strokeLinecap="round" strokeLinejoin="round">
+        <polyline points="172 104 113.333 160 84 132" strokeWidth="12" />
+        <circle cx="128" cy="128" r="96" strokeWidth="12" />
+    </svg>
+);
+const PhXCircleLight = ({ className }: { className?: string }) => (
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256" className={className} fill="none" stroke="currentColor" strokeWidth="16" strokeLinecap="round" strokeLinejoin="round">
+        <circle cx="128" cy="128" r="96" strokeWidth="12" />
+        <line x1="160" y1="96" x2="96" y2="160" strokeWidth="12" />
+        <line x1="160" y1="160" x2="96" y2="96" strokeWidth="12" />
+    </svg>
+);
+const PhChatDotsLight = ({ className }: { className?: string }) => (
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256" className={className} fill="none" stroke="currentColor" strokeWidth="16" strokeLinecap="round" strokeLinejoin="round">
+        <path d="M45.42857,176.99811A96,96,0,1,1,79.00228,210.5717l-33.5737,11.19123a8,8,0,0,1-10.23725-10.23725Z" strokeWidth="12" />
+        <circle cx="96" cy="128" r="8" fill="currentColor" stroke="none" />
+        <circle cx="128" cy="128" r="8" fill="currentColor" stroke="none" />
+        <circle cx="160" cy="128" r="8" fill="currentColor" stroke="none" />
+    </svg>
+);
 
 interface ChatSidebarProps {
     chats: ChatContact[];
@@ -226,38 +269,38 @@ export const ChatSidebar: React.FC<ChatSidebarProps> = ({ chats, activeChatId, o
                                     )}
                                 </div>
 
-                                {/* WhatsApp Business Labels (Dynamic) */}
+                                {/* Dynamic Tags with Phosphor Light Icons */}
                                 <div className="flex flex-wrap gap-1 mt-1">
                                     {(!chat.tags || chat.tags.length === 0 || (!chat.tags.some(t => t.startsWith('crm:')) && !chat.tags.includes('financial'))) && (
                                         <span className="bg-zinc-50 text-zinc-500 text-[10px] px-1.5 py-0.5 rounded-md border border-zinc-200 font-medium flex items-center gap-1.5">
-                                            <User className="w-3 h-3" /> Lead
+                                            <PhUserLight className="w-3 h-3" /> Lead
                                         </span>
                                     )}
 
                                     {chat.tags && chat.tags.map(tag => {
                                         if (tag === 'crm:won' || tag === 'crm:venda' || tag === 'financial') return (
                                             <span key="won" className="bg-amber-50 text-amber-700 text-[10px] px-1.5 py-0.5 rounded-md border border-amber-200 font-medium flex items-center gap-1.5">
-                                                <TrendingUp className="w-3 h-3" /> Venda
+                                                <PhTrendUpLight className="w-3 h-3" /> Venda
                                             </span>
                                         );
                                         if (tag === 'crm:scheduled' || tag === 'crm:agendado') return (
                                             <span key="sched" className="bg-purple-50 text-purple-700 text-[10px] px-1.5 py-0.5 rounded-md border border-purple-200 font-medium flex items-center gap-1.5">
-                                                <Calendar className="w-3 h-3" /> Agendado
+                                                <PhCalendarCheckLight className="w-3 h-3" /> Agendado
                                             </span>
                                         );
                                         if (tag === 'crm:attended' || tag === 'crm:compareceu') return (
                                             <span key="att" className="bg-emerald-50 text-emerald-700 text-[10px] px-1.5 py-0.5 rounded-md border border-emerald-200 font-medium flex items-center gap-1.5">
-                                                <CheckCircle2 className="w-3 h-3" /> Compareceu
+                                                <PhCheckCircleLight className="w-3 h-3" /> Compareceu
                                             </span>
                                         );
                                         if (tag === 'crm:noshow' || tag === 'crm:faltou') return (
                                             <span key="noshow" className="bg-red-50 text-red-700 text-[10px] px-1.5 py-0.5 rounded-md border border-red-200 font-medium flex items-center gap-1.5">
-                                                <XCircle className="w-3 h-3" /> Faltou
+                                                <PhXCircleLight className="w-3 h-3" /> Faltou
                                             </span>
                                         );
                                         if (tag === 'crm:qualifying' || tag === 'crm:em negociação') return (
                                             <span key="qual" className="bg-blue-50 text-blue-700 text-[10px] px-1.5 py-0.5 rounded-md border border-blue-200 font-medium flex items-center gap-1.5">
-                                                <Clock className="w-3 h-3" /> Em Negociação
+                                                <PhChatDotsLight className="w-3 h-3" /> Em Negociação
                                             </span>
                                         );
                                         return null;
