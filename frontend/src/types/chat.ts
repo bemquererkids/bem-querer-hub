@@ -8,6 +8,7 @@ export interface ChatContact {
     avatar?: string;
     phoneNumber?: string;
     status?: 'online' | 'offline';
+    presence?: 'composing' | 'recording' | 'paused' | 'available' | 'unavailable';
 }
 
 export interface ChatMessage {

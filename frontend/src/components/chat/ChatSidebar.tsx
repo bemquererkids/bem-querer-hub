@@ -69,6 +69,13 @@ const PhChatDotsLight = ({ className }: { className?: string }) => (
         <circle cx="160" cy="128" r="8" fill="currentColor" stroke="none" />
     </svg>
 );
+const PhPencilSimpleLineLight = ({ className }: { className?: string }) => (
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256" className={className} fill="none" stroke="currentColor" strokeWidth="16" strokeLinecap="round" strokeLinejoin="round">
+        <path d="M216,40,92.5,163.5a8,8,0,0,0-2.1,3.7l-9.6,38.4a8,8,0,0,0,9.7,9.7l38.4-9.6a8,8,0,0,0,3.7-2.1L256,80Z" strokeWidth="12" />
+        <line x1="216" y1="40" x2="256" y2="80" strokeWidth="12" />
+        <line x1="104" y1="216" x2="16" y2="216" strokeWidth="12" />
+    </svg>
+);
 
 interface ChatSidebarProps {
     chats: ChatContact[];
@@ -248,8 +255,17 @@ export const ChatSidebar: React.FC<ChatSidebarProps> = ({ chats, activeChatId, o
                                 </div>
                                 <div className="flex justify-between items-center mt-0.5">
                                     <p className="text-[14px] text-[#667781] dark:text-[#8696a0] truncate max-w-[85%] flex items-center gap-1">
-                                        <span className="text-indigo-500 dark:text-indigo-400 text-[10px]">✓✓</span>
-                                        {chat.lastMessage}
+                                        {chat.presence === 'composing' ? (
+                                            <span className="flex items-center gap-1 text-[#25d366] font-medium animate-pulse">
+                                                <PhPencilSimpleLineLight className="w-4 h-4" />
+                                                Digitando...
+                                            </span>
+                                        ) : (
+                                            <>
+                                                <span className="text-indigo-500 dark:text-indigo-400 text-[10px]">✓✓</span>
+                                                {chat.lastMessage}
+                                            </>
+                                        )}
                                     </p>
 
 

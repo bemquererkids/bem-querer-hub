@@ -205,12 +205,28 @@ async def receive_uazapi_webhook(request: Request, background_tasks: BackgroundT
         
         if event_type == 'presence':
             # Log calling out the presence
-            presence = payload.get('presence') # e.g. {id: '...', presence: 'composing'}
-            chat_id = payload.get('chatId') or presence.get('id')
-            state = presence.get('presence') or payload.get('body') # unpredictable payload structure
+            presence_data = payload.get('presence') # e.g. {id: '...', presence: 'composing'}
+            chat_id = payload.get('chatId') or presence_data.get('id')
+            state = presence_data.get('presence') or payload.get('body') # unpredictable payload structure
             
-            logger.info(f"🟢 UazAPI Presence Event: Chat={chat_id}, State={state}, Full={payload}")
-            # TODO: Emit to WebSocket here
+            # Extract phone from JID
+            phone = chat_id.split('@')[0] if chat_id else None
+            
+            logger.info(f"🟢 UazAPI Presence Event: Phone={phone}, State={state}")
+            
+            if phone and state:
+                supabase = get_supabase()
+                # Update presence column in conversation
+                # Note: We rely on this column existing in the DB.
+                # State values: 'composing', 'recording', 'paused', 'available'
+                try:
+                    supabase.table('whatsapp_conversations') \
+                        .update({'presence': state}) \
+                        .eq('phone_number', phone) \
+                        .execute()
+                except Exception as e:
+                    logger.warning(f"⚠️ Failed to update presence (Column might be missing): {e}")
+
             return {"status": "success"}
 
         # --- CRM / LEAD UPDATE HANDLING ---
