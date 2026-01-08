@@ -199,7 +199,7 @@ const DealCard = React.memo<DealCardProps>(({ deal, stage, onWhatsApp, onEditVal
                                     )}
                                 </div>
                                 <div className="min-w-0 flex-1 overflow-hidden">
-                                    <h3 className="font-bold text-zinc-900 dark:text-foreground text-sm leading-tight truncate max-w-full">{deal.patientName}</h3>
+                                    <h3 className="font-bold text-zinc-900 dark:text-foreground text-sm leading-tight line-clamp-2" title={deal.patientName}>{deal.patientName}</h3>
                                     <p className="text-[10px] text-zinc-500 dark:text-muted-foreground truncate">Particular</p>
                                 </div>
                             </div>
@@ -337,7 +337,7 @@ const DroppableColumn: React.FC<{
                 items={deals.map(d => d.id)}
                 strategy={verticalListSortingStrategy}
             >
-                <div className="flex-1 overflow-y-auto space-y-2 pr-1 min-h-[100px]">
+                <div className="flex-1 overflow-y-auto space-y-2 pr-1 min-h-[100px] custom-scrollbar">
                     {deals.length === 0 ? (
                         <div className="flex flex-col items-center justify-center h-32 text-center">
                             <stage.icon className={`w-8 h-8 ${stage.iconColor} opacity-30 mb-2`} />
@@ -590,18 +590,37 @@ export const KanbanBoard: React.FC<{ highlightDealId?: string | null }> = ({ hig
                     </div>
                 </div>
 
-                {/* Kanban Columns - 6 RAIAS */}
-                <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-6 gap-2 flex-1 min-h-0 overflow-x-auto">
+                {/* Custom Scrollbar Styles */}
+                <style>{`
+                    .custom-scrollbar::-webkit-scrollbar {
+                        width: 4px;
+                        height: 4px;
+                    }
+                    .custom-scrollbar::-webkit-scrollbar-track {
+                        background: transparent;
+                    }
+                    .custom-scrollbar::-webkit-scrollbar-thumb {
+                        background-color: rgba(156, 163, 175, 0.3);
+                        border-radius: 10px;
+                    }
+                    .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+                        background-color: rgba(156, 163, 175, 0.5);
+                    }
+                `}</style>
+
+                {/* Kanban Columns - Responsivo com Scroll Horizontal Suave */}
+                <div className="flex gap-3 flex-1 min-h-0 overflow-x-auto pb-2 custom-scrollbar snap-x snap-mandatory">
                     {FUNNEL_STAGES.map(stage => {
                         const stageDeals = getDealsByStage(stage.statuses);
                         return (
-                            <DroppableColumn
-                                key={stage.id}
-                                stage={stage}
-                                deals={stageDeals}
-                                onWhatsApp={handleOpenWhatsApp}
-                                onEditValue={handleOpenEditValue}
-                            />
+                            <div key={stage.id} className="min-w-[260px] max-w-[300px] flex-shrink-0 snap-center h-full">
+                                <DroppableColumn
+                                    stage={stage}
+                                    deals={stageDeals}
+                                    onWhatsApp={handleOpenWhatsApp}
+                                    onEditValue={handleOpenEditValue}
+                                />
+                            </div>
                         );
                     })}
                 </div>
