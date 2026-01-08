@@ -36,7 +36,7 @@ class UazAPIService:
             "number": self.normalize_phone(to),
             "text": text,
             "options": {
-                "delay": 1200,
+                "delay": 2500,
                 "presence": "composing"
             }
         }
