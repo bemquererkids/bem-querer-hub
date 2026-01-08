@@ -12,4 +12,5 @@ export interface Deal {
     campaignId?: string; // ID da campanha de origem
     treatmentType?: string; // ex: "Ortodontia", "Limpeza"
     probability: 'low' | 'medium' | 'high';
+    lastMessages?: string[];
 }

@@ -75,7 +75,8 @@ async def get_deals(
                 "source": 'google', # Default fallback
                 "campaignId": None,
                 "phone": chat.get("phone_number"),
-                "probability": "medium"
+                "probability": "medium",
+                "lastMessages": [chat.get("last_message")] if chat.get("last_message") else []
             }
             
             # Refine Source from Patient Data

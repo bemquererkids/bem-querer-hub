@@ -276,6 +276,15 @@ const DealCard = React.memo<DealCardProps>(({ deal, stage, onWhatsApp, onEditVal
                     </div>
                 </div>
 
+                {/* Last Message Preview (Mini-History) */}
+                {deal.lastMessages && deal.lastMessages.length > 0 && (
+                    <div className="mt-2 px-1.5 py-1 bg-white/50 dark:bg-black/20 rounded border border-black/5 dark:border-white/5">
+                        <p className="text-[10px] text-zinc-600 dark:text-zinc-400 line-clamp-2 italic">
+                            "{deal.lastMessages[0]}"
+                        </p>
+                    </div>
+                )}
+
                 {/* Footer: Value + Actions */}
                 <div className="flex items-center justify-between mt-2 pt-2 border-t border-zinc-100 dark:border-zinc-800/50">
                     <div
