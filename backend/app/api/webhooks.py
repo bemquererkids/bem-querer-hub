@@ -206,8 +206,8 @@ async def receive_uazapi_webhook(request: Request, background_tasks: BackgroundT
         if event_type == 'presence':
             # Log calling out the presence
             presence_data = payload.get('presence') # e.g. {id: '...', presence: 'composing'}
-            chat_id = payload.get('chatId') or presence_data.get('id')
-            state = presence_data.get('presence') or payload.get('body') # unpredictable payload structure
+            chat_id = payload.get('chatId') or (presence_data.get('id') if presence_data else None)
+            state = (presence_data.get('presence') if presence_data else None) or payload.get('body') # unpredictable payload structure
             
             # Extract phone from JID
             phone = chat_id.split('@')[0] if chat_id else None
@@ -604,7 +604,7 @@ async def save_whatsapp_message(
             new_conversation = {
                 "clinic_id": clinic_id,
                 "phone_number": phone,
-                "contact_name": name,
+                "contact_name": contact_name,
                 "unread_count": 0 if is_from_me else 1,
                 "tags": [],
                 **update_payload
