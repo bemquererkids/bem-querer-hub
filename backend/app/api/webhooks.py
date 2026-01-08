@@ -252,9 +252,26 @@ async def receive_uazapi_webhook(request: Request, background_tasks: BackgroundT
         
         # Extract message details
         text_content = message_data.get('text') or message_data.get('content', '')
-        sender = message_data.get('sender', '')  # 5511993308484@s.whatsapp.net
-        phone = sender.split('@')[0] if '@' in sender else sender
-        name = chat_data.get('name') or message_data.get('senderName', 'Desconhecido')
+        
+        # Determine Phone / Conversation Partner (Correct JID Logic)
+        # Priority 1: chatId (Explicit context)
+        # Priority 2: key.remoteJid (The chat container)
+        # Priority 3: sender (Fallback, but is ME if fromMe=True)
+        jid = payload.get('chatId') or message_data.get('key', {}).get('remoteJid') or message_data.get('sender')
+        
+        # Filter broadcast status
+        if jid == 'status@broadcast':
+            return {"status": "ignored", "reason": "status_broadcast"}
+
+        phone = jid.split('@')[0] if jid and '@' in jid else jid
+        
+        # Correctly determine Contact Name
+        # If fromMe=True, we want the CHAT name, not senderName (which is me)
+        name = chat_data.get('name') or chat_data.get('contactName')
+        if not name and not message_data.get('fromMe', False):
+             name = message_data.get('senderName', 'Desconhecido')
+        if not name:
+             name = "Desconhecido"
         
         # Get REAL message ID from UazAPI to prevent ghosting/duplicates
         # It's usually in key.id or just id
