@@ -265,17 +265,9 @@ async def receive_uazapi_webhook(request: Request, background_tasks: BackgroundT
 
         phone = jid.split('@')[0] if jid and '@' in jid else jid
         
-        # DEBUG: Log extraction for fromMe messages
-        is_from_me = message_data.get('fromMe', False)
-        if is_from_me:
-            logger.warning(f"🔍 fromMe=True detected!")
-            logger.warning(f"   chatId: {payload.get('chatId')}")
-            logger.warning(f"   key.remoteJid: {message_data.get('key', {}).get('remoteJid')}")
-            logger.warning(f"   sender: {message_data.get('sender')}")
-            logger.warning(f"   → Extracted phone: {phone}")
-        
         # Correctly determine Contact Name
         # If fromMe=True, we want the CHAT name, not senderName (which is me)
+        is_from_me = message_data.get('fromMe', False)
         name = chat_data.get('name') or chat_data.get('contactName')
         if not name and not is_from_me:
              name = message_data.get('senderName', 'Desconhecido')
@@ -283,13 +275,9 @@ async def receive_uazapi_webhook(request: Request, background_tasks: BackgroundT
              name = "Desconhecido"
         
         # Get REAL message ID from UazAPI to prevent ghosting/duplicates
-        # It's usually in key.id or just id
         uaz_id = message_data.get('id') or (message_data.get('key', {}).get('id'))
         if not uaz_id:
-            # Fallback to a hash of content/timestamp if ID is somehow missing
             uaz_id = f"uazapi_{datetime.now().timestamp()}"
-        
-        logger.warning(f"🆔 UazAPI Message ID: {uaz_id}")
 
         if not text_content or not phone:
             logger.warning(f"Missing text or phone: text={text_content}, phone={phone}")
@@ -307,9 +295,8 @@ async def receive_uazapi_webhook(request: Request, background_tasks: BackgroundT
             message_data.get('senderImage')
         )
         
-        logger.warning(f"🖼️ Avatar URL: {avatar_url[:80] if avatar_url else 'NONE'}...")
-        logger.warning(f"✅ Processing message from {name} ({phone}): {text_content[:50]}")
-        logger.warning(f"📦 Message ID: {uaz_id}")
+        logger.info(f"📨 Message from {name} ({phone}): {text_content[:50]}...")
+        logger.info(f"🆔 Message ID: {uaz_id}")
         
         # Save and Process in background
         is_from_me = message_data.get('fromMe', False)
