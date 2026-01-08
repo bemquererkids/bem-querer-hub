@@ -89,7 +89,7 @@ class UazAPIService:
             logger.error(f"Check connection failed: {e}")
             return False
 
-    def update_lead(self, phone: str, name: str = None, status: str = None) -> Dict[str, Any]:
+    def update_lead(self, phone: str, name: str = None, status: str = None, tags: list = None, position: int = None) -> Dict[str, Any]:
         """
         Update Lead info in UazAPI Internal CRM
         Doc: https://docs.uazapi.com/tag/CRM
@@ -99,7 +99,6 @@ class UazAPIService:
         params = {"token": self.token}
         
         # Ensure JID format (5511... @s.whatsapp.net or @c.us)
-        # UazAPI doc usually prefers @s.whatsapp.net for individual chats
         clean_phone = self.normalize_phone(phone)
         if "@" not in clean_phone:
             # Default to whatsapp.net JID
@@ -108,15 +107,17 @@ class UazAPIService:
             jid = clean_phone
             
         payload = {
-            "id": jid, # Correct key based on doc analysis
+            "id": jid, 
         }
         
         if name:
             payload["lead_name"] = name
         if status:
             payload["lead_status"] = status
-            # Also try to sync as tag, just in case
-            # payload["lead_tags"] = [status] 
+        if tags is not None:
+            payload["lead_tags"] = tags
+        if position is not None:
+            payload["lead_kanbanOrder"] = position
             
         headers = {
             "Authorization": f"Bearer {self.token}",
@@ -137,11 +138,12 @@ class UazAPIService:
 
     def add_tag(self, phone: str, tag: str) -> Dict[str, Any]:
         """
-        Add a tag/label to a chat.
-        Note: UazAPI might require label IDs, but let's try pushing to editLead tags first or legacy endpoint.
+        Add a CRM tag to a chat.
+        Note: This overwrites existing tags if the API doesn't support merge.
+        Ideally we should fetch, append, then update.
+        For now, we map this to lead_tags.
         """
-        # Strategy: Use editLead to add tags as it handles string names better in internal CRM
-        return self.update_lead(phone, status=tag) 
+        return self.update_lead(phone, tags=[tag]) 
         
     def delete_chat(self, phone: str) -> bool:
         """

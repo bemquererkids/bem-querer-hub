@@ -299,7 +299,11 @@ async def process_uazapi_crm_event(payload: dict):
         supabase = get_supabase()
         
         # 1. Update Conversation
+        # 1. Update Conversation
         update_data = {}
+        
+        # Determine internal CRM tag from status (Column Sync)
+        internal_crm_tag = None
         if status:
             # Map external status to internal tags
             # e.g. "Agendado" -> "crm:scheduled"
@@ -310,17 +314,42 @@ async def process_uazapi_crm_event(payload: dict):
                 'atendido': 'crm:attended',
                 'perdido': 'crm:lost'
             }
-            internal_tag = status_map.get(status.lower())
-            
-            if internal_tag:
-                 # Fetch current tags
-                 res = supabase.table('whatsapp_conversations').select('tags').eq('phone_number', phone).execute()
-                 if res.data:
-                     current_tags = res.data[0].get('tags') or []
-                     # Remove conflicting CRM tags
-                     current_tags = [t for t in current_tags if not t.startswith('crm:')]
-                     current_tags.append(internal_tag)
-                     update_data['tags'] = current_tags
+            internal_crm_tag = status_map.get(status.lower())
+
+        # Determine external tags (Label Sync)
+        external_tags = data.get('tags') or data.get('lead_tags')
+        
+        # Only update if we have new info
+        if internal_crm_tag or external_tags is not None:
+             # Fetch current tags
+             res = supabase.table('whatsapp_conversations').select('tags').eq('phone_number', phone).execute()
+             if res.data:
+                 current_tags = res.data[0].get('tags') or []
+                 
+                 # 1. Handle Status/CRM Tag (Priority: Incoming Status)
+                 updated_tags = []
+                 # Keep existing CRM tag if no new status arrived, otherwise replace
+                 if internal_crm_tag:
+                     updated_tags.append(internal_crm_tag)
+                 else:
+                     # Keep existing crm tag
+                     updated_tags.extend([t for t in current_tags if t.startswith('crm:')])
+                     
+                 # 2. Handle External Tags (Priority: Incoming Tags)
+                 if external_tags is not None:
+                     # Use incoming external tags (e.g. "VIP")
+                     # Filter out any that inadvertently match crm (unlikely but safe)
+                     updated_tags.extend([t for t in external_tags if not t.startswith('crm:')])
+                 else:
+                     # Keep existing non-crm tags
+                     updated_tags.extend([t for t in current_tags if not t.startswith('crm:')])
+                
+                 # Deduplicate
+                 updated_tags = list(set(updated_tags))
+                 
+                 # Update if changed
+                 if set(updated_tags) != set(current_tags):
+                    update_data['tags'] = updated_tags
         
         if name:
             update_data['contact_name'] = name

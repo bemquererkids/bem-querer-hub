@@ -193,12 +193,23 @@ async def update_deal_status(
                 from app.services.uazapi_service import get_uazapi_service
                 uaz = get_uazapi_service()
                 
-                # Update Status column in UazAPI
-                uaz.update_lead(phone, name=contact_name, status=request.status)
+                # Prepare Tags for UazAPI (Clean Display Names)
+                # 1. Start with the new Status (e.g. "Agendado")
+                uaz_tags = [request.status]
                 
-                # Add status tag (e.g. "Agendado")
-                uaz.add_tag(phone, request.status)
-                print(f"✅ Synced deal {deal_id} (Phone: {phone}) to UazAPI CRM")
+                # 2. Add existing non-CRM tags (e.g. "VIP")
+                extra_tags = [t for t in updated_tags if not t.startswith("crm:")]
+                uaz_tags.extend(extra_tags)
+                
+                # Update Status and Tags in UazAPI
+                uaz.update_lead(
+                    phone, 
+                    name=contact_name, 
+                    status=request.status,
+                    tags=uaz_tags
+                )
+                
+                print(f"✅ Synced deal {deal_id} (Phone: {phone}) to UazAPI CRM: Status={request.status}, Tags={uaz_tags}")
                 
         except Exception as sync_err:
             print(f"⚠️ UazAPI Sync Warning: {sync_err}")
