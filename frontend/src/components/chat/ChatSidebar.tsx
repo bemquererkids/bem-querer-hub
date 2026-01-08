@@ -1,21 +1,20 @@
 import React, { useState } from 'react';
 import { ChatContact } from '../../types/chat';
-import { supabase } from '../../services/supabase'; // Import Added
-import { Search, Filter, MoreVertical, MessageCircle, ChevronDown, Archive, BellOff, PinOff, Mail, Heart, Ban, Trash2 } from 'lucide-react';
+import { supabase } from '../../services/supabase';
+import {
+    Search, Filter, MoreVertical, MessageCircle, ChevronDown, Archive,
+    BellOff, PinOff, Mail, Heart, Ban, Trash2,
+    Calendar, CheckCircle2, XCircle, TrendingUp, Clock, User
+} from 'lucide-react';
 import { Input } from '../ui/input';
-import { Badge } from '../ui/badge';
-import { Tabs, TabsList, TabsTrigger } from '../ui/tabs';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../ui/select';
 import {
     DropdownMenu,
     DropdownMenuContent,
     DropdownMenuItem,
-    DropdownMenuLabel,
     DropdownMenuSeparator,
     DropdownMenuTrigger,
 } from "../ui/dropdown-menu";
 import clsx from 'clsx';
-import { chatService } from '../../services/api';
 
 interface ChatSidebarProps {
     chats: ChatContact[];
@@ -54,7 +53,6 @@ export const ChatSidebar: React.FC<ChatSidebarProps> = ({ chats, activeChatId, o
                 if (error) throw error;
                 console.log("Marked as unread successfully");
             }
-            // Add other actions here later (archive, delete, etc.)
         } catch (error) {
             console.error("Action failed", error);
         }
@@ -68,7 +66,7 @@ export const ChatSidebar: React.FC<ChatSidebarProps> = ({ chats, activeChatId, o
         if (t.includes('crm:qualifying')) return 'bg-blue-50 dark:bg-blue-900/10 hover:bg-blue-100 dark:hover:bg-blue-900/20';
         if (t.includes('crm:noshow')) return 'bg-red-50 dark:bg-red-900/10 hover:bg-red-100 dark:hover:bg-red-900/20';
 
-        // Default Lead (Purple/Indigo as requested)
+        // Default Lead
         return 'bg-indigo-50 dark:bg-indigo-900/10 hover:bg-indigo-100 dark:hover:bg-indigo-900/20';
     };
 
@@ -228,17 +226,42 @@ export const ChatSidebar: React.FC<ChatSidebarProps> = ({ chats, activeChatId, o
                                     )}
                                 </div>
 
-                                {/* WhatsApp Business Labels (Restored functionality) */}
-                                <div className="flex gap-1 mt-1">
-                                    {chat.tags && chat.tags.includes('financial') && (
-                                        <span className="bg-[#f0f2f5] text-[#54656f] text-[10px] px-1.5 py-0.5 rounded-sm border border-[#d1d7db] font-medium">
-                                            💰 Venda
+                                {/* WhatsApp Business Labels (Dynamic) */}
+                                <div className="flex flex-wrap gap-1 mt-1">
+                                    {(!chat.tags || chat.tags.length === 0 || (!chat.tags.some(t => t.startsWith('crm:')) && !chat.tags.includes('financial'))) && (
+                                        <span className="bg-zinc-50 text-zinc-500 text-[10px] px-1.5 py-0.5 rounded-md border border-zinc-200 font-medium flex items-center gap-1.5">
+                                            <User className="w-3 h-3" /> Lead
                                         </span>
                                     )}
-                                    {/* Default 'Lead' label if no specific tags */}
-                                    <span className="bg-[#f0f2f5] text-[#54656f] text-[10px] px-1.5 py-0.5 rounded-sm border border-[#d1d7db] font-medium">
-                                        👤 Lead
-                                    </span>
+
+                                    {chat.tags && chat.tags.map(tag => {
+                                        if (tag === 'crm:won' || tag === 'crm:venda' || tag === 'financial') return (
+                                            <span key="won" className="bg-amber-50 text-amber-700 text-[10px] px-1.5 py-0.5 rounded-md border border-amber-200 font-medium flex items-center gap-1.5">
+                                                <TrendingUp className="w-3 h-3" /> Venda
+                                            </span>
+                                        );
+                                        if (tag === 'crm:scheduled' || tag === 'crm:agendado') return (
+                                            <span key="sched" className="bg-purple-50 text-purple-700 text-[10px] px-1.5 py-0.5 rounded-md border border-purple-200 font-medium flex items-center gap-1.5">
+                                                <Calendar className="w-3 h-3" /> Agendado
+                                            </span>
+                                        );
+                                        if (tag === 'crm:attended' || tag === 'crm:compareceu') return (
+                                            <span key="att" className="bg-emerald-50 text-emerald-700 text-[10px] px-1.5 py-0.5 rounded-md border border-emerald-200 font-medium flex items-center gap-1.5">
+                                                <CheckCircle2 className="w-3 h-3" /> Compareceu
+                                            </span>
+                                        );
+                                        if (tag === 'crm:noshow' || tag === 'crm:faltou') return (
+                                            <span key="noshow" className="bg-red-50 text-red-700 text-[10px] px-1.5 py-0.5 rounded-md border border-red-200 font-medium flex items-center gap-1.5">
+                                                <XCircle className="w-3 h-3" /> Faltou
+                                            </span>
+                                        );
+                                        if (tag === 'crm:qualifying' || tag === 'crm:em negociação') return (
+                                            <span key="qual" className="bg-blue-50 text-blue-700 text-[10px] px-1.5 py-0.5 rounded-md border border-blue-200 font-medium flex items-center gap-1.5">
+                                                <Clock className="w-3 h-3" /> Em Negociação
+                                            </span>
+                                        );
+                                        return null;
+                                    })}
                                 </div>
                             </div>
                         </div>
