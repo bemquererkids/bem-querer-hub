@@ -265,10 +265,19 @@ async def receive_uazapi_webhook(request: Request, background_tasks: BackgroundT
 
         phone = jid.split('@')[0] if jid and '@' in jid else jid
         
+        # DEBUG: Log extraction for fromMe messages
+        is_from_me = message_data.get('fromMe', False)
+        if is_from_me:
+            logger.warning(f"🔍 fromMe=True detected!")
+            logger.warning(f"   chatId: {payload.get('chatId')}")
+            logger.warning(f"   key.remoteJid: {message_data.get('key', {}).get('remoteJid')}")
+            logger.warning(f"   sender: {message_data.get('sender')}")
+            logger.warning(f"   → Extracted phone: {phone}")
+        
         # Correctly determine Contact Name
         # If fromMe=True, we want the CHAT name, not senderName (which is me)
         name = chat_data.get('name') or chat_data.get('contactName')
-        if not name and not message_data.get('fromMe', False):
+        if not name and not is_from_me:
              name = message_data.get('senderName', 'Desconhecido')
         if not name:
              name = "Desconhecido"
