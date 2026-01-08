@@ -39,6 +39,7 @@ class Conversation(BaseModel):
     unreadCount: int = 0  # Changed from unread_count
     tags: List[str] = []  # Added for frontend
     avatar: Optional[str] = None  # Added for frontend
+    presence: Optional[str] = None
 
 # --- Endpoints ---
 
@@ -70,7 +71,8 @@ async def get_conversations():
                 lastMessageTime=conv.get("last_message_at") or "",
                 unreadCount=conv.get("unread_count", 0),
                 tags=conv.get("tags") or [],
-                avatar=conv.get("avatar") or f"https://ui-avatars.com/api/?name={conv.get('contact_name', 'U')}&background=random"
+                avatar=conv.get("avatar") or f"https://ui-avatars.com/api/?name={conv.get('contact_name', 'U')}&background=random",
+                presence=conv.get("presence")
             )
             for conv in response.data
         ]
