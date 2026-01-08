@@ -596,7 +596,7 @@ async def save_whatsapp_message(
             "last_message_at": timestamp or datetime.now().isoformat(),
             "updated_at": datetime.now().isoformat()
         }
-        if name: update_payload['contact_name'] = name
+        if contact_name: update_payload['contact_name'] = contact_name
         if avatar: update_payload['avatar'] = avatar
         
         if not conversation_res.data:
