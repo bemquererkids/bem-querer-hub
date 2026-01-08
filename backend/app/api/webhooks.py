@@ -289,17 +289,18 @@ async def receive_uazapi_webhook(request: Request, background_tasks: BackgroundT
         # Hardcoded clinic for now
         CLINIC_ID_DEFAULT = "00000000-0000-0000-0000-000000000001"
         
-        # Extract Avatar (try multiple fields)
+        # Extract Avatar from UazAPI payload
+        # UazAPI sends: chat.imagePreview (URL with WhatsApp CDN)
         avatar_url = (
+            chat_data.get('imagePreview') or  # ✅ Correct field from UazAPI
+            chat_data.get('image') or
             chat_data.get('profilePictureUrl') or 
-            chat_data.get('profilePicture') or
-            message_data.get('senderImage') or
-            message_data.get('profilePicUrl')
+            message_data.get('senderImage')
         )
         
-        logger.warning(f"🖼️ Avatar URL extracted: {avatar_url if avatar_url else 'NONE'}")
+        logger.warning(f"🖼️ Avatar URL: {avatar_url[:80] if avatar_url else 'NONE'}...")
         logger.warning(f"✅ Processing message from {name} ({phone}): {text_content[:50]}")
-        logger.warning(f"📦 Sending to background task with message_id: {uaz_id}")
+        logger.warning(f"📦 Message ID: {uaz_id}")
         
         # Save and Process in background
         is_from_me = message_data.get('fromMe', False)
