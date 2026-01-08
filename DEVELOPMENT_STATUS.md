@@ -1,65 +1,61 @@
 # 🚀 Status de Desenvolvimento - Sistema Bem Querer
 
-**Última Atualização:** 06/01/2026
-**Contexto:** Refinamento de UI (Dark Mode) e Configuração de IA.
+**Última Atualização:** 08/01/2026
+**Contexto:** Refinamento do Chat (Deleção e Sincronização) e Deploy.
 
 ---
 
 ## ✅ O Que Foi Feito (Concluído)
 
-### 1. Refinamento de UI & Dark Mode
+### 1. Chat & Sincronização (Novo)
+- **Apagar Conversa Completa (`ChatSidebar.tsx` + Backend):**
+  - Implementada funcionalidade para apagar todo o histórico de uma conversa.
+  - Sincronização com o WhatsApp (comando `deleteChat` ou `clearChat`).
+  - Backend robusto: Testa 4 endpoints diferentes da UazAPI/Evolution para garantir compatibilidade.
+  - Interface segura com **Componente AlertDialog** para confirmação antes de apagar.
+- **Sincronização Bidirecional Real (`webhooks.py`):**
+  - Corrigido problema onde mensagens enviadas pelo celular (app oficial) não apareciam no sistema.
+  - Webhook agora processa mensagens com `fromMe: true`, garantindo que o chat do sistema seja um espelho fiel do celular.
+- **Revogar Mensagens:**
+  - "Apagar para todos" funcionando para mensagens enviadas pelo sistema.
+
+### 2. Refinamento de UI & Dark Mode
 - **AI Config Wizard (`AIConfigWizard.tsx`):**
   - Design totalmente adaptado para Dark Mode (contraste corrigido).
-  - Inputs, Labels e Cards padronizados com o tema `zinc` (fundo escuro, bordas sutis).
-  - Correção de botões "invisíveis" e hierarquia visual das etapas.
-  - Seções finalizadas: *Persona, Equipe, Administrativo, Protocolos, Preview*.
+  - Inputs, Labels e Cards padronizados.
 - **Dashboard (`DashboardHome.tsx`):**
-  - Tooltips de gráficos corrigidos (estavam brancos no escuro).
-  - Cards e métricas ajustados para o tema escuro.
-- **Infraestrutura de Tema (`theme-provider.tsx`):**
-  - Componente atualizado para garantir propagação correta do contexto de tema em toda a app.
-- **Validação da IA (Backend):**
-  - Confirmado que o `GPTService` lê corretamente as configurações salvas no banco (`ai_configurations`).
-  - Teste automatizado provou que Personas e Regras são injetadas no prompt do sistema.
-- **Chat (`ChatWindow.tsx`):**
-  - Interface do chat totalmente adaptada para Dark Mode (cores estilo WhatsApp Dark).
-  - Ajustes em bolhas de mensagem, inputs, header e painel de produtividade.
-- **Dashboard (`DashboardHome.tsx`):**
-  - Conectado com sucesso ao backend `/api/crm/metrics`.
-  - Banco de dados populado com dados de teste (Seed) para validar visualização de gráficos e métricas.
-  - Testado fluxo de dados para funil de vendas e faturamento.
+  - Tooltips e gráficos ajustados para tema escuro.
+- **Geral:**
+  - Componente `AlertDialog` criado para modais de confirmação padronizados.
 
 ---
 
-## 🚧 Estado Atual (Foco: CRM & Sincronização)
-- **CRM Kanban**: Interface modernizada, responsiva e com edição de valores.
-- **Integração UazAPI**:
-  - Implementada sincronização bidirecional de Status (CRM -> UazAPI).
-  - Implementado Webhook para receber atualizações do UazAPI (Tags/Status) e refletir no Kanban.
-  - Ajustada autenticação para suportar múltiplos formatos de headers (Token/ApiKey).
-- **Backend CRM**: Rotas `/api/crm` refinadas para lidar com mapeamento de status e tags (ex: 'crm:scheduled' <-> 'Agendado').
+## 🚧 Estado Atual (Foco: Estabilidade & CRM)
+- **Chat**: Funcionalidades principais (Envio, Recebimento, Delete Msg, Delete Chat) operacionais e sincronizadas.
+- **CRM Kanban**: Interface modernizada.
+- **Integração UazAPI**: Estável e robusta contra variações de versão da API.
 
 ---
 
 ## 📋 Próximos Passos
 
-### 1. Sincronização & Estabilidade (Em Andamento)
-- [x] **Apagar Mensagens (Revoke)**: Implementado "Apagar para Todos" no chat.
-  - Sincroniza com WhatsApp (apaga no celular do cliente e do atendente).
-  - Funciona para novas mensagens (que possuem ID real do WhatsApp).
-- [ ] **Validar Webhook de CRM**: Testar se alterações de tags feitas diretamente no WhatsApp/UazAPI atualizam o Kanban automaticamente.
+### 1. Ajustes Finais Chat
+- [ ] **Interface de Aviso**: Verificar se há outros alertas nativos (`alert()`) para substituir por `AlertDialog`.
+- [ ] **Feedback Visual**: Melhorar feedback de "Enviando..." ou "Apagando..." se necessário.
 
 ### 2. Funcionalidades CRM
+- [ ] **Validar Webhook de CRM**: Testar se alterações de tags feitas diretamente no WhatsApp/UazAPI atualizam o Kanban automaticamente.
 - [ ] **Histórico no Card**: Ao clicar no card do Kanban, exibir mini-histórico das últimas mensagens.
 - [ ] **Atribuição de Responsável**: Permitir definir qual atendente é dono do Lead.
 
 ### 3. Finalização
-- [ ] **Deploy de Produção**: Validar variáveis de ambiente finais no servidor de produção.
+- [x] **Deploy de Produção**: Frontend e Backend atualizados e operando.
 
 ---
 
 ## 📂 Arquivos Críticos Recentes
-- `backend/app/services/uazapi_service.py` (Lógica de envio/sincronização)
-- `backend/app/api/webhooks.py` (Recepção de eventos UazAPI)
-- `backend/app/api/crm.py` (Regras de negócio do Kanban)
-- `frontend/src/components/crm/KanbanBoard.tsx` (Interface do Kanban)
+- `backend/app/services/uazapi_service.py` (Lógica robusta de delete_chat)
+- `frontend/src/components/chat/ChatSidebar.tsx` (Menu de ações e Modal de delete)
+- `frontend/src/components/ui/alert-dialog.tsx` (Novo componente de UI)
+- `backend/app/api/webhooks.py` (Lógica de sync fromMe)
+- `backend/test_delete_chat.py` (Script de validação de endpoints)
