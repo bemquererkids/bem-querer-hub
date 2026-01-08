@@ -44,8 +44,12 @@
 2.  **Feedback de Salvamento:** Refinar as notificações de UI (Toast) se necessário (atualmente funcionais).
 
 ### Prioridade Média (Melhorias)
-3.  **Dados Reais no Dashboard:** Conectar os gráficos do Dashboard aos endpoints de métricas reais do CRM (se ainda estiverem com dados mockados).
-4.  **Feedback de Salvamento:** Melhorar as notificações de "Sucesso/Erro" ao salvar configurações (atualmente `alert` simples ou toast básico).
+- [x] **Conexão de Métricas Reais**: Dashboard exibe dados reais do banco (Agendados, Comparecimentos, Vendas).
+- [x] **Filtros de Dados de Teste**: Dados de seed/teste ocultados automaticamente em produção.
+- [x] **Compatibilidade de Tags**: Backend aceita tags em Português (crm:Venda, crm:Agendado) e Inglês.
+- [x] **UX Improvements**: Ajuste de delay de digitação (Typing...) para 2.5s na UazAPI.
+- [ ] **Validação Final**: Usuário confirmar visualização correta de Faturamento (depende de input manual no Kanban).
+- [ ] **Feedback de Salvamento**: Melhorar as notificações de "Sucesso/Erro" ao salvar configurações (atualmente `alert` simples ou toast básico).
 
 ---
 

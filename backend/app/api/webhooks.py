@@ -200,9 +200,21 @@ async def receive_uazapi_webhook(request: Request, background_tasks: BackgroundT
         payload = await request.json()
         logger.info(f"📨 UazAPI Webhook received: EventType={payload.get('EventType')}")
         
-        # Only process message events
-        if payload.get('EventType') != 'messages':
-            logger.info(f"Ignoring non-message event: {payload.get('EventType')}")
+        # Handle 'messages' and 'presence'
+        event_type = payload.get('EventType')
+        
+        if event_type == 'presence':
+            # Log calling out the presence
+            presence = payload.get('presence') # e.g. {id: '...', presence: 'composing'}
+            chat_id = payload.get('chatId') or presence.get('id')
+            state = presence.get('presence') or payload.get('body') # unpredictable payload structure
+            
+            logger.info(f"🟢 UazAPI Presence Event: Chat={chat_id}, State={state}, Full={payload}")
+            # TODO: Emit to WebSocket here
+            return {"status": "success"}
+
+        if event_type != 'messages':
+            logger.info(f"Ignoring non-message event: {event_type}")
             return {"status": "ignored"}
         
         message_data = payload.get('message', {})
