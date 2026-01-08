@@ -289,9 +289,15 @@ async def receive_uazapi_webhook(request: Request, background_tasks: BackgroundT
         # Hardcoded clinic for now
         CLINIC_ID_DEFAULT = "00000000-0000-0000-0000-000000000001"
         
-        # Extract Avatar
-        avatar_url = chat_data.get('profilePictureUrl') or message_data.get('senderImage')
+        # Extract Avatar (try multiple fields)
+        avatar_url = (
+            chat_data.get('profilePictureUrl') or 
+            chat_data.get('profilePicture') or
+            message_data.get('senderImage') or
+            message_data.get('profilePicUrl')
+        )
         
+        logger.warning(f"🖼️ Avatar URL extracted: {avatar_url if avatar_url else 'NONE'}")
         logger.warning(f"✅ Processing message from {name} ({phone}): {text_content[:50]}")
         logger.warning(f"📦 Sending to background task with message_id: {uaz_id}")
         
@@ -629,13 +635,14 @@ async def save_whatsapp_message(
             return None
 
         # 0. Check for existing message_id to prevent duplicates
+        logger.info(f"🔍 Checking for duplicate message_id: {message_id}")
         existing_msg = supabase.table('whatsapp_messages') \
             .select('id') \
             .eq('message_id', message_id) \
             .execute()
             
         if existing_msg.data:
-            logger.info(f"⏭️ Message {message_id} already exists, skipping save.")
+            logger.info(f"⏭️ Message {message_id} already exists (ID: {existing_msg.data[0]['id']}), skipping save.")
             return conversation_id
         
         # 2. Save message
