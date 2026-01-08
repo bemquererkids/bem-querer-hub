@@ -98,20 +98,29 @@ class UazAPIService:
         url = self._get_url(endpoint)
         params = {"token": self.token}
         
+        # Ensure JID format (5511... @s.whatsapp.net or @c.us)
+        # UazAPI doc usually prefers @s.whatsapp.net for individual chats
+        clean_phone = self.normalize_phone(phone)
+        if "@" not in clean_phone:
+            # Default to whatsapp.net JID
+            jid = f"{clean_phone}@s.whatsapp.net"
+        else:
+            jid = clean_phone
+            
         payload = {
-            "number": self.normalize_phone(phone),
+            "id": jid, # Correct key based on doc analysis
         }
         
         if name:
             payload["lead_name"] = name
         if status:
-            # Map our internal status to a friendly name if needed, or pass direct
             payload["lead_status"] = status
+            # Also try to sync as tag, just in case
+            # payload["lead_tags"] = [status] 
             
         try:
-            logger.info(f"🔄 Syncing Lead {phone} to UazAPI: {payload}")
+            # logger.info(f"🔄 Syncing Lead {phone} to UazAPI: {payload}")
             response = requests.post(url, json=payload, params=params, timeout=10)
-            # Don't raise for status sync errors to avoid breaking main flow
             if response.status_code != 200:
                 logger.warning(f"Failed to sync lead to UazAPI: {response.text}")
             return response.json() if response.status_code == 200 else {}
@@ -121,22 +130,15 @@ class UazAPIService:
 
     def add_tag(self, phone: str, tag: str) -> Dict[str, Any]:
         """
-        Add a tag to a chat
+        Add a tag/label to a chat.
+        Note: UazAPI might require label IDs, but let's try pushing to editLead tags first or legacy endpoint.
         """
-        endpoint = "/chat/tag/add"
-        url = self._get_url(endpoint)
-        params = {"token": self.token}
+        # Strategy: Use editLead to add tags as it handles string names better in internal CRM
+        return self.update_lead(phone, status=tag) 
         
-        payload = {
-            "number": self.normalize_phone(phone),
-            "tag": tag
-        }
-        
-        try:
-            requests.post(url, json=payload, params=params, timeout=5)
-        except Exception as e:
-            logger.error(f"Error adding tag to UazAPI: {e}")
-            return {}
+        # Legacy/Alternative logic if needed:
+        # endpoint = "/chat/labels" ... requires label ID usually
+
 
 def get_uazapi_service() -> UazAPIService:
     """
