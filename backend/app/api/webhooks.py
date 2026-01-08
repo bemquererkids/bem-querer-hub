@@ -272,6 +272,9 @@ async def receive_uazapi_webhook(request: Request, background_tasks: BackgroundT
         # Hardcoded clinic for now
         CLINIC_ID_DEFAULT = "00000000-0000-0000-0000-000000000001"
         
+        # Extract Avatar
+        avatar_url = chat_data.get('profilePictureUrl') or message_data.get('senderImage')
+        
         logger.warning(f"✅ Processing message from {name} ({phone}): {text_content[:50]}")
         logger.warning(f"📦 Sending to background task with message_id: {uaz_id}")
         
@@ -285,7 +288,8 @@ async def receive_uazapi_webhook(request: Request, background_tasks: BackgroundT
             name=name,
             message=text_content,
             message_id=uaz_id,
-            is_from_me=is_from_me
+            is_from_me=is_from_me,
+            avatar=avatar_url
         )
         
         return {"status": "success"}
@@ -377,31 +381,33 @@ async def process_uazapi_crm_event(payload: dict):
     except Exception as e:
         logger.error(f"Error processing CRM event: {e}")
 
-async def process_uazapi_message(clinic_id: str, phone: str, name: str, message: str, message_id: str, is_from_me: bool = False):
+async def process_uazapi_message(clinic_id: str, phone: str, name: str, message: str, message_id: str, is_from_me: bool = False, avatar: str = None):
     try:
         logger.warning(f"🔄 [process_uazapi_message] Starting for message_id: {message_id} (Me: {is_from_me})")
         
         # Save to WhatsApp tables
         logger.warning(f"💾 [process_uazapi_message] Calling save_whatsapp_message...")
-        await save_whatsapp_message(
+        conversation_id = await save_whatsapp_message(
             clinic_id=clinic_id,
             phone=phone,
             contact_name=name,
             message_id=message_id,
             content=message,
             message_type="text",
-            is_from_me=is_from_me
+            is_from_me=is_from_me,
+            avatar=avatar
         )
-        logger.warning(f"✅ [process_uazapi_message] Message saved successfully")
+        logger.warning(f"✅ [process_uazapi_message] Message saved successfully. Conversation: {conversation_id}")
         
         # Trigger AI ONLY if it's NOT from me
-        if not is_from_me:
+        if not is_from_me and conversation_id:
             await process_new_lead(
                 phone=phone,
                 name=name,
                 message=message,
                 clinic_id=clinic_id,
-                phone_number_id="uazapi" # Flag for source
+                phone_number_id="uazapi", # Flag for source
+                conversation_id=conversation_id
             )
     except Exception as e:
         logger.error(f"Error processing UazAPI message: {e}")
@@ -545,18 +551,66 @@ async def save_whatsapp_message(
     message_type: str = "text",
     media_url: str = None,
     timestamp: str = None,
-    is_from_me: bool = False
-):
+    is_from_me: bool = False,
+    avatar: str = None
+) -> str:
     """
     Saves WhatsApp message to database for chat integration.
     Creates or updates conversation and adds message.
     Multi-tenant: isolated by clinic_id.
+    Returns: conversation_id
     """
     logger.info(f"💾 Saving WhatsApp message: {content[:50]}...")
     
     try:
         supabase = get_supabase()
         
+        # 1. Get or create conversation (Unified Logic)
+        conversation_res = supabase.table('whatsapp_conversations') \
+            .select('*') \
+            .eq('phone_number', phone) \
+            .eq('clinic_id', clinic_id) \
+            .execute()
+            
+        conversation_id = None
+        
+        update_payload = {
+            "last_message": content,
+            "last_message_at": timestamp or datetime.now().isoformat(),
+            "updated_at": datetime.now().isoformat()
+        }
+        if name: update_payload['contact_name'] = name
+        if avatar: update_payload['avatar'] = avatar
+        
+        if not conversation_res.data:
+            # Create new conversation
+            new_conversation = {
+                "clinic_id": clinic_id,
+                "phone_number": phone,
+                "contact_name": name,
+                "unread_count": 0 if is_from_me else 1,
+                "tags": [],
+                **update_payload
+            }
+            if 'updated_at' in new_conversation: del new_conversation['updated_at'] # Insert doesn't need this usually, but fine.
+            
+            conv_res = supabase.table('whatsapp_conversations').insert(new_conversation).execute()
+            if conv_res.data:
+                conversation_id = conv_res.data[0]['id']
+                logger.info(f"✅ New conversation created: {conversation_id}")
+        else:
+            # Update existing conversation
+            conversation_id = conversation_res.data[0]['id']
+            current_unread = conversation_res.data[0].get('unread_count', 0)
+            update_payload["unread_count"] = current_unread + (0 if is_from_me else 1)
+            
+            supabase.table('whatsapp_conversations').update(update_payload).eq('id', conversation_id).execute()
+            logger.info(f"✅ Conversation updated: {conversation_id}")
+            
+        if not conversation_id:
+            logger.error("❌ Failed to resolve conversation_id")
+            return None
+
         # 0. Check for existing message_id to prevent duplicates
         existing_msg = supabase.table('whatsapp_messages') \
             .select('id') \
@@ -565,40 +619,7 @@ async def save_whatsapp_message(
             
         if existing_msg.data:
             logger.info(f"⏭️ Message {message_id} already exists, skipping save.")
-            return
-
-        # 1. Get or create conversation
-        conversation_res = supabase.table('whatsapp_conversations') \
-            .select('*') \
-            .eq('phone_number', phone) \
-            .eq('clinic_id', clinic_id) \
-            .execute()
-        if not conversation_res.data:
-            # Create new conversation
-            new_conversation = {
-                "clinic_id": clinic_id,
-                "phone_number": phone,
-                "contact_name": contact_name,
-                "last_message": content,
-                "last_message_at": timestamp or datetime.now().isoformat(),
-                "unread_count": 0 if is_from_me else 1,
-                "tags": []
-            }
-            conv_res = supabase.table('whatsapp_conversations').insert(new_conversation).execute()
-            conversation_id = conv_res.data[0]['id']
-            logger.info(f"✅ New conversation created: {conversation_id}")
-        else:
-            # Update existing conversation
-            conversation_id = conversation_res.data[0]['id']
-            current_unread = conversation_res.data[0].get('unread_count', 0)
-            
-            supabase.table('whatsapp_conversations').update({
-                "last_message": content,
-                "last_message_at": timestamp or datetime.now().isoformat(),
-                "unread_count": current_unread + (0 if is_from_me else 1),
-                "updated_at": datetime.now().isoformat()
-            }).eq('id', conversation_id).execute()
-            logger.info(f"✅ Conversation updated: {conversation_id}")
+            return conversation_id
         
         # 2. Save message
         new_message = {
@@ -618,8 +639,11 @@ async def save_whatsapp_message(
         supabase.table('whatsapp_messages').insert(new_message).execute()
         logger.info(f"✅ Message saved: {message_id}")
         
+        return conversation_id
+        
     except Exception as e:
         logger.error(f"❌ Error saving WhatsApp message: {e}", exc_info=True)
+        return None
 
 
 async def process_new_lead(
@@ -627,18 +651,11 @@ async def process_new_lead(
     name: str,
     message: str,
     clinic_id: str,
-    phone_number_id: str
+    phone_number_id: str,
+    conversation_id: str = None
 ):
     """
     Process new lead and trigger AI Carol response
-    
-    Flow:
-    1. Check if patient exists, if not create
-    2. Detect source (Google/Instagram)
-    3. Save user message
-    4. Create/update chat
-    5. Trigger AI Carol
-    6. Send response via Meta API
     """
     from app.services.gpt_service import get_gpt_service
     from app.services.meta_service import get_meta_service_for_clinic
@@ -678,30 +695,28 @@ async def process_new_lead(
         logger.info(f"✅ Existing patient: {name}")
     
     
-    # 2. Get or create WhatsApp conversation
-    chat_res = supabase.table('whatsapp_conversations') \
-        .select('*') \
-        .eq('phone_number', clean_phone) \
-        .execute()
+    logger.info(f"✅ Patient check complete.")
     
-    if not chat_res.data:
-        new_chat = {
-            "phone_number": clean_phone,
-            "contact_name": name,
-            "last_message": message[:100],
-            "last_message_at": datetime.now().isoformat(),
-            "unread_count": 1
-        }
-        c_res = supabase.table('whatsapp_conversations').insert(new_chat).execute()
-        conversation_id = c_res.data[0]['id']
-    else:
-        conversation_id = chat_res.data[0]['id']
-        supabase.table('whatsapp_conversations').update({
-            "last_message": message[:100],
-            "last_message_at": datetime.now().isoformat(),
-            "unread_count": chat_res.data[0].get('unread_count', 0) + 1
-        }).eq('id', conversation_id).execute()
     
+    # 2. Get WhatsApp conversation
+    # We TRUST conversation_id passed from save_whatsapp_message.
+    # If not passed, we try to find it. We DO NOT create it here anymore to avoid duplicates.
+    
+    if not conversation_id:
+        chat_res = supabase.table('whatsapp_conversations') \
+            .select('*') \
+            .eq('phone_number', clean_phone) \
+            .eq('clinic_id', clinic_id) \
+            .execute()
+        if chat_res.data:
+            conversation_id = chat_res.data[0]['id']
+        else:
+            logger.error("❌ Fatal: Conversation not found in process_new_lead and creating it here causes duplicates.")
+            return # Stop to avoid creating orphans
+    
+    if not conversation_id:
+         logger.error("❌ No conversation_id available for AI.")
+         return
     
     # 3. Save user message - REMOVED (Saved earlier by save_whatsapp_message)
     # The webhook already called save_whatsapp_message before calling process_new_lead
