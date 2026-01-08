@@ -314,6 +314,14 @@ async def receive_uazapi_webhook(request: Request, background_tasks: BackgroundT
         # Save and Process in background
         is_from_me = message_data.get('fromMe', False)
         
+        # CRITICAL FIX: Ignore fromMe webhook callbacks without proper chat context
+        # When we send a message via UazAPI, it sends back a webhook with fromMe=true
+        # but without chatId or remoteJid. This causes duplicate conversations.
+        # We already saved the message before sending, so we can safely ignore these.
+        if is_from_me and not (payload.get('chatId') or message_data.get('key', {}).get('remoteJid')):
+            logger.warning(f"⏭️ Ignoring fromMe webhook callback (already processed before sending)")
+            return {"status": "ignored", "reason": "fromMe_callback_without_context"}
+        
         background_tasks.add_task(
             process_uazapi_message,
             clinic_id=CLINIC_ID_DEFAULT,
