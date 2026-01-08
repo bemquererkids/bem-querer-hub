@@ -41,7 +41,6 @@ import {
     PointerSensor,
     useSensor,
     useSensors,
-    closestCorners,
     pointerWithin,
     DragOverEvent,
     useDroppable,
@@ -174,97 +173,94 @@ interface DealCardProps {
 }
 
 const DealCard = React.memo<DealCardProps>(({ deal, stage, onWhatsApp, onEditValue, isDragging = false }) => {
-    const displayDate = new Date(deal.lastContact).toLocaleDateString('pt-BR', { day: '2-digit', month: 'short' });
-    const displayTime = new Date(deal.lastContact).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
+    // Format simplified date (e.g. "Hoje 14:00" or "29/12")
+    const dateObj = new Date(deal.lastContact);
+    const isToday = dateObj.toDateString() === new Date().toDateString();
+    const displayDate = isToday
+        ? `Hoje ${dateObj.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}`
+        : dateObj.toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' });
+
     const sourceInfo = getSourceInfo(deal.source);
 
     return (
         <Card className={`
             ${stage.cardBg}
             border ${stage.borderColor}
-            shadow-sm hover:shadow-md transition-all group
+            shadow-sm hover:shadow-md transition-all group relative
             ${isDragging ? 'opacity-50 rotate-2 scale-105' : ''}
         `}>
-            <CardContent className="p-3 overflow-hidden">
-                <div className="flex items-start gap-2 mb-2">
-                    <GripVertical className="w-4 h-4 text-zinc-400 dark:text-zinc-500 cursor-grab active:cursor-grabbing flex-shrink-0 mt-0.5" />
-                    <div className="flex-1 min-w-0">
-                        <div className="flex justify-between items-start mb-2">
-                            <div className="flex items-center gap-1.5">
-                                <div className={`rounded-full ${stage.bgLight} border ${stage.borderColor} overflow-hidden w-9 h-9 flex items-center justify-center shrink-0`}>
-                                    {deal.patientAvatar ? (
-                                        <img src={deal.patientAvatar} alt="A" className="w-full h-full object-cover" />
-                                    ) : (
-                                        <stage.icon className={`w-5 h-5 ${stage.iconColor}`} />
-                                    )}
-                                </div>
-                                <div className="min-w-0 flex-1 overflow-hidden">
-                                    <h3 className="font-bold text-zinc-900 dark:text-foreground text-sm leading-tight line-clamp-2" title={deal.patientName}>{deal.patientName}</h3>
-                                    <p className="text-[10px] text-zinc-500 dark:text-muted-foreground truncate">Particular</p>
-                                </div>
+            <CardContent className="p-2">
+                {/* Header: Avatar + Name + Source Icon */}
+                <div className="flex items-center gap-2 mb-2">
+                    {/* Drag Handle (Hidden unless hovering) */}
+                    <div className="absolute left-1 top-3 opacity-0 group-hover:opacity-100 cursor-grab active:cursor-grabbing">
+                        <GripVertical className="w-3 h-3 text-zinc-400" />
+                    </div>
+
+                    <div className={`rounded-full ${stage.bgLight} border ${stage.borderColor} w-7 h-7 flex items-center justify-center shrink-0 ml-1`}>
+                        {deal.patientAvatar ? (
+                            <img src={deal.patientAvatar} alt="A" className="w-full h-full object-cover rounded-full" />
+                        ) : (
+                            <stage.icon className={`w-3.5 h-3.5 ${stage.iconColor}`} />
+                        )}
+                    </div>
+
+                    <div className="min-w-0 flex-1">
+                        <div className="flex items-center justify-between">
+                            <h3 className="font-bold text-zinc-900 dark:text-foreground text-xs leading-tight truncate mr-1" title={deal.patientName}>
+                                {deal.patientName}
+                            </h3>
+                            {/* Source Icon Only */}
+                            <div title={sourceInfo.label} className={`${sourceInfo.bg} p-1 rounded-full shrink-0`}>
+                                <sourceInfo.icon className={`w-3 h-3 ${sourceInfo.color}`} />
                             </div>
+                        </div>
+                        <div className="flex items-center gap-1 mt-0.5">
                             {deal.probability === 'high' && (
-                                <Badge className="bg-orange-100 text-orange-700 dark:bg-orange-900/30 dark:text-orange-400 border-orange-200 dark:border-orange-800 text-[9px] h-4 px-1.5">
-                                    Quente
-                                </Badge>
+                                <span className="w-1.5 h-1.5 rounded-full bg-orange-500" title="Quente"></span>
                             )}
+                            <span className="text-[10px] text-zinc-500 truncate">{deal.phone || 'Sem fone'}</span>
                         </div>
+                    </div>
+                </div>
 
-                        <div className="space-y-1.5 mb-2.5">
-                            {/* Source with logo and campaign ID */}
-                            <div className={`flex items-center gap-1.5 p-1.5 rounded-full ${sourceInfo.bg} border ${sourceInfo.border}`}>
-                                <sourceInfo.icon className={`w-3.5 h-3.5 ${sourceInfo.color}`} />
-                                <div className="flex-1 min-w-0">
-                                    <p className={`text-[10px] font-semibold ${sourceInfo.color}`}>{sourceInfo.label}</p>
-                                    {deal.campaignId && (
-                                        <div className="flex items-center gap-0.5">
-                                            <Hash className="w-2.5 h-2.5 text-zinc-400" />
-                                            <p className="text-[9px] text-zinc-500 dark:text-zinc-400 font-mono">{deal.campaignId}</p>
-                                        </div>
-                                    )}
-                                </div>
-                            </div>
+                {/* Footer: Value + Actions */}
+                <div className="flex items-center justify-between mt-2 pt-2 border-t border-zinc-100 dark:border-zinc-800/50">
+                    <div
+                        className="text-[10px] font-semibold text-zinc-700 dark:text-zinc-300 cursor-pointer hover:bg-black/5 rounded px-1 transition-colors"
+                        onClick={(e) => { e.stopPropagation(); onEditValue(); }}
+                        title="Clique para editar valor"
+                    >
+                        {deal.value > 0
+                            ? new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(deal.value)
+                            : <span className="text-zinc-400">R$ --</span>
+                        }
+                    </div>
 
-                            {deal.phone && (
-                                <div className="flex items-center gap-1.5 text-[11px] text-zinc-600 dark:text-zinc-400">
-                                    <Phone className="w-3 h-3" />
-                                    <span>{deal.phone}</span>
-                                </div>
-                            )}
-                            <div className="flex items-center gap-1.5 text-[11px] text-zinc-500 dark:text-muted-foreground">
-                                <Clock className="w-3 h-3" />
-                                <span>{displayDate} às {displayTime}</span>
-                                {/* Show "Movido agora" if moved in last 30 seconds */}
-                                {(() => {
-                                    const movedSecondsAgo = (Date.now() - new Date(deal.lastContact).getTime()) / 1000;
-                                    if (movedSecondsAgo < 30) {
-                                        return (
-                                            <Badge className="bg-indigo-100 text-indigo-700 dark:bg-indigo-900/30 dark:text-indigo-300 border-indigo-200 dark:border-indigo-800 text-[8px] h-3.5 px-1 animate-pulse font-semibold">
-                                                Movido agora
-                                            </Badge>
-                                        );
-                                    }
-                                    return null;
-                                })()}
-                            </div>
+                    <div className="flex items-center gap-1">
+                        <div className="text-[9px] text-zinc-400 font-medium">
+                            {displayDate}
                         </div>
-
-                        {/* Deal Value */}
-                        <div className="flex items-center justify-between text-[11px] font-medium text-zinc-700 dark:text-zinc-300 bg-zinc-50 dark:bg-zinc-800/50 p-1 rounded border border-zinc-100 dark:border-zinc-800">
-                            <span>{new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(deal.value || 0)}</span>
-                            <Button variant="ghost" size="icon" className="h-4 w-4 hover:bg-zinc-200 dark:hover:bg-zinc-700" onClick={(e) => { e.stopPropagation(); onEditValue(); }}>
-                                <Pencil className="w-2.5 h-2.5" />
-                            </Button>
-                        </div>
-
                         <Button
-                            onClick={onWhatsApp}
-                            className="w-full bg-[#25D366] hover:bg-[#20bd5a] text-white font-semibold h-7 gap-1 shadow-sm text-[11px]"
+                            onClick={(e) => { e.stopPropagation(); onWhatsApp(); }}
+                            size="icon"
+                            className="h-6 w-6 bg-[#25D366] hover:bg-[#20bd5a] text-white shadow-sm rounded-full ml-1"
+                            title="Abrir WhatsApp"
                         >
-                            <MessageCircle className="w-3 h-3" /> WhatsApp
+                            <MessageCircle className="w-3.5 h-3.5" />
                         </Button>
                     </div>
                 </div>
+
+                {/* Campaign ID Mini Badge if exists */}
+                {deal.campaignId && (
+                    <div className="absolute top-0 right-0 -mt-1 -mr-1">
+                        <span className="flex h-2 w-2 relative">
+                            <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-blue-400 opacity-75"></span>
+                            <span className="relative inline-flex rounded-full h-2 w-2 bg-blue-500"></span>
+                        </span>
+                    </div>
+                )}
             </CardContent>
         </Card>
     );
@@ -318,15 +314,15 @@ const DroppableColumn: React.FC<{
         >
             {/* Column Header */}
             <div className={`
-                ${stage.bgLight} border ${stage.borderColor} p-2.5 rounded-lg shadow-sm mb-2
+                ${stage.bgLight} border ${stage.borderColor} p-1.5 rounded-lg shadow-sm mb-1.5
                 ${isOver ? 'ring-2 ring-offset-2 ring-indigo-500' : ''}
             `}>
                 <div className="flex items-center justify-between">
                     <div className="flex items-center gap-1.5">
-                        <stage.icon className={`w-4 h-4 ${stage.iconColor}`} />
-                        <h2 className={`text-sm font-bold ${stage.textColor}`}>{stage.title}</h2>
+                        <stage.icon className={`w-3.5 h-3.5 ${stage.iconColor}`} />
+                        <h2 className={`text-xs font-bold ${stage.textColor} truncate`}>{stage.title}</h2>
                     </div>
-                    <Badge className={`${stage.bgLight} ${stage.textColor} border ${stage.borderColor} text-[10px] h-4 px-1.5`}>
+                    <Badge className={`${stage.bgLight} ${stage.textColor} border ${stage.borderColor} text-[9px] h-3.5 px-1`}>
                         {deals.length}
                     </Badge>
                 </div>
@@ -337,11 +333,11 @@ const DroppableColumn: React.FC<{
                 items={deals.map(d => d.id)}
                 strategy={verticalListSortingStrategy}
             >
-                <div className="flex-1 overflow-y-auto space-y-2 pr-1 min-h-[100px] custom-scrollbar">
+                <div className="flex-1 overflow-y-auto space-y-1.5 pr-1 min-h-[100px] custom-scrollbar">
                     {deals.length === 0 ? (
-                        <div className="flex flex-col items-center justify-center h-32 text-center">
-                            <stage.icon className={`w-8 h-8 ${stage.iconColor} opacity-30 mb-2`} />
-                            <p className="text-[11px] text-zinc-400 dark:text-zinc-500">Arraste cards aqui</p>
+                        <div className="flex flex-col items-center justify-center h-24 text-center">
+                            <stage.icon className={`w-6 h-6 ${stage.iconColor} opacity-20 mb-1`} />
+                            <p className="text-[10px] text-zinc-400 dark:text-zinc-500">Vazio</p>
                         </div>
                     ) : (
                         deals.map(deal => (
@@ -429,7 +425,6 @@ export const KanbanBoard: React.FC<{ highlightDealId?: string | null }> = ({ hig
     const handleDragOver = (event: DragOverEvent) => {
         const { over } = event;
         if (!over) {
-            // Reset to original stage when not over anything
             if (activeDeal) {
                 const originalStage = FUNNEL_STAGES.find(s => s.statuses.includes(activeDeal.status));
                 setActiveStage(originalStage || null);
@@ -437,14 +432,12 @@ export const KanbanBoard: React.FC<{ highlightDealId?: string | null }> = ({ hig
             return;
         }
 
-        // Check if hovering over a droppable column
         const targetStage = FUNNEL_STAGES.find(stage => stage.id === over.id);
         if (targetStage) {
             setActiveStage(targetStage);
             return;
         }
 
-        // Check if hovering over a card (get its parent stage)
         const targetDeal = deals.find(d => d.id === over.id);
         if (targetDeal) {
             const targetDealStage = FUNNEL_STAGES.find(s => s.statuses.includes(targetDeal.status));
@@ -464,28 +457,22 @@ export const KanbanBoard: React.FC<{ highlightDealId?: string | null }> = ({ hig
         const activeId = active.id as string;
         const overId = over.id as string;
 
-        // Find which stage the card was dropped into
         let targetStage = FUNNEL_STAGES.find(stage => stage.id === overId);
-        console.log('[DRAG] Dropped on ID:', overId, 'Found stage:', targetStage?.title);
 
-        // If dropped on a card, find that card's stage
         if (!targetStage) {
             const targetDeal = deals.find(d => d.id === overId);
             if (targetDeal) {
                 targetStage = FUNNEL_STAGES.find(s => s.statuses.includes(targetDeal.status));
-                console.log('[DRAG] Dropped on card, found stage:', targetStage?.title);
             }
         }
 
         if (targetStage) {
             const currentDeal = deals.find(d => d.id === activeId);
             const isMovingToNewStage = currentDeal && !targetStage.statuses.includes(currentDeal.status);
-            console.log('[DRAG] Current status:', currentDeal?.status, 'Target statuses:', targetStage.statuses, 'Is moving?', isMovingToNewStage);
 
             if (isMovingToNewStage && currentDeal) {
                 const newStatus = targetStage.statuses[0] as CRMStatus;
 
-                // Update deal status and timestamp (optimistic update)
                 setDeals(prevDeals =>
                     prevDeals.map(deal =>
                         deal.id === activeId
@@ -498,12 +485,10 @@ export const KanbanBoard: React.FC<{ highlightDealId?: string | null }> = ({ hig
                     )
                 );
 
-                // Persist to backend
                 try {
                     await crmService.updateDealStatus(activeId, targetStage.title);
                 } catch (error) {
                     console.error('Failed to update deal status:', error);
-                    // Revert on error
                     setDeals(prevDeals =>
                         prevDeals.map(deal =>
                             deal.id === activeId
@@ -527,7 +512,6 @@ export const KanbanBoard: React.FC<{ highlightDealId?: string | null }> = ({ hig
             console.log("Sending WhatsApp message to", selectedDeal.id);
             await chatService.sendMessage(selectedDeal.id, message);
             setShowWhatsAppModal(false);
-            // Optional: Show success toast
         } catch (error) {
             console.error("Failed to send message", error);
             alert("Erro ao enviar mensagem. Verifique a conexão.");
@@ -543,7 +527,7 @@ export const KanbanBoard: React.FC<{ highlightDealId?: string | null }> = ({ hig
     const handleSaveValue = async () => {
         if (!editingDeal) return;
         try {
-            const val = parseFloat(tempValue.replace(',', '.').replace(/^R\$\s?/, '')); // Simple cleanup
+            const val = parseFloat(tempValue.replace(',', '.').replace(/^R\$\s?/, ''));
             if (isNaN(val)) {
                 alert("Valor inválido");
                 return;
@@ -551,7 +535,6 @@ export const KanbanBoard: React.FC<{ highlightDealId?: string | null }> = ({ hig
 
             await crmService.updateDealValue(editingDeal.id, val);
 
-            // Optimistic update
             setDeals(prev => prev.map(d => d.id === editingDeal.id ? { ...d, value: val } : d));
             setEditValueModalOpen(false);
         } catch (error) {
@@ -585,7 +568,7 @@ export const KanbanBoard: React.FC<{ highlightDealId?: string | null }> = ({ hig
                     <div>
                         <h1 className="text-base font-bold text-zinc-900 dark:text-foreground tracking-tight">Funil de Vendas</h1>
                         <p className="text-[11px] text-zinc-500 dark:text-muted-foreground">
-                            Arraste os cards entre as raias para mudar de etapa
+                            Visualização compacta
                         </p>
                     </div>
                 </div>
@@ -608,12 +591,12 @@ export const KanbanBoard: React.FC<{ highlightDealId?: string | null }> = ({ hig
                     }
                 `}</style>
 
-                {/* Kanban Columns - Responsivo com Scroll Horizontal Suave */}
-                <div className="flex gap-3 flex-1 min-h-0 overflow-x-auto pb-2 custom-scrollbar snap-x snap-mandatory">
+                {/* Kanban Columns - Layout Compacto Fixo (Sem Scroll Horizontal Global) */}
+                <div className="flex flex-1 min-h-0 gap-1.5 h-full overflow-hidden">
                     {FUNNEL_STAGES.map(stage => {
                         const stageDeals = getDealsByStage(stage.statuses);
                         return (
-                            <div key={stage.id} className="min-w-[260px] max-w-[300px] flex-shrink-0 snap-center h-full">
+                            <div key={stage.id} className="flex-1 min-w-0 h-full flex flex-col">
                                 <DroppableColumn
                                     stage={stage}
                                     deals={stageDeals}
@@ -624,19 +607,6 @@ export const KanbanBoard: React.FC<{ highlightDealId?: string | null }> = ({ hig
                         );
                     })}
                 </div>
-
-                {/* Drag Overlay - shows card with current stage color */}
-                <DragOverlay>
-                    {activeDeal && activeStage ? (
-                        <DealCard
-                            deal={activeDeal}
-                            stage={activeStage}
-                            onWhatsApp={() => { }}
-                            onEditValue={() => { }}
-                            isDragging
-                        />
-                    ) : null}
-                </DragOverlay>
             </div>
 
             {/* WhatsApp Modal */}
