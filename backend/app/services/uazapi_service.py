@@ -143,59 +143,30 @@ class UazAPIService:
         # Strategy: Use editLead to add tags as it handles string names better in internal CRM
         return self.update_lead(phone, status=tag) 
         
-    async def delete_chat(self, phone: str) -> bool:
+    def delete_chat(self, phone: str) -> bool:
         """
         Delete entire chat history (Clear Chat)
+        Tries multiple endpoints to ensure compatibility.
         """
-        # Endpoints might vary. 
-        # /chat/deleteChat connects to WPP 'deleteChat' function (clears history)
-        endpoint = f"/chat/deleteChat/{self.instance}" 
-        
-        # Free version often uses /chat/delete or /chat/clear
-        if "free.uazapi" in self.base_url:
-            endpoint = f"/chat/delete/{self.instance}"
-
-        # Try generic
-        url = self._get_url(endpoint)
-        if "/{self.instance}" in url: # If not replaced correctly by _get_url logic (unlikely)
-             # _get_url appends to base, so logic above is flawed if _get_url doesn't handle params. 
-             # _get_url simply joins. 
-             # UazAPI Service _get_url implementation:
-             # return f"{self.base_url}{endpoint}"
-             pass
-        
-        # Refine URL building:
-        # The base URL usually ends with /instance/ sometimes.. 
-        # Current BASE_URL: https://bemquerer.uazapi.com
-        # Current INSTANCE: bemquerer
-        # Standard UazAPI paths are /message/sendText, /chat/deleteChat
-        # Some versions need instance in path, some in header/query.
-        # User credentials show UAZAPI_BASE_URL=https://bemquerer.uazapi.com 
-        # So likely https://bemquerer.uazapi.com/chat/deleteChat is the path?
-        # Or https://bemquerer.uazapi.com/chat/deleteChat/bemquerer?
-        
-        # Let's try the safest known endpoint for Evolution/UazAPI: /chat/delete
-        endpoint = "/chat/delete"
-        # If specific instance needed in path:
-        # endpoint = f"/chat/delete/{self.instance}"
-        
-        # Given previous success with /message/delete (revoke), let's assume /chat/delete works for chat.
-        
         clean_phone = self.normalize_phone(phone)
         jid = f"{clean_phone}@s.whatsapp.net" if "@" not in clean_phone else clean_phone
         
-        payload = {"phone": clean_phone} # Some APIs take phone
-        # OR 
-        payload_alt = {"chatId": jid} 
+        # Candidate 1: Standard /chat/deleteChat (Evolution API / UazAPI v1/v2 common)
+        # Payload often needs 'chatId' or 'remoteJid'
         
-        # Let's try multiple payload formats if one fails? No, simpler.
-        # Standard: { "phone": "..." } or { "variable": "..." }?
+        endpoints = [
+            f"/chat/deleteChat/{self.instance}",
+            f"/chat/delete/{self.instance}",
+            "/chat/deleteChat", 
+            "/chat/delete"
+        ]
         
-        # Let's stick to simple payload with phone.
-        payload = {
-            "phone": clean_phone,
-            "chatId": jid
-        }
+        payloads = [
+            {"chatId": jid},
+            {"remoteJid": jid},
+            {"phone": clean_phone}, 
+            {"number": clean_phone}
+        ]
         
         headers = {
             "apikey": self.token,
@@ -204,60 +175,28 @@ class UazAPIService:
             "Content-Type": "application/json"
         }
         
-        # Attempt 1: /chat/deleteChat (common)
-        url1 = f"{self.base_url}/chat/deleteChat"
-        try:
-            logger.info(f"🗑️ Deleting chat {clean_phone} via {url1}")
-            # Ensure sync (this method is async def but requests is sync. We should make it sync or use aoihttp. 
-            # The service uses 'requests' (sync). So 'await' in caller will fail if this is not async. 
-            # But the caller `delete_conversation` uses `await uaz.delete_chat`. 
-            # So I must make this async or the caller shouldn't await.
-            # existing methods send_message are SYNC. `delete_message` is SYNC.
-            # caller `delete_conversation` awaited it. That will crash. 
-            # I must remove `await` in caller or make this `async`.
-            # If I make this async, I need `aiohttp` or wrap `requests`?
-            # Existing `send_image` is async await? 
-            # Let's check `send_image`.
-            pass 
-        except: pass
+        success = False
         
-        # Checking `send_image`: in `chat.py` it creates `uazapi = get_uazapi_service()`.
-        # `uazapi.send_image` is awaited in `chat.py`. 
-        # Let's check `uazapi_service.py` to see if `send_image` is async.
-        # Only `send_image` seems to be awaited in `chat.py` (line 255).
-        # But `send_message` (line 157) is NOT awaited. 
-        # `delete_message` (line 367) is NOT awaited.
-        # My implementation of `delete_conversation` in `chat.py` line ~400 uses `await uaz.delete_chat(phone)`.
-        # This assumes `delete_chat` is async.
-        # I should make it async to match `chat.py` expectation, OR fix `chat.py`.
-        # Since I edit `uazapi_service.py` now, I will make it async? 
-        # But the class uses `requests`. 
-        # It's better to fix `chat.py` to NOT await, or make a fake async.
-        # But `chat.py` edit is already applied. 
-        # So I MUST make this `async def` and use `run_in_executor` or just not block?
-        # OR simply return a future?
-        # Actually, if I define `async def`, I can use `requests` inside (blocking event loop) which is bad but works.
-        
-        # BETTER: Fix `chat.py` in next step. For now define as sync and I'll remove `await` in `chat.py`.
-        # Wait, I can't edit `chat.py` again immediately easily (or I can).
-        
-        # Let's check `send_image` in `uazapi_service.py`.
-        pass
-
-    def delete_chat(self, phone: str) -> bool:
-         # Sync implementation to match class style
-         endpoint = "/chat/delete"
-         url = self._get_url(endpoint)
-         payload = {"phone": self.normalize_phone(phone)}
-         headers = {
-            "apikey": self.token,
-            "Authorization": f"Bearer {self.token}",
-            "Content-Type": "application/json"
-         }
-         try:
-             res = requests.post(url, json=payload, headers=headers)
-             return res.status_code == 200
-         except: return False
+        for ep in endpoints:
+            url = self._get_url(ep)
+            for p in payloads:
+                try:
+                    logger.info(f"🗑️ Attempting delete chat via {url} with keys {list(p.keys())}")
+                    # Try DELETE and POST
+                    res = requests.delete(url, json=p, headers=headers, timeout=5)
+                    if res.status_code == 200:
+                         logger.info(f"✅ Chat deleted via DELETE {url}")
+                         return True
+                         
+                    res = requests.post(url, json=p, headers=headers, timeout=5)
+                    if res.status_code == 200:
+                         logger.info(f"✅ Chat deleted via POST {url}")
+                         return True
+                         
+                except Exception as e:
+                    logger.warning(f"Failed attempt {url}: {e}")
+                    
+        return False
 
 
 def get_uazapi_service() -> UazAPIService:

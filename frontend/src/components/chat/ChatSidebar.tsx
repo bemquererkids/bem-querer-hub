@@ -14,6 +14,16 @@ import {
     DropdownMenuSeparator,
     DropdownMenuTrigger,
 } from "../ui/dropdown-menu";
+import {
+    AlertDialog,
+    AlertDialogAction,
+    AlertDialogCancel,
+    AlertDialogContent,
+    AlertDialogDescription,
+    AlertDialogFooter,
+    AlertDialogHeader,
+    AlertDialogTitle,
+} from "../ui/alert-dialog";
 import clsx from 'clsx';
 
 // --- Phosphor Icons (Light Weight: 12px stroke on 256px viewbox) ---
@@ -71,6 +81,10 @@ export const ChatSidebar: React.FC<ChatSidebarProps> = ({ chats, activeChatId, o
     const [searchQuery, setSearchQuery] = useState('');
     const [filterTab, setFilterTab] = useState<'all' | 'unread'>('all');
 
+    // Dialog State
+    const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
+    const [chatToDelete, setChatToDelete] = useState<string | null>(null);
+
     const filteredChats = chats.filter(chat => {
         // 1. Text Search
         const matchesSearch = (chat.name || '').toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -89,18 +103,10 @@ export const ChatSidebar: React.FC<ChatSidebarProps> = ({ chats, activeChatId, o
 
         try {
             if (action === 'delete') {
-                if (!confirm("Tem certeza que deseja apagar esta conversa? Isso apagará o histórico no sistema e tentará apagar no WhatsApp.")) return;
-                try {
-                    await chatService.deleteChat(chatId);
-                    // Force refresh or let Realtime handle it. 
-                    // Assuming parent component listens to Supabase changes.
-                } catch (delError) {
-                    console.error("Delete call failed", delError);
-                    alert("Erro ao apagar conversa. Tente novamente.");
-                    return;
-                }
+                setChatToDelete(chatId);
+                setIsDeleteDialogOpen(true);
+                return;
             }
-
             if (action === 'mark_unread') {
                 const { error } = await supabase
                     .from('whatsapp_conversations')
@@ -112,7 +118,20 @@ export const ChatSidebar: React.FC<ChatSidebarProps> = ({ chats, activeChatId, o
             }
         } catch (error) {
             console.error("Action failed", error);
-            alert("Ação falhou: " + error);
+            alert("Falha ao executar ação: " + error);
+        }
+    };
+
+    const confirmDelete = async () => {
+        if (!chatToDelete) return;
+        try {
+            await chatService.deleteChat(chatToDelete);
+            setIsDeleteDialogOpen(false);
+            setChatToDelete(null);
+            // Ideally force refresh here
+        } catch (delError) {
+            console.error("Delete call failed", delError);
+            alert("Erro ao apagar conversa. Tente novamente.");
         }
     };
 
@@ -326,6 +345,25 @@ export const ChatSidebar: React.FC<ChatSidebarProps> = ({ chats, activeChatId, o
                     ))
                 )}
             </div>
+
+            {/* Delete Confirmation Dialog */}
+            <AlertDialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
+                <AlertDialogContent>
+                    <AlertDialogHeader>
+                        <AlertDialogTitle>Apagar conversa?</AlertDialogTitle>
+                        <AlertDialogDescription>
+                            Isso apagará o histórico desta conversa no sistema e tentará limpar o histórico no WhatsApp (em alguns casos).
+                            Esta ação não pode ser desfeita.
+                        </AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <AlertDialogFooter>
+                        <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                        <AlertDialogAction onClick={confirmDelete} className="bg-red-500 hover:bg-red-600 outline-none ring-0">
+                            Apagar
+                        </AlertDialogAction>
+                    </AlertDialogFooter>
+                </AlertDialogContent>
+            </AlertDialog>
         </div>
     );
 };
