@@ -417,6 +417,26 @@ Data Atual: {current_date}
             
             messages = [{"role": "system", "content": system_prompt}]
             
+            # 🔍 RAG: Search knowledge base for relevant context
+            try:
+                from app.services.knowledge_base_service import get_knowledge_base_service
+                
+                kb_service = get_knowledge_base_service()
+                knowledge_context = kb_service.get_context_for_query(message, max_tokens=2000)
+                
+                if knowledge_context:
+                    logger.info(f"📚 RAG: Found relevant knowledge for query")
+                    # Add knowledge context as system message
+                    messages.append({
+                        "role": "system",
+                        "content": f"{knowledge_context}\n\nUSE AS INFORMAÇÕES ACIMA para responder com precisão. Se a informação estiver nos documentos, cite-a. Se não estiver, seja honesta."
+                    })
+                else:
+                    logger.info(f"📚 RAG: No relevant knowledge found")
+            except Exception as e:
+                logger.warning(f"⚠️ RAG search failed: {e}")
+                # Continue without RAG if it fails
+            
             if context:
                 # Add patient context
                 patient_context = {k: v for k, v in context.items() if k != "clinic_id"}
