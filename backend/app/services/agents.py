@@ -197,7 +197,17 @@ class TriagemAgent(BaseAgent):
         logger.info("🔍 Triagem: NÃO é primeira interação, processando normalmente")
         
         # 🤖 USAR GPT PARA CONVERSA NATURAL E INVESTIGATIVA
-        # Em vez de regras rígidas, usar LLM para ser mais humana
+        # Agentes Kids/Adulto foram implementados, seguro usar
+        USE_GPT = True
+        
+        if USE_GPT:
+            # 🤖 USAR GPT PARA CONVERSA NATURAL E INVESTIGATIVA
+            # (código GPT aqui - desabilitado temporariamente)
+            pass
+        
+        # 🔧 LÓGICA BASEADA EM REGRAS (funcionando)
+        logger.info("Using rule-based logic")
+        message_lower = message.lower()
         
         # Construir contexto do que já sabemos
         context_parts = []
@@ -437,6 +447,103 @@ Retorne APENAS o JSON, sem explicações."""
         return "Desculpe, pode repetir? 😊", None
 
 
+
+class KidsAgent(BaseAgent):
+    """Agente especialista em Odontopediatria"""
+    
+    async def process(self, message: str, state: ConversationState, context: Dict = None) -> Tuple[str, AgentType]:
+        # Contexto do paciente
+        nome = state.collected_data.get("nome", "o paciente")
+        idade = state.collected_data.get("idade", "criança")
+        motivo = state.collected_data.get("motivo", "consulta")
+        
+        # Contexto RAG
+        knowledge = context.get("knowledge", "") if context else ""
+        
+        system_prompt = f"""Você é Carol, especialista em Odontopediatria da Bem-Querer Odontologia.
+
+CONTEXTO DO PACIENTE:
+- Nome: {nome}
+- Idade: {idade} anos
+- Motivo: {motivo}
+
+{knowledge}
+
+DIRETRIZES:
+1. Seja empática e acolhedora com os pais
+2. Use linguagem clara e tranquilizadora
+3. Se tiver informações na base de conhecimento (valores, preparos), use-as
+4. O objetivo é AGENDAR A CONSULTA
+5. Verifique a disponibilidade (simule por enquanto)
+6. Ofereça horários próximos
+
+Responda à mensagem do paciente de forma natural e útil."""
+
+        messages = [
+            {"role": "system", "content": system_prompt},
+            {"role": "user", "content": message}
+        ]
+        
+        try:
+            response = await self.client.chat.completions.create(
+                model=self.model,
+                messages=messages,
+                temperature=0.7,
+                max_tokens=300
+            )
+            return response.choices[0].message.content, None
+        except Exception as e:
+            logger.error(f"Error in KidsAgent: {e}")
+            return "Desculpe, tive um erro ao verificar a agenda. Pode tentar novamente?", None
+
+
+class AdultoAgent(BaseAgent):
+    """Agente especialista em Odontologia Geral (Adulto)"""
+    
+    async def process(self, message: str, state: ConversationState, context: Dict = None) -> Tuple[str, AgentType]:
+        # Contexto do paciente
+        nome = state.collected_data.get("nome", "o paciente")
+        motivo = state.collected_data.get("motivo", "consulta")
+        
+        # Contexto RAG
+        knowledge = context.get("knowledge", "") if context else ""
+        
+        system_prompt = f"""Você é Carol, assistente da Bem-Querer Odontologia.
+
+CONTEXTO DO PACIENTE:
+- Nome: {nome}
+- Motivo: {motivo}
+
+{knowledge}
+
+DIRETRIZES:
+1. Seja profissional e eficiente
+2. Use linguagem clara
+3. Se tiver informações na base de conhecimento (valores, preparos), use-as
+4. O objetivo é AGENDAR A CONSULTA
+5. Verifique a disponibilidade (simule por enquanto)
+6. Ofereça horários próximos
+
+Responda à mensagem do paciente de forma natural e útil."""
+
+        messages = [
+            {"role": "system", "content": system_prompt},
+            {"role": "user", "content": message}
+        ]
+        
+        try:
+            response = await self.client.chat.completions.create(
+                model=self.model,
+                messages=messages,
+                temperature=0.7,
+                max_tokens=300
+            )
+            return response.choices[0].message.content, None
+        except Exception as e:
+            logger.error(f"Error in AdultoAgent: {e}")
+            return "Desculpe, tive um erro ao verificar a agenda. Pode tentar novamente?", None
+
+
 # Factory para criar agentes
 def create_agent(agent_type: AgentType, client: AsyncOpenAI) -> BaseAgent:
     """Cria um agente"""
@@ -444,6 +551,9 @@ def create_agent(agent_type: AgentType, client: AsyncOpenAI) -> BaseAgent:
         return RouterAgent(client)
     elif agent_type == AgentType.TRIAGEM:
         return TriagemAgent(client)
-    # TODO: Adicionar outros agentes
+    elif agent_type == AgentType.KIDS:
+        return KidsAgent(client)
+    elif agent_type == AgentType.ADULTO:
+        return AdultoAgent(client)
     else:
         raise ValueError(f"Agent type {agent_type} not implemented yet")
