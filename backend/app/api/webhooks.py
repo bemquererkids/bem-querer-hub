@@ -242,6 +242,12 @@ async def receive_uazapi_webhook(request: Request, background_tasks: BackgroundT
         message_data = payload.get('message', {})
         chat_data = payload.get('chat', {})
         
+        # 🔍 DEBUG: Log completo do payload
+        logger.warning(f"🔍 [DEBUG] Full Payload Keys: {list(payload.keys())}")
+        logger.warning(f"🔍 [DEBUG] Message Data Keys: {list(message_data.keys())}")
+        logger.warning(f"🔍 [DEBUG] Chat Data Keys: {list(chat_data.keys())}")
+        logger.warning(f"🔍 [DEBUG] Chat Data: {chat_data}")
+        
         # Check if message is from me
         # if message_data.get('fromMe', False):
         #    logger.info("Ignoring message from me (Legacy Check - Disabled for Sync)")
@@ -254,16 +260,24 @@ async def receive_uazapi_webhook(request: Request, background_tasks: BackgroundT
         text_content = message_data.get('text') or message_data.get('content', '')
         
         # Determine Phone / Conversation Partner (Correct JID Logic)
-        # Priority 1: chatId (Explicit context)
-        # Priority 2: key.remoteJid (The chat container)
-        # Priority 3: sender (Fallback, but is ME if fromMe=True)
-        jid = payload.get('chatId') or message_data.get('key', {}).get('remoteJid') or message_data.get('sender')
+        # Priority 1: chat.id (UazAPI specific - contains the phone number)
+        # Priority 2: chatId (Explicit context)
+        # Priority 3: key.remoteJid (The chat container)
+        # Priority 4: sender (Fallback, but is ME if fromMe=True)
+        
+        # UazAPI sends the phone in chat.id field
+        jid = chat_data.get('id') or payload.get('chatId') or message_data.get('key', {}).get('remoteJid') or message_data.get('sender')
+        
+        logger.warning(f"🔍 [DEBUG] Extracted JID: {jid}")
         
         # Filter broadcast status
         if jid == 'status@broadcast':
             return {"status": "ignored", "reason": "status_broadcast"}
 
+        # Extract phone from JID (format: 5548999999999@s.whatsapp.net or 5548999999999@c.us)
         phone = jid.split('@')[0] if jid and '@' in jid else jid
+        
+        logger.warning(f"🔍 [DEBUG] Extracted Phone: {phone}")
         
         # Correctly determine Contact Name
         # If fromMe=True, we want the CHAT name, not senderName (which is me)
@@ -273,6 +287,8 @@ async def receive_uazapi_webhook(request: Request, background_tasks: BackgroundT
              name = message_data.get('senderName', 'Desconhecido')
         if not name:
              name = "Desconhecido"
+        
+        logger.warning(f"🔍 [DEBUG] Extracted Name: {name}")
         
         # Get REAL message ID from UazAPI to prevent ghosting/duplicates
         uaz_id = message_data.get('id') or (message_data.get('key', {}).get('id'))
@@ -294,6 +310,8 @@ async def receive_uazapi_webhook(request: Request, background_tasks: BackgroundT
             chat_data.get('profilePictureUrl') or 
             message_data.get('senderImage')
         )
+        
+        logger.warning(f"🔍 [DEBUG] Extracted Avatar URL: {avatar_url[:100] if avatar_url else 'None'}...")
         
         logger.info(f"📨 Message from {name} ({phone}): {text_content[:50]}...")
         logger.info(f"🆔 Message ID: {uaz_id}")
