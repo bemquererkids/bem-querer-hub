@@ -2,6 +2,7 @@
 """
 GPT Service (OpenAI)
 Handles all interactions with OpenAI GPT-4/Turbo for chat processing
+Supports both single-agent and multi-agent modes
 """
 from openai import AsyncOpenAI
 from typing import Dict, Any, Optional, List
@@ -20,6 +21,9 @@ except ImportError:
     HAS_CLINICORP = False
 
 logger = logging.getLogger(__name__)
+
+# Multi-Agent Mode Flag
+USE_MULTI_AGENT = os.getenv("USE_MULTI_AGENT", "true").lower() == "true"
 
 class GPTService:
     """Service for interacting with OpenAI GPT"""
@@ -415,8 +419,57 @@ Data Atual: {current_date}
     ) -> Dict[str, Any]:
         """
         Process user message with Tool Calling loop
+        Supports both single-agent and multi-agent modes
         """
         try:
+            # 🤖 MULTI-AGENT MODE
+            if USE_MULTI_AGENT:
+                logger.info("🤖 Using Multi-Agent System")
+                try:
+                    from app.services.multi_agent_orchestrator import get_multi_agent_orchestrator
+                    
+                    orchestrator = get_multi_agent_orchestrator()
+                    
+                    # Extrair phone do contexto
+                    phone = context.get("phone") if context else None
+                    clinic_id = context.get("clinic_id", "00000000-0000-0000-0000-000000000001") if context else "00000000-0000-0000-0000-000000000001"
+                    
+                    if not phone:
+                        logger.warning("No phone in context, falling back to single-agent")
+                    else:
+                        result = await orchestrator.process_message(
+                            message=message,
+                            phone=phone,
+                            clinic_id=clinic_id,
+                            chat_history=chat_history,
+                            context=context
+                        )
+                        
+                        # Se humano assumiu, não retornar resposta
+                        if result.get("human_takeover"):
+                            return {
+                                "response": None,
+                                "intent": "human_takeover",
+                                "used_tool": False,
+                                "human_takeover": True
+                            }
+                        
+                        return {
+                            "response": result.get("response"),
+                            "intent": result.get("intent", "chat"),
+                            "used_tool": False,
+                            "multi_agent": True,
+                            "current_agent": result.get("current_agent"),
+                            "patient_type": result.get("patient_type")
+                        }
+                        
+                except Exception as e:
+                    logger.error(f"Multi-agent error, falling back to single-agent: {e}")
+                    # Continue to single-agent mode
+            
+            # 📝 SINGLE-AGENT MODE (Original)
+            logger.info("📝 Using Single-Agent System")
+            
             # 1. Load AI Configuration dynamically from database
             clinic_id = context.get("clinic_id", "00000000-0000-0000-0000-000000000001") if context else "00000000-0000-0000-0000-000000000001"
             system_prompt = await self._load_ai_config_from_db(clinic_id)
