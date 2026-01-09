@@ -129,21 +129,65 @@ class ConversationState:
 
 
 class ConversationManager:
-    """Gerenciador de conversas"""
+    """Gerenciador de conversas com persistência no Supabase"""
     
     def __init__(self):
-        # Cache em memória (em produção, usar Redis ou banco)
+        # Cache em memória para performance
         self._conversations: Dict[str, ConversationState] = {}
     
     def get_or_create(self, phone: str, clinic_id: str) -> ConversationState:
-        """Obtém ou cria uma conversa"""
+        """Obtém ou cria uma conversa (com persistência no Supabase)"""
         key = f"{clinic_id}:{phone}"
         
-        if key not in self._conversations:
-            self._conversations[key] = ConversationState(phone, clinic_id)
-            logger.info(f"Created new conversation for {phone}")
+        # 1. Verificar cache em memória primeiro
+        if key in self._conversations:
+            logger.info(f"📦 Loaded from cache: {phone}")
+            return self._conversations[key]
         
-        return self._conversations[key]
+        # 2. Tentar carregar do Supabase
+        try:
+            from app.core.database import get_supabase
+            supabase = get_supabase()
+            
+            result = supabase.table("conversation_states") \
+                .select("*") \
+                .eq("phone", phone) \
+                .eq("clinic_id", clinic_id) \
+                .execute()
+            
+            if result.data and len(result.data) > 0:
+                # Restaurar estado do banco
+                data = result.data[0]
+                state = ConversationState.from_dict({
+                    "phone": data["phone"],
+                    "clinic_id": data["clinic_id"],
+                    "current_agent": data["current_agent"],
+                    "patient_type": data["patient_type"],
+                    "intent": data["intent"],
+                    "human_takeover": data["human_takeover"],
+                    "collected_data": data["collected_data"] or {},
+                    "agent_history": data["agent_history"] or [],
+                    "created_at": data["created_at"],
+                    "updated_at": data["updated_at"]
+                })
+                
+                # Adicionar ao cache
+                self._conversations[key] = state
+                logger.info(f"💾 Loaded from Supabase: {phone} (collected_data: {state.collected_data})")
+                return state
+                
+        except Exception as e:
+            logger.warning(f"⚠️ Failed to load from Supabase: {e}")
+        
+        # 3. Criar novo estado se não encontrou
+        state = ConversationState(phone, clinic_id)
+        self._conversations[key] = state
+        logger.info(f"✨ Created new conversation for {phone}")
+        
+        # Salvar no banco imediatamente
+        self.save(state)
+        
+        return state
     
     def get(self, phone: str, clinic_id: str) -> Optional[ConversationState]:
         """Obtém uma conversa"""
@@ -151,12 +195,35 @@ class ConversationManager:
         return self._conversations.get(key)
     
     def save(self, state: ConversationState):
-        """Salva uma conversa"""
+        """Salva uma conversa no Supabase"""
         key = f"{state.clinic_id}:{state.phone}"
         self._conversations[key] = state
         
-        # TODO: Persistir no banco de dados
-        # await save_to_database(state.to_dict())
+        # Persistir no Supabase
+        try:
+            from app.core.database import get_supabase
+            supabase = get_supabase()
+            
+            data = {
+                "phone": state.phone,
+                "clinic_id": state.clinic_id,
+                "current_agent": state.current_agent.value,
+                "patient_type": state.patient_type.value,
+                "intent": state.intent.value,
+                "human_takeover": state.human_takeover,
+                "collected_data": state.collected_data,
+                "agent_history": state.agent_history,
+                "updated_at": datetime.now().isoformat()
+            }
+            
+            # Upsert (insert or update)
+            supabase.table("conversation_states").upsert(data, on_conflict="phone,clinic_id").execute()
+            
+            logger.info(f"💾 Saved to Supabase: {state.phone} (collected_data: {state.collected_data})")
+            
+        except Exception as e:
+            logger.error(f"❌ Failed to save to Supabase: {e}")
+
     
     def delete(self, phone: str, clinic_id: str):
         """Deleta uma conversa"""
