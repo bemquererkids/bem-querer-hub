@@ -158,14 +158,13 @@ class TriagemAgent(BaseAgent):
             greeting = "Boa noite"
         
         # Verificar se é primeira mensagem (apresentação)
-        is_first_message = len(state.agent_history) <= 1
+        # Considera primeira se não tem nenhum dado coletado ainda
+        is_first_message = not collected or len(collected) == 0
         
         prompt = f"""
 Você é a Carol, da equipe Bem-Querer Odontologia.
 
 HORÁRIO ATUAL: {greeting}
-
-PRIMEIRA MENSAGEM: {is_first_message}
 
 DADOS JÁ COLETADOS:
 {json.dumps(collected, indent=2, ensure_ascii=False)}
@@ -174,51 +173,56 @@ MENSAGEM DO PACIENTE: "{message}"
 
 ---
 
-INSTRUÇÕES:
+{"PRIMEIRA INTERAÇÃO - APRESENTAÇÃO:" if is_first_message else "CONTINUAÇÃO - COLETAR DADOS:"}
 
-{"SE FOR A PRIMEIRA MENSAGEM (saudação inicial):" if is_first_message else "CONTINUAÇÃO DA CONVERSA:"}
-
-{'''APRESENTAÇÃO OBRIGATÓRIA (apenas na primeira mensagem):
+{'''Responda EXATAMENTE assim:
 "{greeting}! 😊 Um prazer, sou a Carol, da equipe Bem-Querer Odontologia. 
 Será um prazer ajudá-lo(a)!
 
 A consulta é para você ou para seu filho(a)?"
 
-IMPORTANTE: Use exatamente essa apresentação na primeira mensagem!
-''' if is_first_message else '''
-DADOS NECESSÁRIOS (se não tiver):
+E extraia: tipo=null (ainda não sabemos)
+''' if is_first_message else f'''
+ANÁLISE DA MENSAGEM:
+Extraia informações da mensagem "{message}":
+
+PALAVRAS-CHAVE PARA TIPO:
+- "filho", "filha", "criança", "bebê", "meu filho", "minha filha" → tipo=kids
+- "para mim", "eu", "meu dente", "adulto" → tipo=adulto
+
+DADOS NECESSÁRIOS (pergunte se não tiver):
 1. tipo: É para criança (kids) ou adulto?
 2. nome: Nome do paciente
 3. idade: Idade (se criança)
-4. motivo: Motivo da consulta
-5. dor_urgencia: Está sentindo dor ou incômodo no momento? (sim/não)
+4. dor_urgencia: Está sentindo dor ou incômodo? (sim/não)
+5. motivo: Motivo da consulta
 
-PERGUNTAS A FAZER (uma por vez, na ordem):
-- Se não tem tipo: "A consulta é para você ou para seu filho(a)?"
-- Se não tem nome: "Qual o nome [dele/dela/seu]?"
-- Se não tem idade (e é criança): "Qual a idade [dele/dela]?"
-- Se não tem dor_urgencia: "Está sentindo alguma dor ou incômodo no momento?"
-- Se não tem motivo: "Qual o motivo da consulta?"
+ORDEM DAS PERGUNTAS:
+1. Se não tem tipo: "A consulta é para você ou para seu filho(a)?"
+2. Se não tem nome: "Qual o nome {{"dela" if "filha" in message.lower() else "dele" if "filho" in message.lower() else "do paciente"}}?"
+3. Se não tem idade (e é kids): "Qual a idade {{"dela" if "filha" in message.lower() else "dele"}}?"
+4. Se não tem dor_urgencia: "Está sentindo alguma dor ou incômodo no momento?"
+5. Se não tem motivo: "Qual o motivo da consulta?"
 
-SEJA NATURAL:
-- Faça UMA pergunta por vez
-- Se a mensagem responde algo, EXTRAIA a informação
-- Use emojis moderados (💙, 🦷, 😊)
-- Tom amigável e acolhedor
+IMPORTANTE:
+- Faça APENAS UMA pergunta por vez
+- Se a mensagem responde algo, EXTRAIA e vá para próxima pergunta
+- NÃO repita a apresentação
+- Seja natural e amigável
 '''}
 
 QUANDO TRANSFERIR:
-- Se tem: tipo (kids/adulto) + nome + motivo + dor_urgencia → PRONTO para transferir
-- Se tipo = kids → Próximo agente: "kids"
-- Se tipo = adulto → Próximo agente: "adulto"
+- Se tem: tipo + nome + motivo + dor_urgencia → ready_to_transfer=true
+- Se tipo=kids → next_agent="kids"
+- Se tipo=adulto → next_agent="adulto"
 
-RETORNE JSON:
+RETORNE JSON (sem markdown):
 {{
   "response": "sua resposta ao paciente",
   "extracted_data": {{
     "tipo": "kids|adulto|null",
     "nome": "nome ou null",
-    "idade": "idade ou null",
+    "idade": "número ou null",
     "motivo": "motivo ou null",
     "dor_urgencia": "sim|não|null"
   }},
@@ -237,18 +241,21 @@ RETORNE JSON:
             
             result = json.loads(response.choices[0].message.content)
             
+            logger.info(f"Triagem result: {result}")
+            
             # Salvar dados extraídos
             for key, value in result["extracted_data"].items():
                 if value and value != "null":
                     state.collect_data(key, value)
+                    logger.info(f"Extracted {key} = {value}")
             
             # Atualizar tipo de paciente se descobriu
-            if result["extracted_data"].get("tipo"):
+            if result["extracted_data"].get("tipo") and result["extracted_data"]["tipo"] != "null":
                 tipo = result["extracted_data"]["tipo"]
                 state.set_patient_type(PatientType.KIDS if tipo == "kids" else PatientType.ADULTO)
             
             # Determinar próximo agente
-            if result["ready_to_transfer"] and result["next_agent"]:
+            if result.get("ready_to_transfer") and result.get("next_agent"):
                 next_agent = AgentType(result["next_agent"])
             else:
                 next_agent = None  # Continua na triagem
@@ -256,18 +263,12 @@ RETORNE JSON:
             return result["response"], next_agent
             
         except Exception as e:
-            logger.error(f"Triagem error: {e}")
+            logger.error(f"Triagem error: {e}", exc_info=True)
             # Fallback com apresentação
-            from datetime import datetime
-            hour = datetime.now().hour
-            if 5 <= hour < 12:
-                greeting = "Bom dia"
-            elif 12 <= hour < 18:
-                greeting = "Boa tarde"
+            if not collected or len(collected) == 0:
+                return f"{greeting}! 😊 Um prazer, sou a Carol, da equipe Bem-Querer Odontologia.\n\nA consulta é para você ou para seu filho(a)?", None
             else:
-                greeting = "Boa noite"
-            
-            return f"{greeting}! 😊 Um prazer, sou a Carol, da equipe Bem-Querer Odontologia.\n\nA consulta é para você ou para seu filho(a)?", None
+                return "Desculpe, pode repetir? 😊", None
 
 
 # Factory para criar agentes
