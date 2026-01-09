@@ -163,11 +163,14 @@ class TriagemAgent(BaseAgent):
         else:
             greeting = "Boa noite"
         
-        # Verificar se é primeira mensagem
-        is_first_message = not collected or len(collected) == 0
+        # Verificar se é primeira mensagem DO TRIAGEM (não do sistema)
+        # Se veio do Router, já teve interação, então NÃO é primeira mensagem
+        # agent_history contém: [{"from": "router", "to": "triagem", ...}]
+        # Se len <= 1, significa que está na primeira transição (router -> triagem)
+        is_first_interaction_with_triagem = len(state.agent_history) <= 1 and (not collected or len(collected) == 0)
         
-        # Se for primeira mensagem, apenas apresentar
-        if is_first_message:
+        # Se for primeira interação COM O TRIAGEM, apenas apresentar
+        if is_first_interaction_with_triagem:
             response = f"{greeting}! 😊 Um prazer, sou a Carol, da equipe Bem-Querer Odontologia.\nSerá um prazer ajudá-lo(a)!\n\nA consulta é para você ou para seu filho(a)?"
             return response, None
         
