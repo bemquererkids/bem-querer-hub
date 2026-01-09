@@ -166,17 +166,30 @@ class TriagemAgent(BaseAgent):
         # DEBUG: Log para diagnosticar
         logger.info(f"🔍 Triagem Debug: collected_data = {collected}")
         logger.info(f"🔍 Triagem Debug: agent_history length = {len(state.agent_history)}")
-        logger.info(f"🔍 Triagem Debug: agent_history = {state.agent_history}")
+        logger.info(f"🔍 Triagem Debug: message = {message}")
         
-        # SOLUÇÃO SIMPLES E DEFINITIVA:
-        # Só mostra saudação se collected_data está COMPLETAMENTE vazio
-        # Assim que coletar qualquer dado (tipo, nome, etc), não mostra mais
+        # WORKAROUND IMEDIATO: Se a mensagem contém palavras-chave específicas,
+        # significa que NÃO é primeira vez (usuário está respondendo à pergunta)
+        message_lower = message.lower()
+        
+        # Palavras que indicam resposta à pergunta "para você ou seu filho?"
+        response_keywords = [
+            "filho", "filha", "criança", "bebê", "meu filho", "minha filha",
+            "para mim", "eu preciso", "meu dente", "para eu", "pra mim"
+        ]
+        
+        is_responding_to_question = any(keyword in message_lower for keyword in response_keywords)
+        
+        # SOLUÇÃO: Só mostra saudação se:
+        # 1. NÃO tem dados coletados E
+        # 2. NÃO está respondendo à pergunta (não tem keywords)
         has_any_data = bool(collected and len(collected) > 0)
         
         logger.info(f"🔍 Triagem Debug: has_any_data = {has_any_data}")
+        logger.info(f"🔍 Triagem Debug: is_responding_to_question = {is_responding_to_question}")
         
-        # Se NÃO tem nenhum dado coletado, é primeira interação
-        if not has_any_data:
+        # Se NÃO tem dados E NÃO está respondendo, é primeira interação
+        if not has_any_data and not is_responding_to_question:
             logger.info("🔍 Triagem: Mostrando saudação (primeira interação)")
             response = f"{greeting}! 😊 Um prazer, sou a Carol, da equipe Bem-Querer Odontologia.\nSerá um prazer ajudá-lo(a)!\n\nA consulta é para você ou para seu filho(a)?"
             return response, None
