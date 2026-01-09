@@ -123,6 +123,73 @@ async def debug_uazapi():
         "results": results
     }
 
+@main_router.get("/debug/rag")
+async def debug_rag():
+    """Endpoint de debug para verificar status do RAG"""
+    from pathlib import Path
+    import os
+    
+    result = {
+        "status": "checking",
+        "knowledge_base_path": None,
+        "knowledge_base_exists": False,
+        "documents_found": 0,
+        "documents": [],
+        "service_loaded": False,
+        "service_documents": 0,
+        "test_query": None,
+        "error": None
+    }
+    
+    try:
+        # 1. Verificar caminho do knowledge_base
+        backend_dir = Path(__file__).parent.parent
+        kb_path = backend_dir.parent / "knowledge_base"
+        result["knowledge_base_path"] = str(kb_path)
+        result["knowledge_base_exists"] = kb_path.exists()
+        
+        if kb_path.exists():
+            md_files = list(kb_path.glob("*.md"))
+            result["documents_found"] = len(md_files)
+            result["documents"] = [f.name for f in md_files]
+        
+        # 2. Tentar carregar o serviço
+        try:
+            from app.services.knowledge_base_service import get_knowledge_base_service
+            kb_service = get_knowledge_base_service()
+            result["service_loaded"] = True
+            result["service_documents"] = len(kb_service.documents)
+            
+            # 3. Testar busca
+            test_results = kb_service.search("neuropediatria", max_results=2)
+            result["test_query"] = {
+                "query": "neuropediatria",
+                "results_found": len(test_results),
+                "results": [
+                    {
+                        "title": r["title"],
+                        "score": r["score"],
+                        "category": r["category"]
+                    }
+                    for r in test_results
+                ]
+            }
+            
+        except Exception as e:
+            result["error"] = f"Service error: {str(e)}"
+            import traceback
+            result["traceback"] = traceback.format_exc()
+        
+        result["status"] = "success" if result["service_loaded"] else "failed"
+        
+    except Exception as e:
+        result["status"] = "error"
+        result["error"] = str(e)
+        import traceback
+        result["traceback"] = traceback.format_exc()
+    
+    return result
+
 # WhatsApp Status - Handled by integration router (removed mock to avoid conflict)
 
 # Clinicorp Status - Check environment variables
