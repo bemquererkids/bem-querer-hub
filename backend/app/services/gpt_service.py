@@ -418,6 +418,7 @@ Data Atual: {current_date}
             messages = [{"role": "system", "content": system_prompt}]
             
             # 🔍 RAG: Search knowledge base for relevant context
+            knowledge_context = None
             try:
                 from app.services.knowledge_base_service import get_knowledge_base_service
                 
@@ -425,17 +426,29 @@ Data Atual: {current_date}
                 knowledge_context = kb_service.get_context_for_query(message, max_tokens=2000)
                 
                 if knowledge_context:
-                    logger.info(f"📚 RAG: Found relevant knowledge for query")
-                    # Add knowledge context as system message
-                    messages.append({
-                        "role": "system",
-                        "content": f"{knowledge_context}\n\nUSE AS INFORMAÇÕES ACIMA para responder com precisão. Se a informação estiver nos documentos, cite-a. Se não estiver, seja honesta."
-                    })
+                    logger.info(f"📚 RAG: Found relevant knowledge from files")
                 else:
-                    logger.info(f"📚 RAG: No relevant knowledge found")
+                    logger.info(f"📚 RAG: No relevant knowledge found in files")
             except Exception as e:
-                logger.warning(f"⚠️ RAG search failed: {e}")
-                # Continue without RAG if it fails
+                logger.warning(f"⚠️ RAG file search failed: {e}")
+            
+            # 📦 Fallback: Use embedded knowledge if file-based RAG failed
+            if not knowledge_context:
+                try:
+                    from app.services.embedded_knowledge import search_embedded_knowledge
+                    knowledge_context = search_embedded_knowledge(message)
+                    if knowledge_context:
+                        logger.info(f"📦 RAG: Using embedded knowledge (fallback)")
+                except Exception as e:
+                    logger.warning(f"⚠️ Embedded knowledge failed: {e}")
+            
+            # Add knowledge context if found (from either source)
+            if knowledge_context:
+                messages.append({
+                    "role": "system",
+                    "content": f"{knowledge_context}\n\nUSE AS INFORMAÇÕES ACIMA para responder com precisão. Se a informação estiver nos documentos, cite-a. Se não estiver, seja honesta."
+                })
+            
             
             if context:
                 # Add patient context
