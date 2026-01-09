@@ -244,20 +244,44 @@ class TriagemAgent(BaseAgent):
             # Perguntar dor
             return "Está sentindo alguma dor ou incômodo no momento?", None
         
-        # Tem tipo, nome (e idade se kids), extrair dor
+        # Tem tipo, nome (e idade se kids), extrair dor E motivo
         if not collected.get("dor_urgencia"):
-            if any(word in message_lower for word in ["sim", "dor", "doendo", "incômodo", "incomodo"]):
+            # Detectar se tem dor
+            has_pain = any(word in message_lower for word in ["sim", "dor", "doendo", "incômodo", "incomodo", "inchado", "inflamado"])
+            no_pain = any(word in message_lower for word in ["não", "nao", "sem dor", "não sinto"])
+            
+            if has_pain:
                 state.collect_data("dor_urgencia", "sim")
                 logger.info("Extracted dor_urgencia=sim")
-            elif any(word in message_lower for word in ["não", "nao", "sem dor", "não sinto"]):
+                
+                # 🎯 INTELIGENTE: Se a resposta tem mais de 5 palavras, provavelmente já explicou o motivo
+                # Exemplo: "está com dor, está inchado o dente da frente"
+                if len(message.split()) > 5:
+                    # Extrair motivo da própria mensagem
+                    state.collect_data("motivo", message.strip())
+                    logger.info(f"🎯 Extracted motivo from pain description: {message.strip()}")
+                    
+                    # Pular pergunta do motivo e ir direto para próximo passo
+                    tipo = collected.get("tipo")
+                    if tipo == "kids":
+                        next_agent = AgentType.KIDS
+                    else:
+                        next_agent = AgentType.ADULTO
+                    
+                    return "Entendi! Vou verificar os horários disponíveis. Um momento... 🦷", next_agent
+                else:
+                    # Resposta curta, perguntar mais detalhes
+                    return "Entendi. Pode me contar mais sobre o que está acontecendo?", None
+                    
+            elif no_pain:
                 state.collect_data("dor_urgencia", "não")
                 logger.info("Extracted dor_urgencia=não")
+                # Perguntar motivo
+                return "Qual o motivo da consulta?", None
             else:
-                # Assumir que não tem dor
+                # Não conseguiu detectar, assumir que não tem dor e perguntar motivo
                 state.collect_data("dor_urgencia", "não")
-            
-            # Perguntar motivo
-            return "Qual o motivo da consulta?", None
+                return "Qual o motivo da consulta?", None
         
         # Tem tudo menos motivo
         if not collected.get("motivo"):
