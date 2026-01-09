@@ -216,13 +216,20 @@ class ConversationManager:
                 "updated_at": datetime.now().isoformat()
             }
             
-            # Upsert (insert or update)
-            supabase.table("conversation_states").upsert(data, on_conflict="phone,clinic_id").execute()
+            logger.info(f"💾 Attempting to save: {state.phone}")
+            logger.info(f"   Data: collected_data={state.collected_data}, current_agent={state.current_agent.value}")
             
-            logger.info(f"💾 Saved to Supabase: {state.phone} (collected_data: {state.collected_data})")
+            # Upsert (insert or update)
+            result = supabase.table("conversation_states").upsert(data, on_conflict="phone,clinic_id").execute()
+            
+            logger.info(f"💾 ✅ Saved to Supabase: {state.phone} (collected_data: {state.collected_data})")
             
         except Exception as e:
-            logger.error(f"❌ Failed to save to Supabase: {e}")
+            logger.error(f"❌ CRITICAL: Failed to save to Supabase: {e}")
+            logger.error(f"   Phone: {state.phone}")
+            logger.error(f"   Collected Data: {state.collected_data}")
+            import traceback
+            logger.error(traceback.format_exc())
 
     
     def delete(self, phone: str, clinic_id: str):
