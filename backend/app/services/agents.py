@@ -197,8 +197,8 @@ class TriagemAgent(BaseAgent):
         logger.info("🔍 Triagem: NÃO é primeira interação, processando normalmente")
         
         # 🤖 USAR GPT PARA CONVERSA NATURAL E INVESTIGATIVA
-        # Agentes Kids/Adulto foram implementados, seguro usar
-        USE_GPT = True
+        # 🚨 EMERGÊNCIA: Desabilitando GPT para restaurar serviço
+        USE_GPT = False
         
         if USE_GPT:
             # 🤖 USAR GPT PARA CONVERSA NATURAL E INVESTIGATIVA
