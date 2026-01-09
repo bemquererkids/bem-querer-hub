@@ -163,16 +163,25 @@ class TriagemAgent(BaseAgent):
         else:
             greeting = "Boa noite"
         
-        # Verificar se é primeira mensagem DO TRIAGEM (não do sistema)
-        # Se veio do Router, já teve interação, então NÃO é primeira mensagem
-        # agent_history contém: [{"from": "router", "to": "triagem", ...}]
-        # Se len <= 1, significa que está na primeira transição (router -> triagem)
-        is_first_interaction_with_triagem = len(state.agent_history) <= 1 and (not collected or len(collected) == 0)
+        # DEBUG: Log para diagnosticar
+        logger.info(f"🔍 Triagem Debug: collected_data = {collected}")
+        logger.info(f"🔍 Triagem Debug: agent_history length = {len(state.agent_history)}")
+        logger.info(f"🔍 Triagem Debug: agent_history = {state.agent_history}")
         
-        # Se for primeira interação COM O TRIAGEM, apenas apresentar
-        if is_first_interaction_with_triagem:
+        # SOLUÇÃO SIMPLES E DEFINITIVA:
+        # Só mostra saudação se collected_data está COMPLETAMENTE vazio
+        # Assim que coletar qualquer dado (tipo, nome, etc), não mostra mais
+        has_any_data = bool(collected and len(collected) > 0)
+        
+        logger.info(f"🔍 Triagem Debug: has_any_data = {has_any_data}")
+        
+        # Se NÃO tem nenhum dado coletado, é primeira interação
+        if not has_any_data:
+            logger.info("🔍 Triagem: Mostrando saudação (primeira interação)")
             response = f"{greeting}! 😊 Um prazer, sou a Carol, da equipe Bem-Querer Odontologia.\nSerá um prazer ajudá-lo(a)!\n\nA consulta é para você ou para seu filho(a)?"
             return response, None
+        
+        logger.info("🔍 Triagem: NÃO é primeira interação, processando normalmente")
         
         # Não é primeira mensagem - extrair dados e perguntar
         message_lower = message.lower()
