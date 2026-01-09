@@ -66,14 +66,20 @@ class GPTService:
         except Exception as e:
             logger.warning(f"Failed to load AI config from database: {e}")
         
-        # Fallback to Bem-Querer hardcoded prompt
+        # Fallback to Bem-Querer unified prompt (Kids + Adulto)
         try:
-            from app.services.carol_prompt_bemquerer import get_carol_prompt
-            logger.info("Using fallback Bem-Querer prompt")
+            from app.services.carol_prompt_unified import get_carol_prompt
+            logger.info("Using Bem-Querer unified prompt (Kids + Adulto)")
             return get_carol_prompt()
         except ImportError:
-            logger.warning("Carol prompt file not found, using basic prompt")
-            return self._get_basic_prompt_template()
+            # Fallback to old Kids-only prompt
+            try:
+                from app.services.carol_prompt_bemquerer import get_carol_prompt
+                logger.info("Using fallback Bem-Querer Kids prompt")
+                return get_carol_prompt()
+            except ImportError:
+                logger.warning("Carol prompt file not found, using basic prompt")
+                return self._get_basic_prompt_template()
 
     def _load_key_from_json(self) -> Optional[str]:
         # 1. Try Env Var first (Security Best Practice)
