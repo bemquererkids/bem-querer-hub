@@ -259,14 +259,28 @@ async def receive_uazapi_webhook(request: Request, background_tasks: BackgroundT
         # Extract message details
         text_content = message_data.get('text') or message_data.get('content', '')
         
-        # Determine Phone / Conversation Partner (Correct JID Logic)
-        # Priority 1: chat.id (UazAPI specific - contains the phone number)
-        # Priority 2: chatId (Explicit context)
-        # Priority 3: key.remoteJid (The chat container)
-        # Priority 4: sender (Fallback, but is ME if fromMe=True)
+        # Determine Phone / Conversation Partner (FIXED for UazAPI)
+        # UazAPI Payload Structure:
+        # - chat.id = Internal UazAPI ID (e.g., "r5c2377e36f036c") ❌ NOT the phone!
+        # - chat.wa_chatid = WhatsApp JID (e.g., "5511993308484@s.whatsapp.net") ✅
+        # - chat.phone = Formatted phone (e.g., "+55 11 99330-8484") ✅
+        # - message.chatid = WhatsApp JID ✅
+        # - message.sender = Sender JID ✅
         
-        # UazAPI sends the phone in chat.id field
-        jid = chat_data.get('id') or payload.get('chatId') or message_data.get('key', {}).get('remoteJid') or message_data.get('sender')
+        # Priority order for extracting phone:
+        # 1. chat.wa_chatid (Most reliable - WhatsApp JID)
+        # 2. message.chatid (Message-level JID)
+        # 3. payload.chatId (Legacy support)
+        # 4. message.sender (Fallback, but could be ME if fromMe=True)
+        # 5. key.remoteJid (Meta/Evolution API format)
+        
+        jid = (
+            chat_data.get('wa_chatid') or 
+            message_data.get('chatid') or 
+            payload.get('chatId') or 
+            message_data.get('sender') or
+            message_data.get('key', {}).get('remoteJid')
+        )
         
         logger.warning(f"🔍 [DEBUG] Extracted JID: {jid}")
         
@@ -277,14 +291,31 @@ async def receive_uazapi_webhook(request: Request, background_tasks: BackgroundT
         # Extract phone from JID (format: 5548999999999@s.whatsapp.net or 5548999999999@c.us)
         phone = jid.split('@')[0] if jid and '@' in jid else jid
         
-        logger.warning(f"🔍 [DEBUG] Extracted Phone: {phone}")
+        # Clean phone number (remove spaces, dashes, parentheses)
+        if phone:
+            phone = phone.replace(' ', '').replace('-', '').replace('(', '').replace(')', '').replace('+', '')
+        
+        logger.warning(f"🔍 [DEBUG] Extracted Phone (cleaned): {phone}")
         
         # Correctly determine Contact Name
-        # If fromMe=True, we want the CHAT name, not senderName (which is me)
+        # UazAPI sends name in multiple fields:
+        # - chat.name (Primary display name)
+        # - chat.wa_name (WhatsApp profile name)
+        # - chat.contactName (Contact saved name)
+        # - message.senderName (Fallback)
+        
         is_from_me = message_data.get('fromMe', False)
-        name = chat_data.get('name') or chat_data.get('contactName')
+        
+        name = (
+            chat_data.get('name') or 
+            chat_data.get('wa_name') or 
+            chat_data.get('contactName')
+        )
+        
+        # If still no name and not from me, try message sender name
         if not name and not is_from_me:
              name = message_data.get('senderName', 'Desconhecido')
+        
         if not name:
              name = "Desconhecido"
         
