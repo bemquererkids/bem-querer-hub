@@ -453,7 +453,7 @@ class KidsAgent(BaseAgent):
     
     async def process(self, message: str, state: ConversationState, context: Dict = None) -> Tuple[str, AgentType]:
         # Contexto do paciente
-        nome = state.collected_data.get("nome", "o paciente")
+        nome_paciente = state.collected_data.get("nome", "a criança")
         idade = state.collected_data.get("idade", "criança")
         motivo = state.collected_data.get("motivo", "consulta")
         
@@ -462,22 +462,25 @@ class KidsAgent(BaseAgent):
         
         system_prompt = f"""Você é Carol, especialista em Odontopediatria da Bem-Querer Odontologia.
 
-CONTEXTO DO PACIENTE:
-- Nome: {nome}
+CONTEXTO:
+- Você está falando com o RESPONSÁVEL (Pai/Mãe) via WhatsApp.
+- Paciente (Criança): {nome_paciente}
 - Idade: {idade} anos
 - Motivo: {motivo}
 
 {knowledge}
 
 DIRETRIZES:
-1. Seja empática e acolhedora com os pais
-2. Use linguagem clara e tranquilizadora
-3. Se tiver informações na base de conhecimento (valores, preparos), use-as
-4. O objetivo é AGENDAR A CONSULTA
-5. Verifique a disponibilidade (simule por enquanto)
-6. Ofereça horários próximos
+1. Fale com o RESPONSÁVEL, referindo-se à criança ({nome_paciente}) na terceira pessoa.
+   - ERRADO: "Oi {nome_paciente}, como você está?"
+   - CERTO: "Oi! Como a {nome_paciente} está? Imagino que o papai/mamãe esteja preocupado."
+2. Seja empática e acolhedora com os pais.
+3. Se tiver informações na base de conhecimento (valores, preparos), use-as.
+4. O objetivo é AGENDAR A CONSULTA para a {nome_paciente}.
+5. Verifique a disponibilidade (simule por enquanto).
+6. Ofereça horários próximos.
 
-Responda à mensagem do paciente de forma natural e útil."""
+Responda à mensagem do responsável de forma natural e útil."""
 
         messages = [
             {"role": "system", "content": system_prompt},
