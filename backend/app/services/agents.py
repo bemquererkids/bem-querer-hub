@@ -547,13 +547,24 @@ Responda à mensagem do paciente de forma natural e útil."""
 # Factory para criar agentes
 def create_agent(agent_type: AgentType, client: AsyncOpenAI) -> BaseAgent:
     """Cria um agente"""
-    if agent_type == AgentType.ROUTER:
-        return RouterAgent(client)
-    elif agent_type == AgentType.TRIAGEM:
+    try:
+        logger.info(f"🏭 Creating agent: {agent_type}")
+        
+        if agent_type == AgentType.ROUTER:
+            return RouterAgent(client)
+        elif agent_type == AgentType.TRIAGEM:
+            return TriagemAgent(client)
+        elif agent_type == AgentType.KIDS:
+            return KidsAgent(client)
+        elif agent_type == AgentType.ADULTO:
+            return AdultoAgent(client)
+        else:
+            logger.warning(f"⚠️ Agent type {agent_type} not implemented, falling back to TRIAGEM")
+            return TriagemAgent(client)
+            
+    except NameError as e:
+        logger.error(f"❌ Class not found: {e}. Fallback to TRIAGEM")
         return TriagemAgent(client)
-    elif agent_type == AgentType.KIDS:
-        return KidsAgent(client)
-    elif agent_type == AgentType.ADULTO:
-        return AdultoAgent(client)
-    else:
-        raise ValueError(f"Agent type {agent_type} not implemented yet")
+    except Exception as e:
+        logger.error(f"❌ Error creating agent: {e}. Fallback to TRIAGEM")
+        return TriagemAgent(client)

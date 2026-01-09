@@ -106,13 +106,37 @@ class MultiAgentOrchestrator:
                 }
             
             # 4. Processar com agente atual
+            # Determinar agente atual
             current_agent_type = state.current_agent
             logger.info(f"Processing with agent: {current_agent_type.value}")
             
-            # Criar agente
-            agent = create_agent(current_agent_type, self.client)
+            try:
+                # Tentar criar o agente
+                try:
+                    agent = create_agent(current_agent_type, self.client)
+                except ValueError as e:
+                    logger.error(f"❌ Erro ao criar agente {current_agent_type}: {e}")
+                    logger.warning("⚠️ Fazendo fallback para TRIAGEM")
+                    # Fallback para Triagem se agente não existir
+                    current_agent_type = AgentType.TRIAGEM
+                    state.current_agent = AgentType.TRIAGEM
+                    agent = create_agent(AgentType.TRIAGEM, self.client)
+                    
+            except Exception as e:
+                 logger.critical(f"🔥 Erro crítico ao criar agente (fallback falhou): {e}")
+                 return {
+                    "response": "Desculpe, estamos com uma instabilidade momentânea. Pode tentar novamente em 1 minuto? 🔧",
+                    "current_agent": "error",
+                    "patient_type": state.patient_type.value,
+                    "intent": state.intent.value,
+                    "human_takeover": False,
+                    "error": str(e)
+                 }
+
+            # Adicionar contexto RAG se necessário
+            if context is None: # Ensure context is a dict if not provided
+                context = {}
             
-            # Adicionar conhecimento RAG se não for router
             knowledge_context = None
             if current_agent_type != AgentType.ROUTER:
                 try:
