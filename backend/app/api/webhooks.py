@@ -814,7 +814,11 @@ async def process_new_lead(
     ai_response = await gpt_service.process_message(
         message=message,
         chat_history=history,
-        context={"patient_name": name, "clinic_id": clinic_id}
+        context={
+            "patient_name": name,
+            "clinic_id": clinic_id,
+            "phone": clean_phone  # ← IMPORTANTE: Para multi-agent
+        }
     )
     ai_response_text = ai_response.get("response", "Desculpe, não entendi.")
     logger.warning(f"🤖 AI Response generated: {ai_response_text[:100]}...")
