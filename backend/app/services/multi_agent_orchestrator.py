@@ -113,14 +113,35 @@ class MultiAgentOrchestrator:
             agent = create_agent(current_agent_type, self.client)
             
             # Adicionar conhecimento RAG se não for router
+            knowledge_context = None
             if current_agent_type != AgentType.ROUTER:
-                knowledge_context = search_embedded_knowledge(
-                    message,
-                    patient_age=state.patient_type.value if state.patient_type != "indefinido" else None
-                )
-                if context is None:
-                    context = {}
-                context["knowledge"] = knowledge_context
+                try:
+                    from app.services.knowledge_base_service import get_knowledge_base_service
+                    
+                    kb_service = get_knowledge_base_service()
+                    knowledge_context = kb_service.get_context_for_query(message, max_tokens=1500)
+                    
+                    if knowledge_context:
+                        logger.info(f"📚 RAG: Found relevant knowledge for query")
+                        if context is None:
+                            context = {}
+                        context["knowledge"] = knowledge_context
+                    else:
+                        logger.info(f"📚 RAG: No relevant knowledge found")
+                        
+                except Exception as e:
+                    logger.warning(f"⚠️ RAG search failed: {e}")
+                    # Fallback to embedded knowledge
+                    try:
+                        knowledge_context = search_embedded_knowledge(
+                            message,
+                            patient_age=state.patient_type.value if state.patient_type != "indefinido" else None
+                        )
+                        if context is None:
+                            context = {}
+                        context["knowledge"] = knowledge_context
+                    except Exception as e2:
+                        logger.warning(f"⚠️ Embedded knowledge also failed: {e2}")
             
             # Processar mensagem
             response, next_agent = await agent.process(message, state, context)
