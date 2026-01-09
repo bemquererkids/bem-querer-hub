@@ -109,6 +109,7 @@ class ConversationState:
             "human_takeover": self.human_takeover,
             "collected_data": self.collected_data,
             "agent_history": self.agent_history,
+            "user_name": self.user_name,
             "created_at": self.created_at.isoformat(),
             "updated_at": self.updated_at.isoformat()
         }
@@ -123,6 +124,7 @@ class ConversationState:
         state.human_takeover = data["human_takeover"]
         state.collected_data = data["collected_data"]
         state.agent_history = data["agent_history"]
+        state.user_name = data.get("user_name")
         state.created_at = datetime.fromisoformat(data["created_at"])
         state.updated_at = datetime.fromisoformat(data["updated_at"])
         return state

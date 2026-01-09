@@ -457,23 +457,26 @@ class KidsAgent(BaseAgent):
         idade = state.collected_data.get("idade", "criança")
         motivo = state.collected_data.get("motivo", "consulta")
         
+        # Nome do responsável
+        nome_responsavel = state.user_name or "Mãe/Pai"
+        
         # Contexto RAG
         knowledge = context.get("knowledge", "") if context else ""
         
         system_prompt = f"""Você é Carol, especialista em Odontopediatria da Bem-Querer Odontologia.
 
 CONTEXTO:
-- Você está falando com o RESPONSÁVEL (Pai/Mãe) via WhatsApp.
-- Paciente (Criança): {nome_paciente}
+- Você está falando com: {nome_responsavel} (Responsável)
+- Sobre o Paciente (Criança): {nome_paciente}
 - Idade: {idade} anos
 - Motivo: {motivo}
 
 {knowledge}
 
 DIRETRIZES:
-1. Fale com o RESPONSÁVEL, referindo-se à criança ({nome_paciente}) na terceira pessoa.
-   - ERRADO: "Oi {nome_paciente}, como você está?"
-   - CERTO: "Oi! Como a {nome_paciente} está? Imagino que o papai/mamãe esteja preocupado."
+1. Fale com {nome_responsavel}, referindo-se à criança ({nome_paciente}) na terceira pessoa.
+   - ERRADO: "Oi {nome_paciente}..."
+   - CERTO: "Oi {nome_responsavel}! Como a {nome_paciente} está pós..."
 2. Seja empática e acolhedora com os pais.
 3. Se tiver informações na base de conhecimento (valores, preparos), use-as.
 4. O objetivo é AGENDAR A CONSULTA para a {nome_paciente}.

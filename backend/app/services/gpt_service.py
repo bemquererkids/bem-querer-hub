@@ -430,9 +430,10 @@ Data Atual: {current_date}
                     
                     orchestrator = get_multi_agent_orchestrator()
                     
-                    # Extrair phone do contexto
+                    # Extrair phone e nome do contexto
                     phone = context.get("phone") if context else None
                     clinic_id = context.get("clinic_id", "00000000-0000-0000-0000-000000000001") if context else "00000000-0000-0000-0000-000000000001"
+                    sender_name = context.get("patient_name") if context else None
                     
                     if not phone:
                         logger.warning("No phone in context, falling back to single-agent")
@@ -442,7 +443,8 @@ Data Atual: {current_date}
                             phone=phone,
                             clinic_id=clinic_id,
                             chat_history=chat_history,
-                            context=context
+                            context=context,
+                            sender_name=sender_name
                         )
                         
                         # Se humano assumiu, não retornar resposta

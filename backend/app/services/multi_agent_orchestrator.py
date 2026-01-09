@@ -51,11 +51,12 @@ class MultiAgentOrchestrator:
         message: str,
         phone: str,
         clinic_id: str,
-        chat_history: Optional[list] = None,
-        context: Optional[Dict[str, Any]] = None
+        chat_history: List[Dict] = [],
+        context: Dict = None,
+        sender_name: str = None
     ) -> Dict[str, Any]:
         """
-        Processa uma mensagem através do sistema multi-agent
+        Processa uma mensagem usando o sistema multi-agentes.
         
         Args:
             message: Mensagem do usuário
@@ -63,6 +64,7 @@ class MultiAgentOrchestrator:
             clinic_id: ID da clínica
             chat_history: Histórico de mensagens
             context: Contexto adicional
+            sender_name: Nome do remetente (opcional)
             
         Returns:
             {
@@ -77,6 +79,12 @@ class MultiAgentOrchestrator:
         try:
             # 1. Obter ou criar estado da conversa
             state = self.conversation_manager.get_or_create(phone, clinic_id)
+            
+            # Atualizar nome do usuário se fornecido
+            if sender_name and sender_name != "Desconhecido" and not state.user_name:
+                state.user_name = sender_name
+                logger.info(f"👤 User name identified and saved in state: {sender_name}")
+                self.conversation_manager.save(state)
             
             # 2. Verificar se humano assumiu
             if state.human_takeover:
